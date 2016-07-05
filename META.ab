@@ -1,0 +1,8 @@
+version = "$(pkg_version)"
+description = "A library for building dynamic webapps, using Js_of_ocaml."
+requires = "async_kernel bin_prot core_kernel fieldslib incr_map incremental_kernel js_of_ocaml js_of_ocaml.async ppx_assert.runtime-lib ppx_bench.runtime-lib ppx_expect.collector ppx_hash.runtime-lib ppx_inline_test.runtime-lib sexplib typerep variantslib virtual_dom"
+archive(byte  ) = "incr_dom.cma"
+archive(native) = "incr_dom.cmxa"
+plugin(byte  ) = "incr_dom.cma"
+plugin(native) = "incr_dom.cmxs"
+exists_if = "incr_dom.cma"

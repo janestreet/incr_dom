@@ -1,0 +1,34 @@
+This directory contains a few examples of how the =incr_dom= library
+can be used.
+
+To run any of these examples, follow the steps below:
+
+- To compile to JavaScript, you first need to set the Omake build
+  environment variable =WITH_ARCH_32_BIT= to true.  In emacs, you can
+  do this using the command =M-x Omake.setenv= (just follow the
+  prompts), and you can check its current value in the Omake status
+  buffer using the command =C-c C-v=.
+
+- Once the variable is set, start compilation in the usual way (=C-c
+  C-c= in emacs). Once this is done, there should be a .js file in
+  =lib/incr_dom/example/EXAMPLE=, where =EXAMPLE= is the directory for
+  the specific example.
+
+- Next, you need to start an HTTP server so that you can access the
+  example from a different machine.  Navigate to the root of the
+  feature where you compiled the example, and run the following
+  command:
+
+  #+begin_src
+  # python -m SimpleHTTPServer 8080
+  #+end_src
+
+- Finally, open a web browser (this can be on a machine that is not
+  your workstation).  Go to the following URL, where =WORKSTATION= is
+  your workstation's name, and =EXAMPLE= is the directory for the
+  specific example.
+
+   http://WORKSTATION.delacy.com:8080/lib/incr_dom/example/EXAMPLE/index.html
+
+You should now be able to see and interact with the example
+application!
