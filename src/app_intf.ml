@@ -3,11 +3,11 @@ open Virtual_dom.Std
 
 module type S = sig
   module Model : sig
-    type t [@@deriving sexp]
+    type t
   end
 
   module Action : sig
-    type t [@@deriving sexp]
+    type t [@@deriving sexp_of]
 
     val apply :
       t
