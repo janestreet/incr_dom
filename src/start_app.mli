@@ -13,10 +13,15 @@ open! Async_kernel.Std
     [on_display] is called every time the DOM is updated, with the value of the model just
     before and just after the update.  Things like updating the window scroll naturally go
     here.
+
+    If [bind_to_element_with_id] is specified, the app will be bound to the element with
+    the given id. In other words, the DOM returned by [App.view] will replace that
+    element. If not specified, the app will be bound to the body element.
 *)
 val start
-  :  (module App_intf.S with type Model.t = 'model and type Action.t = 'action)
+  :  ?bind_to_element_with_id : string
   -> initial_state : 'model
   -> on_startup : (schedule:('action -> unit) -> 'model Incr.Var.t -> unit)
   -> on_display : (schedule:('action -> unit) -> 'model -> 'model -> unit)
+  -> (module App_intf.S with type Model.t = 'model and type Action.t = 'action)
   -> unit

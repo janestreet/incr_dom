@@ -29,10 +29,11 @@ let timer_stop s =
 
 let start
       (type model) (type action)
-      (module App : App_intf.S with type Model.t = model and type Action.t = action)
+      ?bind_to_element_with_id
       ~initial_state
       ~on_startup
       ~on_display
+      (module App : App_intf.S with type Model.t = model and type Action.t = action)
   =
   (* This is idempotent and so fine to do. *)
   Async_js.init ();
@@ -44,8 +45,17 @@ let start
     let view = Incr.observe (App.view (Incr.Var.watch state) ~schedule) in
     Incr.stabilize ();
     let html = ref (Incr.Observer.value view |> ok_exn) in
-    let elt = ref (Vdom.Node.to_dom !html :> Dom.element Js.t) in
-    Dom_html.document##.body := (Obj.magic !elt);
+    let html_dom = Vdom.Node.to_dom !html in
+    let elt = ref (html_dom :> Dom.element Js.t) in
+    (match bind_to_element_with_id with
+      | None ->
+        Dom_html.document##.body := html_dom;
+      | Some id ->
+        let elem = Dom_html.getElementById id in
+        let parent =
+          Option.value_exn ~here:[%here] (Js.Opt.to_option elem##.parentNode)
+        in
+        Dom.replaceChild parent !elt elem);
     on_startup ~schedule state;
     Pipe.iter' r ~f:(fun actions ->
       timer_start "total";
@@ -71,7 +81,7 @@ let start
       timer_stop "diff";
 
       timer_start "patch";
-      let elt' = Vdom.Node.Patch.apply patch (!elt :> Dom.element Js.t) in
+      let elt' = Vdom.Node.Patch.apply patch !elt in
       timer_stop "patch";
 
       timer_start "on_display";
