@@ -28,7 +28,7 @@ To run any of these examples, follow the steps below:
   your workstation's name, and =EXAMPLE= is the directory for the
   specific example.
 
-   http://WORKSTATION.delacy.com:8080/lib/incr_dom/example/EXAMPLE/index.html
+   http://WORKSTATION:8080/lib/incr_dom/example/EXAMPLE/index.html
 
 You should now be able to see and interact with the example
 application!
