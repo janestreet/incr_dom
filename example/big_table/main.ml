@@ -14,6 +14,9 @@ let () =
   Start_app.start
     (module Table)
     ~initial_state:(Table.init ())
+    ~project_immutable_summary:(fun model ->
+      Model.focus_cell_id model
+    )
     ~on_startup:(fun ~schedule m_var ->
       Clock_ns.every (Time_ns.Span.of_sec 0.05) (fun () ->
         for _ = 1 to 250 do
@@ -36,13 +39,14 @@ let () =
         )
       end
     )
-    ~on_display:(fun ~schedule:_ _old_model (new_model:Model.t) ->
-      let id = Model.focus_cell_id new_model in
-      match Js.Opt.to_option (Dom_html.document##getElementById (Js.string id)) with
-      | None     -> ()
-      | Some elt ->
-        if not (Js_misc.element_is_in_viewport elt) then begin
-          logf "scroll to %s" id;
-          Js_misc.scroll ~id ()
-        end
-    )
+    ~on_display:(fun ~schedule:_ ~old:old_id model ->
+      let new_id = Model.focus_cell_id model in
+      if old_id <> new_id then begin
+        match Js.Opt.to_option (Dom_html.document##getElementById (Js.string new_id)) with
+        | None     -> ()
+        | Some elt ->
+          if not (Js_misc.element_is_in_viewport elt) then begin
+            logf "scroll to %s" new_id;
+            Js_misc.scroll ~id:new_id ()
+          end
+      end)

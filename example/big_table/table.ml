@@ -196,7 +196,7 @@ let view (m : Model.t Incr.t) ~schedule =
           let%bind row = row in
           Var.watch row.visible
         in
-        if not is_visible then
+        if not is_visible then (
           (* for invisible rows, we
 
              - create a constant node, which never ticks unless row becomes visible again
@@ -206,8 +206,8 @@ let view (m : Model.t Incr.t) ~schedule =
             let colspan = Vdom.Attr.create "colspan" (Int.to_string the_num_cols) in
             Vdom.Node.td [colspan; id] [ Vdom.Node.text "-" ]
           in
-          return (Some (Vdom.Node.tr [ Vdom.Attr.id (row_id row_index) ] [ td ]))
-        else begin
+          return (Some (Vdom.Node.tr [ Vdom.Attr.id (row_id row_index) ] [ td ])))
+        else (
           let focused_col =
             let%bind row = row in
             Var.watch row.focused_column
@@ -240,8 +240,7 @@ let view (m : Model.t Incr.t) ~schedule =
           Some (Vdom.Node.tr
                   [ Vdom.Attr.id (row_id row_index) ]
                   (row_index_cell :: Map.data row_cells))
-        end
-      )
+      ))
   in
   Vdom.Node.body [on_keypress] [Vdom.Node.table [] (Map.data cells)]
 ;;

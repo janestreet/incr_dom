@@ -7,4 +7,5 @@ let () =
     (module Counters)
     ~initial_state:(Counters.Model.Fields.create ~counters:(Int.Map.singleton 0 13))
     ~on_startup:(fun ~schedule:_ _ -> ())
-    ~on_display:(fun ~schedule:_ _ _ -> ())
+    ~project_immutable_summary:Fn.id
+    ~on_display:(fun ~schedule:_ ~old:_ _ -> ())

@@ -6,9 +6,10 @@ open! Import
 
 let rec chunk_list l n =
   if List.is_empty l then []
-  else
+  else (
     let (chunk,rest) = List.split_n l n in
     chunk :: chunk_list rest n
+  )
 
 let rec refresh_visibility ~schedule (state_var : Entries.Model.t Incr.Var.t) =
   let open Deferred.Let_syntax in
@@ -31,12 +32,13 @@ let rec refresh_visibility ~schedule (state_var : Entries.Model.t Incr.Var.t) =
             | None -> acc
             | Some entry ->
               if Bool.(=) elt_visible (Entry.Model.is_visible entry) then acc
-              else
+              else (
                 let entries =
                   Map.add acc.entries ~key:entry_id
                     ~data:(Entry.Model.set_visibility entry elt_visible)
                 in
-                { acc with entries })
+                { acc with entries }
+              ))
       in
       Incr.Var.set state_var state';
       schedule Entries.Action.nop; (* force a redisplay *)
@@ -56,10 +58,8 @@ let () =
       every (Time_ns.Span.of_sec 0.5) (fun () -> schedule Entries.Action.nop);
       don't_wait_for @@ refresh_visibility ~schedule state;
     )
-    ~on_display:(fun ~schedule:_ old_state new_state ->
-      let focus_changed =
-        let outer_focus (x:Entries.Model.t) = Option.map x.focus ~f:fst in
-        outer_focus old_state <> outer_focus new_state
-      in
-      if focus_changed then Js_misc.scroll ()
+    ~project_immutable_summary:(fun model -> Option.map model.focus ~f:fst)
+    ~on_display:(fun ~schedule:_ ~old:old_focus model ->
+      let new_focus = Option.map model.focus ~f:fst in
+      if old_focus <> new_focus then (Js_misc.scroll ())
     )

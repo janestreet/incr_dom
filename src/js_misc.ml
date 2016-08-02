@@ -45,8 +45,8 @@ let scroll ?(id="keep-in-view") () =
   match Js.Opt.to_option (Dom_html.document##getElementById (Js.string id)) with
   | None -> ()
   | Some elt ->
-    if not (element_is_in_viewport elt) then
-      elt##scrollIntoView (Js.bool true)
+    if not (element_is_in_viewport elt) then (
+      elt##scrollIntoView (Js.bool true))
 ;;
 
 (* Not yet supported on Chrome.  Maybe we should use jQuery?
@@ -134,7 +134,7 @@ let element_search ~length ~nth_element_id ~search_by mode layout x =
         | Rows    -> Int.(<=) first.top  last.top
         | Columns -> Int.(<=) first.left last.left
       in
-      nth_element (if is_ascending then n else length - n - 1)
+      nth_element (if is_ascending then n else (length - n - 1))
     in
     fun n -> search_by (viewport_rect_of_element (nth_element_normalized n))
   in
@@ -143,7 +143,7 @@ let element_search ~length ~nth_element_id ~search_by mode layout x =
 
 let find_visible_range ~length ~nth_element_id layout =
   if length = 0 then None
-  else
+  else (
     let element_search = element_search ~length ~nth_element_id in
     let viewport_rect = viewport_rect () in
     let first =
@@ -165,4 +165,5 @@ let find_visible_range ~length ~nth_element_id layout =
     (* Both [first] and [last] need to be [Some]. Otherwise, for example if the whole
        table is below view port, then [first] will be [Some], [last] will be [None] *)
     Option.both first last
+  )
 ;;

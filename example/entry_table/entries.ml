@@ -43,9 +43,10 @@ module Action = struct
 
   let do_kick_all (model:Model.t) =
     if Random.float 1. < 0.6 then model
-    else
+    else (
       let entries = Map.map model.entries ~f:Entry.Model.kick in
       { model with entries }
+    )
 
   let do_kick_one (model:Model.t) =
     let pos = Random.int (Map.length model.entries) in
@@ -157,8 +158,8 @@ let view (m:Model.t Incr.t) ~schedule =
       | Char 'j' -> schedule (Move_outer_focus Next)
       | Char 'u' -> schedule (Move_inner_focus Prev)
       | Char 'i' -> schedule (Move_inner_focus Next)
-      | Char 'x' -> if kp.ctrl then schedule (Raise (Error.of_string "got X"))
-      | Char 'y' -> if kp.ctrl then schedule Raise_js
+      | Char 'x' -> if kp.ctrl then (schedule (Raise (Error.of_string "got X")))
+      | Char 'y' -> if kp.ctrl then (schedule Raise_js)
       | Char 'd' -> schedule Nop
       | Char 's' -> schedule Dump_state
       | Char 'e' -> schedule (Entry (focus, Toggle_collapse))
@@ -181,21 +182,21 @@ let view (m:Model.t Incr.t) ~schedule =
       logf !"creating %{Entry_id}" entry_id;
       let name = entry >>| Entry.Model.name in
       let%bind name = name and search_string = search_string in
-      if not (Model.name_found_by_search ~search_string name) then Incr.const None
-      else
+      if not (Model.name_found_by_search ~search_string name) then (Incr.const None)
+      else (
         let focus_me () = schedule (Action.Set_outer_focus entry_id) in
         let focus =
           match%map focus with
           | None -> Entry.Unfocused
           | Some (entry_id', fp) ->
-            if Entry_id.(=) entry_id entry_id' then Entry.Focused fp
+            if Entry_id.(=) entry_id entry_id' then (Entry.Focused fp)
             else Entry.Unfocused
         in
         let%map view =
           Entry.view entry entry_id ~focus ~focus_me ~set_inner_focus
         in
         Some view
-    )
+      ))
   and on_keypress = on_keypress
   in
   Node.body [on_keypress] (input :: Map.data entries)
