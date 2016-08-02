@@ -129,6 +129,12 @@ let start_derived
       timer_stop "apply actions";
 
       timer_start "stabilize";
+      let now =
+        let date = new%js Js.date_now in
+        Time_ns.Span.of_ms date##getTime
+        |> Time_ns.of_span_since_epoch
+      in
+      Incr.advance_clock ~to_:now;
       Incr.stabilize ();
       timer_stop "stabilize";
 
