@@ -160,7 +160,7 @@ let field_is_focused ~collapsed (focus:focus_state) pos =
   match focus with
   | Unfocused -> false
   | Focused focus_point ->
-    Some pos = (Option.bind focus_point (fun x -> Map.find focus_map x))
+    Some pos = (Option.bind focus_point ~f:(fun x -> Map.find focus_map x))
 
 let align_left f attrs nodes=
   f (Attr.create "align" "left" :: attrs) nodes

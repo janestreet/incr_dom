@@ -40,7 +40,7 @@ let of_event (e:Dom_html.keyboardEvent Js.t) =
       | "Right" -> Right
       | "Enter" -> Enter
       | _ ->
-        match Option.bind (Js.Optdef.to_option e##.charCode) Char.of_int with
+        match Option.bind (Js.Optdef.to_option e##.charCode) ~f:Char.of_int with
         | Some c -> Char c
         | None ->
           match Char.of_int e##.keyCode  with
