@@ -1,0 +1,14 @@
+(library (
+  (name incr_dom)
+  (public_name incr_dom)
+  (preprocess (((pps (ppx_js_driver JANE -ite-check)) All)))
+  (libraries (
+    js_of_ocaml
+    virtual_dom
+    core_kernel
+    js_of_ocaml_async
+    async_kernel
+    incremental_kernel
+    incr_map
+  ))
+))

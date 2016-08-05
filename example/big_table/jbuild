@@ -1,0 +1,15 @@
+(executables
+ ((names (main))
+  (libraries (
+    async_kernel
+    core_kernel
+    incr_dom
+    ))
+  (js_of_ocaml ((flags (--source-map-inline
+                        --debuginfo
+                        --enable with-js-error
+                        --pretty
+                        ;; --no-inline
+                        ))))
+  (preprocess (((pps (ppx_js_driver JANE -ite-check)) All)))
+  ))
