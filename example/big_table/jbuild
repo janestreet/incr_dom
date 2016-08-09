@@ -11,5 +11,5 @@
                         --pretty
                         ;; --no-inline
                         ))))
-  (preprocess (((pps (ppx_js_driver JANE -ite-check)) All)))
+  (preprocess (((pps (ppx_js_driver JANE_KERNEL -ite-check)) All)))
   ))

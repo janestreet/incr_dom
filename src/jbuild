@@ -1,7 +1,8 @@
 (library (
   (name incr_dom)
   (public_name incr_dom)
-  (preprocess (((pps (ppx_js_driver JANE -ite-check)) All)))
+  (js_of_ocaml ())
+  (preprocess (((pps (ppx_js_driver JANE_KERNEL -ite-check)) All)))
   (libraries (
     js_of_ocaml
     virtual_dom
