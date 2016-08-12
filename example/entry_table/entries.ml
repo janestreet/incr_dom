@@ -5,6 +5,7 @@ module Model = struct
   type t = { entries : Entry.Model.t Entry_id.Map.t
            ; focus : (Entry_id.t * Focus_point.t option) option
            ; search_string : string
+           ; visible_range : (Entry_id.t * Entry_id.t) option
            }
   [@@deriving fields, sexp]
 
@@ -144,7 +145,10 @@ module Action = struct
 
 end
 
-let view (m:Model.t Incr.t) ~schedule =
+let in_range cmp (lo, hi) value =
+  cmp lo value <= 0 && cmp hi value >= 0
+
+let view (m:Model.t Incr.t) ~schedule ~viewport_changed:_ =
   let open Vdom in
   let open Incr.Let_syntax in
   let set_inner_focus fp = schedule (Action.Set_inner_focus fp) in
@@ -177,10 +181,16 @@ let view (m:Model.t Incr.t) ~schedule =
   in
   let entries       = m >>| Model.entries       in
   let search_string = m >>| Model.search_string in
+  let visible_range = m >>| Model.visible_range in
   let%map entries =
     Incr.Map.filter_mapi' entries ~f:(fun ~key:entry_id ~data:entry ->
       logf !"creating %{Entry_id}" entry_id;
       let name = entry >>| Entry.Model.name in
+      let visible =
+        match%map visible_range with
+        | None -> false
+        | Some range -> in_range Entry_id.compare range entry_id
+      in
       let%bind name = name and search_string = search_string in
       if not (Model.name_found_by_search ~search_string name) then (Incr.const None)
       else (
@@ -193,7 +203,7 @@ let view (m:Model.t Incr.t) ~schedule =
             else Entry.Unfocused
         in
         let%map view =
-          Entry.view entry entry_id ~focus ~focus_me ~set_inner_focus
+          Entry.view entry entry_id ~visible ~focus ~focus_me ~set_inner_focus
         in
         Some view
       ))
@@ -201,6 +211,22 @@ let view (m:Model.t Incr.t) ~schedule =
   in
   Node.body [on_keypress] (input :: Map.data entries)
 
+let update_visibility m =
+  let filtered_entries = Model.filtered_entries m in
+  let visible_range =
+    Js_misc.find_visible_range
+      ~length:(Map.length filtered_entries)
+      ~nth_element_id:(fun n ->
+        Map.nth_exn filtered_entries n |> fst |> Entry_id.id_string
+      )
+      Js_misc.Rows
+    |> Option.map ~f:(fun (a, b) ->
+      ( Map.nth_exn filtered_entries a |> fst
+      , Map.nth_exn filtered_entries b |> fst
+      )
+    )
+  in
+  { m with visible_range }
 
 let example ~entries : Model.t =
   let entries =
@@ -213,4 +239,5 @@ let example ~entries : Model.t =
     | Some (k,_) -> Some (k,None)
     | None -> None
   in
-  { focus; entries; search_string = "" }
+  { focus; entries; search_string = ""; visible_range = None }
+

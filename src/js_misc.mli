@@ -26,3 +26,9 @@ val find_visible_range
   -> nth_element_id:(int -> string)
   -> rows_or_columns
   -> (int * int) option
+
+(** [scroll_container node] finds the closest scrollable ancestor in the DOM tree.
+    If there is no scrollable element above the node passed in, then the document
+    will be returned
+*)
+val get_scroll_container : Dom.node Js.t -> Dom.node Js.t

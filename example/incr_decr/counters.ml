@@ -30,7 +30,9 @@ module Action = struct
   let should_log _ = true
 end
 
-let view (m : Model.t Incr.t) ~schedule =
+let update_visibility m = m
+
+let view (m : Model.t Incr.t) ~schedule ~viewport_changed:_ =
   let open Incr.Let_syntax in
   let open Vdom in
   let on_add_new_click = Attr.on_click (fun _ev -> schedule Action.New_counter) in

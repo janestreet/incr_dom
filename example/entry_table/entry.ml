@@ -2,7 +2,6 @@ open! Core_kernel.Std
 open! Import
 
 module Model = struct
-
   module Focusable_field = struct
     module T = struct
       type t =
@@ -35,7 +34,6 @@ module Model = struct
       ; blimp     : float Dirpair.t
       ; snip      : float Dirpair.t
       ; collapsed : bool
-      ; visible   : bool
       } [@@deriving sexp, fields]
 
     let get t ((ff:Focusable_field.t), dir) =
@@ -87,9 +85,6 @@ module Model = struct
     let focus_map = focus_map ~collapsed:t.basic.collapsed in
     move_map_focus focus_map fp dir
 
-  let set_visibility t visible = { t with basic = {t.basic with visible} }
-  let is_visible t = t.basic.visible
-
   let kick t =
     let kick = 0.01 *. float (Random.int 3 - 1) in
     let buy = t.live.buy +. kick in
@@ -111,7 +106,6 @@ module Model = struct
            ; blimp     = dp 1.02 1.02
            ; snip      = dp 0.03 0.03
            ; collapsed = true
-           ; visible   = true
            }
        ; live = dp 33.12 33.13
        }
@@ -232,25 +226,27 @@ let basic_data_and_header ~set_inner_focus ~focus (basic:Model.Basic.t) =
 (** Returns an incremental displaying the live ticking part of the arb display.
    Importantly, this incremental stops updating when the element in question is out of
    view, thus reducing the churn on the DOM and on the incremental graph. *)
-let live_data basic live =
+let live_data visible live =
   let open Incr.Let_syntax in
-  match%bind basic >>| Model.Basic.visible with
-  | true ->
-    let%map live = live in
-    [ td [] [Node.text (Float.to_string live.buy)]
-    ; td [] [Node.text (Float.to_string live.sell)] ]
-  | false ->
-    Incr.const [ td [] [Node.text "--"]
-               ; td [] [Node.text "--"] ]
+  Incr.if_ visible
+    ~then_:(
+      let%map live = live in
+      [ td [] [Node.text (Float.to_string live.buy)]
+      ; td [] [Node.text (Float.to_string live.sell)] ]
+    )
+    ~else_:(
+      Incr.const [ td [] [Node.text "--"]
+                 ; td [] [Node.text "--"] ]
+    )
 ;;
 
-let view (m:Model.t Incr.t) (entry_id:Entry_id.t) ~focus ~focus_me ~set_inner_focus =
+let view (m:Model.t Incr.t) (entry_id:Entry_id.t) ~visible ~focus ~focus_me ~set_inner_focus =
   let open Incr.Let_syntax in
   let entry_id_attr = Attr.id (Entry_id.id_string entry_id) in
   let key_attr = Attr.string_property "key" (Entry_id.id_string entry_id) in
   let live  = m >>| Model.live  in
   let basic = m >>| Model.basic in
-  let live_data = live_data basic live in
+  let live_data = live_data visible live in
   let%bind focus = focus in
   let%map (basic_data,header) = basic >>| basic_data_and_header ~set_inner_focus ~focus
   and     live_data = live_data

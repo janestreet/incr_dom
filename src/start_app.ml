@@ -43,6 +43,49 @@ let request_animation_frame callback =
     : Dom_html.animation_frame_request_id)
 ;;
 
+(** [Visibility] encapsulates the dirtying and cleaning of the visibility flag
+
+    The viewport starts out dirty. When we look at the DOM to compute what is visible by
+    calling [update_visibility], the viewport then becomes clean. Any time the user
+    scrolls our page or resizes the window, the viewport becomes dirty again. If we update
+    the DOM, the viewport becomes dirty again because a DOM update could cause a reflow,
+    moving the elements that are visible.
+
+    We have implemented this as a flag instead of requiring the users to send an action on
+    scroll because it would make no sense to compute the visibility on the virtual-dom
+    when the virtual-dom does not match the actual dom (as it is in the middle of
+    [apply_actions]). *)
+module Visibility : sig
+  type t
+
+  val create_as_dirty : unit -> t
+
+  val mark_clean : t -> unit
+  val mark_dirty : t -> unit
+
+  val is_dirty : t -> bool
+
+  (** returns a deferred that becomes determined next time we're dirty, so immediately if
+      it's already dirty.  *)
+  val when_dirty : t -> unit Deferred.t
+
+end = struct
+  type t = { mutable when_dirty: unit Ivar.t }
+
+  let create_as_dirty () =
+    { when_dirty  = Ivar.create_full () }
+
+  let mark_dirty t = Ivar.fill_if_empty t.when_dirty ()
+  let is_dirty t = Ivar.is_full t.when_dirty
+  let when_dirty t = Ivar.read t.when_dirty
+
+  let mark_clean t =
+    if is_dirty t then (
+      t.when_dirty <- Ivar.create ()
+    )
+end
+
+
 let start_derived
       (type model) (type derived) (type action)
       ?bind_to_element_with_id
@@ -65,10 +108,17 @@ let start_derived
     let (r, w) = Pipe.create () in
     let schedule action = Pipe.write_without_pushback w action in
 
-    let view =
-      Incr.observe (App.view (Incr.Var.watch state) derived_state_incr ~schedule)
-    in
+    let visibility = Visibility.create_as_dirty () in
+    let viewport_changed () = Visibility.mark_dirty visibility in
 
+    let view =
+      Incr.observe
+        (App.view
+           (Incr.Var.watch state)
+           derived_state_incr
+           ~schedule
+           ~viewport_changed)
+    in
     let derived_state = Incr.observe derived_state_incr in
     let get_derived_state () = Incr.stabilize (); Incr.Observer.value_exn derived_state in
     let extract_immutable_summary () =
@@ -85,19 +135,47 @@ let start_derived
     let immutable_summary = extract_immutable_summary () in
 
     (match bind_to_element_with_id with
-      | None ->
-        Dom_html.document##.body := html_dom;
-      | Some id ->
-        let elem = Dom_html.getElementById id in
-        let parent =
-          Option.value_exn ~here:[%here] (Js.Opt.to_option elem##.parentNode)
-        in
-        Dom.replaceChild parent elt elem);
+     | None ->
+       Dom_html.document##.body := html_dom;
+     | Some id ->
+       let elem = Dom_html.getElementById id in
+       let parent =
+         Option.value_exn ~here:[%here] (Js.Opt.to_option elem##.parentNode)
+       in
+       Dom.replaceChild parent elt elem
+    );
+
+    (* we make sure to call [viewport_changed] whenever the window resizes or the scroll
+       container in which our HTML is located is scrolled. *)
+    let call_viewport_changed_on_event event_name where =
+      ignore (
+        Dom.addEventListener
+          where
+          (Dom.Event.make event_name)
+          (Dom.handler (fun _ -> viewport_changed (); Js._true))
+          Js._false
+        : Dom.event_listener_id)
+    in
+    call_viewport_changed_on_event "scroll"
+      (Js_misc.get_scroll_container (html_dom :> Dom.node Js.t));
+    call_viewport_changed_on_event "resize" Dom_html.window;
+
     on_startup ~schedule state;
 
     let prev_immutable_summary = ref immutable_summary in
     let prev_html = ref html in
     let prev_elt = ref elt in
+
+    let update_visibility () =
+      Visibility.mark_clean visibility;
+      Incr.stabilize ();
+      let new_state =
+        App.update_visibility
+          (Incr.Var.value state)
+          (Incr.Observer.value_exn derived_state)
+      in
+      Incr.Var.set state new_state
+    in
 
     let apply_action action =
       if App.Action.should_log action then begin
@@ -124,6 +202,12 @@ let start_derived
     let perform_update pipe =
       timer_start "total";
 
+      timer_start "update visibility";
+      if Visibility.is_dirty visibility then (
+        update_visibility ()
+      );
+      timer_stop "update visibility";
+
       timer_start "apply actions";
       apply_actions pipe;
       timer_stop "apply actions";
@@ -147,6 +231,10 @@ let start_derived
       timer_start "diff";
       let patch = Vdom.Node.Patch.create ~previous:!prev_html ~current:html in
       timer_stop "diff";
+
+      if not (Vdom.Node.Patch.is_empty patch) then (
+        Visibility.mark_dirty visibility;
+      );
 
       timer_start "patch";
       let elt = Vdom.Node.Patch.apply patch !prev_elt in
@@ -173,10 +261,14 @@ let start_derived
        refresh the UI. All the actions will be processed and the changes propagated
        to the DOM in one frame. *)
     let rec callback () =
-      if Pipe.is_empty r then (
+      if not (Visibility.is_dirty visibility) && Pipe.is_empty r then (
         don't_wait_for (
           (* Wait until actions have been enqueued before scheduling an animation frame *)
-          let%map (_ : [`Eof | `Ok]) = Pipe.values_available r in
+          Deferred.any_unit
+            [ Deferred.ignore (Pipe.values_available r : ([ `Eof | `Ok ] Deferred.t))
+            ; Visibility.when_dirty visibility
+            ]
+          >>| fun () ->
           request_animation_frame callback
         )
       ) else (
@@ -206,6 +298,7 @@ module Make_derived (App : App_intf.S) :
     let apply t ~schedule model ~stabilize_and_get_derived:(_ : unit -> Derived_model.t) =
       apply t ~schedule model
   end
+  let update_visibility model (_ : unit) = App.update_visibility model
   let view model (_ : unit Incr.t) ~schedule = App.view model ~schedule
 end
 

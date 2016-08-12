@@ -167,3 +167,34 @@ let find_visible_range ~length ~nth_element_id layout =
     Option.both first last
   )
 ;;
+
+let get_scroll_container : Dom.node Js.t -> Dom.node Js.t =
+  let f =
+    Js.Unsafe.pure_js_expr {js|
+      (function (element) {
+        var doc = element.ownerDocument || document;
+        var win = doc.defaultView || window;
+        var re = /(auto|scroll)/;
+
+        if (element === doc) {
+          return doc;
+        }
+
+        var cur = element.parentNode;
+
+        while (cur.parentNode) {
+          var style = win.getComputedStyle(cur);
+
+          if (re.test(style.overflow + style.overflowY + style.overflowX)) {
+            return cur;
+          }
+
+          cur = cur.parentNode;
+        }
+
+        return doc;
+      })
+    |js}
+  in
+  fun el -> Js.Unsafe.fun_call f [| Js.Unsafe.inject el |]
+;;

@@ -176,7 +176,7 @@ let invisible_cell x y ~focused =
   in
   Some (Vdom.Node.td attr [Vdom.Node.text "---"])
 
-let view (m : Model.t Incr.t) ~schedule =
+let view (m : Model.t Incr.t) ~schedule ~viewport_changed:_ =
   let open Incr.Let_syntax in
   let on_keypress =
     Vdom.Attr.on_keypress (fun ev ->
@@ -244,3 +244,5 @@ let view (m : Model.t Incr.t) ~schedule =
   in
   Vdom.Node.body [on_keypress] [Vdom.Node.table [] (Map.data cells)]
 ;;
+
+let update_visibility m = m

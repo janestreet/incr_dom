@@ -7,8 +7,6 @@ module Model : sig
   val example : unit -> t
   val kick : t -> t
   val move_focus : t -> Focus_point.t option -> focus_dir -> Focus_point.t option
-  val set_visibility : t -> bool -> t
-  val is_visible : t -> bool
   val name : t -> string
 end
 
@@ -28,6 +26,7 @@ type focus_state = Unfocused | Focused of Focus_point.t option
 val view
   :  Model.t Incr.t
   -> Entry_id.t
+  -> visible:bool Incr.t
   -> focus:focus_state Incr.t
   -> focus_me:(unit -> unit)
   -> set_inner_focus:(Focus_point.t -> unit)
