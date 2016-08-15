@@ -32,6 +32,10 @@ end
 
 let update_visibility m = m
 
+let on_startup ~schedule:_ _ = ()
+
+let on_display ~schedule:_ ~old:_ _ = ()
+
 let view (m : Model.t Incr.t) ~schedule ~viewport_changed:_ =
   let open Incr.Let_syntax in
   let open Vdom in

@@ -2,7 +2,7 @@ open! Core_kernel.Std
 open Virtual_dom.Std
 
 (** The interface for a basic, incrementally rendered application. *)
-module type S = sig
+module type S_simple = sig
   module Model : sig
     type t
   end
@@ -10,6 +10,9 @@ module type S = sig
   module Action : sig
     type t [@@deriving sexp_of]
 
+    (** [apply] performs modifications to the model as dictated by the action.
+
+        [schedule] allows you to specify additional actions to be performed *)
     val apply
       :  t
       -> schedule:(t -> unit)
@@ -32,28 +35,127 @@ module type S = sig
 
       Call [schedule] for requesting an action to be applied.
 
-      Call [viewport_changed] when you detect scrolling or resizing of an inner
-      pane. Scrolling in the view's scroll container and resizing of the window are
-      already tracked by [Start_app].  *)
+      Call [viewport_changed] when you detect scrolling or resizing of an inner pane.
+      Scrolling in the view's scroll container and resizing of the window are already
+      tracked by [Start_app].
+
+      Note that [view] should not be calling either of those two functions directly.
+      Rather, they should be embedded in event handlers. If you need to call [schedule]
+      directly, put that logic in [on_display] or [Action.apply]. *)
   val view
     :  Model.t Incr.t
     -> schedule:(Action.t -> unit)
     -> viewport_changed:(unit -> unit)
     -> Vdom.Node.t Incr.t
+
+  (** [on_startup] is called once, right after the initial DOM is set to the
+      view that corresponds to the initial state.  This is useful for doing
+      things like starting up async processes. *)
+  val on_startup
+    :  schedule:(Action.t -> unit)
+    -> Model.t
+    -> unit
+
+  (** [on_display] is called every time the DOM is updated, with the model just before the
+      update and the model just after the update. Use [on_display] to initiate actions.
+
+      Actions should not be initiated by the [view] function directly. The initiation of
+      an action is a change (edge-triggered), not a state (level-triggered).
+      Correspondingly, [view] only responds to levels while [on_display] allows you to
+      compute edges, or changes in the model. *)
+  val on_display
+    :  schedule:(Action.t -> unit)
+    -> old:Model.t
+    -> Model.t
+    -> unit
+end
+
+(** The interface for a basic, incrementally rendered application with the possibility
+    for a mutable model. *)
+module type S_imperative = sig
+  module Model : sig
+    type t
+  end
+
+  (** [Model_summary] allows you to make the [Model] be mutable, but persist the necessary
+      information to discover edge transitions in [on_display]. The old model is persisted
+      as a summary after stabilization and is passed to the next invocation of
+      [on_display] *)
+  module Model_summary : sig
+    type t
+
+    (** [create] extracts the information needed to compute edge transitions in
+        [on_display]. If [Model.t] is immutable, this can be [Fn.id]. If you don't need to
+        trigger external actions, then this can be [Fn.const ()]. If your model is mutable
+        and you need to trigger actions, then this will need to be somewhere in between *)
+    val create : Model.t -> t
+  end
+
+  module Action : sig
+    type t [@@deriving sexp_of]
+
+    val apply
+      :  t
+      -> schedule:(t -> unit)
+      -> Model.t
+      -> Model.t
+
+    val should_log : t -> bool
+  end
+
+  val update_visibility : Model.t -> Model.t
+
+  val view
+    :  Model.t Incr.t
+    -> schedule:(Action.t -> unit)
+    -> viewport_changed:(unit -> unit)
+    -> Vdom.Node.t Incr.t
+
+  val on_startup
+    :  schedule:(Action.t -> unit)
+    -> Model.t
+    -> unit
+
+  val on_display
+    :  schedule:(Action.t -> unit)
+    -> old:Model_summary.t
+    -> Model.t
+    -> unit
 end
 
 (** An extension of the basic API that supports the use of a derived model. The purpose of
-    this is to allow sharing of an incremental computation between the calculation of the
+    this is to allow sharing of an incremental computation between the creation of the
     view and the application of an action. *)
 module type S_derived = sig
   module Model : sig
     type t
   end
 
+  (** [Derived_model] is the data container that allows you to share computations between
+      the actions and the view. Any things that the actions need to use should be stored
+      in Derived_model.t. Then, in [Action.apply], you can call
+      [stabilize_and_get_derived] to retrieve that data and make use of it. *)
   module Derived_model : sig
     type t
 
+    (** [create] sets up the incremental that performs the shared computations. Sharing
+        computations will typically look something like this:
+
+        {[
+          let%map shared1 = computation1
+          and     shared2 = computation2
+          and     shared3 = computation3
+          in
+          { shared1; shared2; shared3 }
+        ]}
+    *)
     val create : Model.t Incr.t -> t Incr.t
+  end
+
+  module Model_summary : sig
+    type t
+
+    val create : Model.t -> Derived_model.t -> t
   end
 
   module Action : sig
@@ -77,4 +179,18 @@ module type S_derived = sig
     -> schedule:(Action.t -> unit)
     -> viewport_changed:(unit -> unit)
     -> Vdom.Node.t Incr.t
+
+  val on_startup
+    :  schedule:(Action.t -> unit)
+    -> Model.t
+    -> Derived_model.t
+    -> unit
+
+  val on_display
+    :  schedule:(Action.t -> unit)
+    -> old:Model_summary.t
+    -> Model.t
+    -> Derived_model.t
+    -> unit
 end
+

@@ -86,17 +86,11 @@ end = struct
 end
 
 
-let start_derived
-      (type model) (type derived) (type action)
+let derived
+      (type model)
       ?bind_to_element_with_id
       ~initial_state
-      ~on_startup
-      ~project_immutable_summary
-      ~on_display
-      (module App : App_intf.S_derived
-        with type Model.t = model
-         and type Action.t = action
-         and type Derived_model.t = derived)
+      (module App : App_intf.S_derived with type Model.t = model)
   =
   (* This is idempotent and so fine to do. *)
   Async_js.init ();
@@ -122,7 +116,7 @@ let start_derived
     let derived_state = Incr.observe derived_state_incr in
     let get_derived_state () = Incr.stabilize (); Incr.Observer.value_exn derived_state in
     let extract_immutable_summary () =
-      project_immutable_summary
+      App.Model_summary.create
         (Incr.Var.value state)
         (Incr.Observer.value_exn derived_state)
     in
@@ -160,7 +154,10 @@ let start_derived
       (Js_misc.get_scroll_container (html_dom :> Dom.node Js.t));
     call_viewport_changed_on_event "resize" Dom_html.window;
 
-    on_startup ~schedule state;
+    App.on_startup
+      ~schedule
+      (Incr.Var.value state)
+      (Incr.Observer.value_exn derived_state);
 
     let prev_immutable_summary = ref immutable_summary in
     let prev_html = ref html in
@@ -241,7 +238,7 @@ let start_derived
       timer_stop "patch";
 
       timer_start "on_display";
-      on_display
+      App.on_display
         ~schedule
         (* Retrieve the immutable_summary from the previous iteration *)
         ~old:!prev_immutable_summary
@@ -281,8 +278,34 @@ let start_derived
     Deferred.never ()
   )
 
-(** Trivially lift a simple App_intf into a derived one. *)
-module Make_derived (App : App_intf.S) :
+(** Trivially lift the simple App_intf into a derived one *)
+module Make_simple_derived (App : App_intf.S_simple) :
+  (App_intf.S_derived
+   with type Model.t = App.Model.t
+    and type Action.t = App.Action.t)
+= struct
+  module Model = App.Model
+  module Derived_model = struct
+    type t = unit
+    let create (_ : Model.t Incr.t) = Incr.const ()
+  end
+  module Model_summary = struct
+    type t = App.Model.t
+    let create model () = model
+  end
+  module Action = struct
+    include App.Action
+    let apply t ~schedule model ~stabilize_and_get_derived:(_ : unit -> Derived_model.t) =
+      apply t ~schedule model
+  end
+  let update_visibility model () = App.update_visibility model
+  let on_startup ~schedule model () = App.on_startup ~schedule model
+  let view model (_ : unit Incr.t) ~schedule = App.view model ~schedule
+  let on_display ~schedule ~old model () = App.on_display ~schedule ~old model
+end
+
+(** Trivially lift the imperative App_intf into a derived one. *)
+module Make_derived (App : App_intf.S_imperative) :
   (App_intf.S_derived
    with type Model.t = App.Model.t
     and type Action.t = App.Action.t
@@ -293,28 +316,39 @@ module Make_derived (App : App_intf.S) :
     type t = unit
     let create (_ : Model.t Incr.t) = Incr.const ()
   end
+  module Model_summary = struct
+    include App.Model_summary
+    let create model () = create model
+  end
   module Action = struct
     include App.Action
     let apply t ~schedule model ~stabilize_and_get_derived:(_ : unit -> Derived_model.t) =
       apply t ~schedule model
   end
-  let update_visibility model (_ : unit) = App.update_visibility model
+  let update_visibility model () = App.update_visibility model
+  let on_startup ~schedule model () = App.on_startup ~schedule model
   let view model (_ : unit Incr.t) ~schedule = App.view model ~schedule
+  let on_display ~schedule ~old model () = App.on_display ~schedule ~old model
 end
 
-let start
-      (type model) (type action)
+let simple
+      (type model)
       ?bind_to_element_with_id
       ~initial_state
-      ~on_startup
-      ~project_immutable_summary
-      ~on_display
-      (module App : App_intf.S with type Model.t = model and type Action.t = action)
+      (module App : App_intf.S_simple with type Model.t = model)
   =
-  start_derived
+  derived
     ?bind_to_element_with_id
     ~initial_state
-    ~on_startup
-    ~project_immutable_summary:(fun model () -> project_immutable_summary model)
-    ~on_display:(fun ~schedule ~old model () -> on_display ~schedule ~old model)
+    (module Make_simple_derived(App))
+
+let imperative
+      (type model)
+      ?bind_to_element_with_id
+      ~initial_state
+      (module App : App_intf.S_imperative with type Model.t = model)
+  =
+  derived
+    ?bind_to_element_with_id
+    ~initial_state
     (module Make_derived(App))

@@ -1,3 +1,4 @@
+open! Async_kernel.Std
 open! Core_kernel.Std
 open! Import
 
@@ -145,6 +146,10 @@ module Action = struct
 
 end
 
+let on_startup ~schedule _ =
+  Js_misc.scroll ();
+  every (Time_ns.Span.of_sec 1.)  (fun () -> schedule (Action.kick_n 150))
+
 let in_range cmp (lo, hi) value =
   cmp lo value <= 0 && cmp hi value >= 0
 
@@ -240,4 +245,8 @@ let example ~entries : Model.t =
     | None -> None
   in
   { focus; entries; search_string = ""; visible_range = None }
+
+let on_display ~schedule:_ ~(old : Model.t) (model : Model.t) =
+  let get_focus (m : Model.t) = Option.map m.focus ~f:fst in
+  if get_focus old <> get_focus model then (Js_misc.scroll ())
 

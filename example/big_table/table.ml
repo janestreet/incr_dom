@@ -1,5 +1,7 @@
 open! Core_kernel.Std
+open Async_kernel.Std
 open Incr_dom.Std
+open Js_of_ocaml
 
 let the_num_rows = 20_000
 let the_num_cols = 50
@@ -17,7 +19,7 @@ module Model = struct
       (* update to this var will not cause rerendering if the row is invisible *)
       { text : string Var.t
       }
-    [@@deriving sexp_of, fields]
+      [@@deriving sexp_of, fields]
 
     let create () = { text = Var.create "0.0000" }
   end
@@ -30,7 +32,7 @@ module Model = struct
          rows are very cheap *)
       ; visible        : bool       Var.t
       }
-    [@@deriving sexp_of, fields]
+      [@@deriving sexp_of, fields]
 
     let create () =
       let cells =
@@ -47,7 +49,7 @@ module Model = struct
     ; mutable focused_row  : int
     ; mutable visible_rows : (int * int)
     }
-  [@@deriving sexp_of, fields]
+    [@@deriving sexp_of, fields]
 
   let focus t =
     let col =
@@ -129,18 +131,22 @@ module Model = struct
     t
 end
 
+module Model_summary = struct
+  type t = string
+
+  let create = Model.focus_cell_id
+end
+
 module Action = struct
   type t =
     | Set_text of int * int * string
     | Move_focus of [`left | `right | `up | `down]
-    | Set_visible_rows of int * int
-  [@@deriving sexp]
+    [@@deriving sexp]
 
   let apply t ~schedule:_ (m:Model.t) =
     match t with
     | Set_text         (x, y, text) -> Model.set_text         m x y text
     | Move_focus       dir          -> Model.move_focus       m dir
-    | Set_visible_rows (from, to_)  -> Model.set_visible_rows m from to_
 
   let random () =
     Set_text (Random.int the_num_rows
@@ -166,6 +172,13 @@ let init () =
   ; focused_row = 0
   ; visible_rows = (0, 0)
   }
+
+let on_startup ~schedule _ =
+  Clock_ns.every (Time_ns.Span.of_sec 0.05) (fun () ->
+    for _ = 1 to 250 do
+      schedule (Action.random ())
+    done
+  )
 
 let text_td text = Vdom.Node.td [] [Vdom.Node.text text]
 
@@ -240,9 +253,38 @@ let view (m : Model.t Incr.t) ~schedule ~viewport_changed:_ =
           Some (Vdom.Node.tr
                   [ Vdom.Attr.id (row_id row_index) ]
                   (row_index_cell :: Map.data row_cells))
-      ))
+        ))
   in
   Vdom.Node.body [on_keypress] [Vdom.Node.table [] (Map.data cells)]
 ;;
 
-let update_visibility m = m
+let visible_rows_of_model (_:Model.t) =
+  let nth_element_id n = row_id n in
+  Js_misc.find_visible_range ~length:the_num_rows ~nth_element_id Js_misc.Rows
+;;
+
+let update_visibility m =
+  match visible_rows_of_model m with
+  | None             -> m
+  | Some (from, to_) ->
+    (* cover half a page above and below current page *)
+    let from, to_ =
+      let length = (to_ + 1 - from) / 2 in
+      let from   = from - length        in
+      let to_    = to_ + length         in
+      from, to_
+    in
+    Model.set_visible_rows m from to_
+
+let on_display ~schedule:_ ~old:old_id model =
+  let new_id = Model.focus_cell_id model in
+  if old_id <> new_id then begin
+    match Js.Opt.to_option (Dom_html.document##getElementById (Js.string new_id)) with
+    | None     -> ()
+    | Some elt ->
+      if not (Js_misc.element_is_in_viewport elt) then begin
+        logf "scroll to %s" new_id;
+        Js_misc.scroll ~id:new_id ()
+      end
+  end
+

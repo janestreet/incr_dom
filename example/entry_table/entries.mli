@@ -27,4 +27,6 @@ val view
   -> viewport_changed:(unit -> unit)
   -> Vdom.Node.t Incr.t
 
+val on_startup : schedule:(Action.t -> unit) -> Model.t -> unit
 val update_visibility : Model.t -> Model.t
+val on_display : schedule:(Action.t -> unit) -> old:Model.t -> Model.t -> unit
