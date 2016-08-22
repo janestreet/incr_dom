@@ -102,16 +102,28 @@ let derived
     let (r, w) = Pipe.create () in
     let schedule action = Pipe.write_without_pushback w action in
 
+    let module Event =
+      Vdom.Event.Define
+        (struct
+          module Action = App.Action
+          let handle action = Pipe.write_without_pushback w action
+        end)
+    in
+
     let visibility = Visibility.create_as_dirty () in
     let viewport_changed () = Visibility.mark_dirty visibility in
+    (* This registers the [viewport_changed] handler with Virtual_dom. If event handlers
+       use the [Vdom.Event.Viewport_changed] event, we are notified. *)
+    let module Viewport_handler =
+      Vdom.Event.Define_visibility (struct let handle = viewport_changed end)
+    in
 
     let view =
       Incr.observe
         (App.view
            (Incr.Var.watch state)
            derived_state_incr
-           ~schedule
-           ~viewport_changed)
+           ~inject:Event.inject)
     in
     let derived_state = Incr.observe derived_state_incr in
     let get_derived_state () = Incr.stabilize (); Incr.Observer.value_exn derived_state in
@@ -163,11 +175,18 @@ let derived
     let prev_html = ref html in
     let prev_elt = ref elt in
 
+    let recompute_derived model =
+      Incr.Var.set state model;
+      Incr.stabilize ();
+      Incr.Observer.value_exn derived_state
+    in
+
     let update_visibility () =
       Visibility.mark_clean visibility;
       Incr.stabilize ();
       let new_state =
         App.update_visibility
+          ~recompute_derived
           (Incr.Var.value state)
           (Incr.Observer.value_exn derived_state)
       in
@@ -298,9 +317,9 @@ module Make_simple_derived (App : App_intf.S_simple) :
     let apply t ~schedule model ~stabilize_and_get_derived:(_ : unit -> Derived_model.t) =
       apply t ~schedule model
   end
-  let update_visibility model () = App.update_visibility model
+  let update_visibility model () ~recompute_derived:_ = App.update_visibility model
   let on_startup ~schedule model () = App.on_startup ~schedule model
-  let view model (_ : unit Incr.t) ~schedule = App.view model ~schedule
+  let view model (_ : unit Incr.t) ~inject = App.view model ~inject
   let on_display ~schedule ~old model () = App.on_display ~schedule ~old model
 end
 
@@ -325,9 +344,9 @@ module Make_derived (App : App_intf.S_imperative) :
     let apply t ~schedule model ~stabilize_and_get_derived:(_ : unit -> Derived_model.t) =
       apply t ~schedule model
   end
-  let update_visibility model () = App.update_visibility model
+  let update_visibility model () ~recompute_derived:_ = App.update_visibility model
   let on_startup ~schedule model () = App.on_startup ~schedule model
-  let view model (_ : unit Incr.t) ~schedule = App.view model ~schedule
+  let view model (_ : unit Incr.t) ~inject = App.view model ~inject
   let on_display ~schedule ~old model () = App.on_display ~schedule ~old model
 end
 

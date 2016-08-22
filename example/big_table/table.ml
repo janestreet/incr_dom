@@ -189,17 +189,16 @@ let invisible_cell x y ~focused =
   in
   Some (Vdom.Node.td attr [Vdom.Node.text "---"])
 
-let view (m : Model.t Incr.t) ~schedule ~viewport_changed:_ =
+let view (m : Model.t Incr.t) ~inject =
   let open Incr.Let_syntax in
-  let on_keypress =
-    Vdom.Attr.on_keypress (fun ev ->
-      let kp = Keypress.of_event ev in
-      match kp.key with
-      | Char 'j' -> schedule (Action.Move_focus `up)
-      | Char 'k' -> schedule (Action.Move_focus `down)
-      | Char 'h' -> schedule (Action.Move_focus `left)
-      | Char 'l' -> schedule (Action.Move_focus `right)
-      | _ -> ()
+  let on_keydown =
+    Vdom.Attr.on_keydown (fun ev ->
+      match Dom_html.Keyboard_code.of_event ev with
+      | KeyJ -> inject (Action.Move_focus `up)
+      | KeyK -> inject (Action.Move_focus `down)
+      | KeyH -> inject (Action.Move_focus `left)
+      | KeyL -> inject (Action.Move_focus `right)
+      | _ -> Vdom.Event.Ignore
     )
   in
   let%map cells =
@@ -255,7 +254,7 @@ let view (m : Model.t Incr.t) ~schedule ~viewport_changed:_ =
                   (row_index_cell :: Map.data row_cells))
         ))
   in
-  Vdom.Node.body [on_keypress] [Vdom.Node.table [] (Map.data cells)]
+  Vdom.Node.body [on_keydown] [Vdom.Node.table [] (Map.data cells)]
 ;;
 
 let visible_rows_of_model (_:Model.t) =

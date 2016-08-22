@@ -33,19 +33,12 @@ module type S_simple = sig
 
   (** [view] sets up the incremental from the model to the virtual DOM.
 
-      Call [schedule] for requesting an action to be applied.
-
-      Call [viewport_changed] when you detect scrolling or resizing of an inner pane.
-      Scrolling in the view's scroll container and resizing of the window are already
-      tracked by [Start_app].
-
-      Note that [view] should not be calling either of those two functions directly.
-      Rather, they should be embedded in event handlers. If you need to call [schedule]
-      directly, put that logic in [on_display] or [Action.apply]. *)
+      [inject] gives you the ability to create event handlers in the virtual DOM. In your
+      event handler, call this function on the action you would like to schedule. Virtual
+      DOM will automatically delegate that action back to the [Start_app] main loop. *)
   val view
     :  Model.t Incr.t
-    -> schedule:(Action.t -> unit)
-    -> viewport_changed:(unit -> unit)
+    -> inject:(Action.t -> Vdom.Event.t)
     -> Vdom.Node.t Incr.t
 
   (** [on_startup] is called once, right after the initial DOM is set to the
@@ -57,12 +50,7 @@ module type S_simple = sig
     -> unit
 
   (** [on_display] is called every time the DOM is updated, with the model just before the
-      update and the model just after the update. Use [on_display] to initiate actions.
-
-      Actions should not be initiated by the [view] function directly. The initiation of
-      an action is a change (edge-triggered), not a state (level-triggered).
-      Correspondingly, [view] only responds to levels while [on_display] allows you to
-      compute edges, or changes in the model. *)
+      update and the model just after the update. Use [on_display] to initiate actions. *)
   val on_display
     :  schedule:(Action.t -> unit)
     -> old:Model.t
@@ -107,8 +95,7 @@ module type S_imperative = sig
 
   val view
     :  Model.t Incr.t
-    -> schedule:(Action.t -> unit)
-    -> viewport_changed:(unit -> unit)
+    -> inject:(Action.t -> Vdom.Event.t)
     -> Vdom.Node.t Incr.t
 
   val on_startup
@@ -171,13 +158,22 @@ module type S_derived = sig
     val should_log : t -> bool
   end
 
-  val update_visibility : Model.t -> Derived_model.t -> Model.t
+  (** [update_visbility] gives you access to both the model and the derived model.
+
+      If you do some intermediate updates to the model, and would like to recompute the
+      derived model from those, [recompute_derived model' => derived'] will give you
+      that ability. [recompute_derived] updates the model in the incremental graph and
+      re-stabilizes the derived model, before giving it back to you. *)
+  val update_visibility
+    :  Model.t
+    -> Derived_model.t
+    -> recompute_derived:(Model.t -> Derived_model.t)
+    -> Model.t
 
   val view
     :  Model.t Incr.t
     -> Derived_model.t Incr.t
-    -> schedule:(Action.t -> unit)
-    -> viewport_changed:(unit -> unit)
+    -> inject:(Action.t -> Vdom.Event.t)
     -> Vdom.Node.t Incr.t
 
   val on_startup

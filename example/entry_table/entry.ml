@@ -257,7 +257,7 @@ let view (m:Model.t Incr.t) (entry_id:Entry_id.t) ~visible ~focus ~focus_me ~set
     Node.table
       ((if focused then [Attr.id "keep-in-view"] else [])
        @ [ Attr.class_ (if focused then "focused" else "unfocused")
-         ; Attr.on_click (fun _ -> focus_me ())
+         ; Attr.on_click (fun _ -> focus_me)
          ])
       [ header; data ]
   in

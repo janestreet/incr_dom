@@ -36,16 +36,16 @@ let on_startup ~schedule:_ _ = ()
 
 let on_display ~schedule:_ ~old:_ _ = ()
 
-let view (m : Model.t Incr.t) ~schedule ~viewport_changed:_ =
+let view (m : Model.t Incr.t) ~inject =
   let open Incr.Let_syntax in
   let open Vdom in
-  let on_add_new_click = Attr.on_click (fun _ev -> schedule Action.New_counter) in
+  let on_add_new_click = Attr.on_click (fun _ev -> inject Action.New_counter) in
   let add_new_counter_button =
     Node.div []
       [ Node.button [on_add_new_click] [Node.text "add new counter"] ]
   in
   let button txt pos diff =
-    let on_click _ev = schedule (Action.Update (pos, diff)) in
+    let on_click _ev = inject (Action.Update (pos, diff)) in
     Vdom.Node.button
       [ Attr.on_click on_click ]
       [ Node.text txt ]

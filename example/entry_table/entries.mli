@@ -23,8 +23,7 @@ val example : entries:int -> Model.t
 
 val view
   :  Model.t Incr.t
-  -> schedule:(Action.t -> unit)
-  -> viewport_changed:(unit -> unit)
+  -> inject:(Action.t -> Vdom.Event.t)
   -> Vdom.Node.t Incr.t
 
 val on_startup : schedule:(Action.t -> unit) -> Model.t -> unit

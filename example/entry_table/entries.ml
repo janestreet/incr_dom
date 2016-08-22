@@ -1,6 +1,7 @@
 open! Async_kernel.Std
 open! Core_kernel.Std
 open! Import
+open Js_of_ocaml
 
 module Model = struct
   type t = { entries : Entry.Model.t Entry_id.Map.t
@@ -153,35 +154,44 @@ let on_startup ~schedule _ =
 let in_range cmp (lo, hi) value =
   cmp lo value <= 0 && cmp hi value >= 0
 
-let view (m:Model.t Incr.t) ~schedule ~viewport_changed:_ =
+let view (m:Model.t Incr.t) ~inject =
   let open Vdom in
   let open Incr.Let_syntax in
-  let set_inner_focus fp = schedule (Action.Set_inner_focus fp) in
+  let set_inner_focus fp = inject (Action.Set_inner_focus fp) in
   let focus = m >>| Model.focus in
-  let on_keypress =
+  let on_keydown =
     let%map focus = focus in
-    Attr.on_keypress (fun ev ->
-      let kp = Keypress.of_event ev in
-      match kp.key with
-      | Char 'k' -> schedule (Move_outer_focus Prev)
-      | Char 'j' -> schedule (Move_outer_focus Next)
-      | Char 'u' -> schedule (Move_inner_focus Prev)
-      | Char 'i' -> schedule (Move_inner_focus Next)
-      | Char 'x' -> if kp.ctrl then (schedule (Raise (Error.of_string "got X")))
-      | Char 'y' -> if kp.ctrl then (schedule Raise_js)
-      | Char 'd' -> schedule Nop
-      | Char 's' -> schedule Dump_state
-      | Char 'e' -> schedule (Entry (focus, Toggle_collapse))
-      | Char ('+' | '=') -> schedule (Entry (focus, Bump Incr))
-      | Char ('-' | '_') -> schedule (Entry (focus, Bump Decr))
-      | _ -> ()
+    Attr.on_keydown (fun ev ->
+      match Dom_html.Keyboard_code.of_event ev with
+      | KeyK -> inject (Move_outer_focus Prev)
+      | KeyJ -> inject (Move_outer_focus Next)
+      | KeyU -> inject (Move_inner_focus Prev)
+      | KeyI -> inject (Move_inner_focus Next)
+      | KeyX ->
+        if Js.to_bool ev##.ctrlKey then (
+          inject (Raise (Error.of_string "got X"))
+        ) else (
+          Vdom.Event.Ignore
+        )
+      | KeyY ->
+        if Js.to_bool ev##.ctrlKey then (
+          inject Raise_js
+        ) else (
+          Vdom.Event.Ignore
+        )
+      | KeyD -> inject Nop
+      | KeyS -> inject Dump_state
+      | KeyE -> inject (Entry (focus, Toggle_collapse))
+      | Equal -> inject (Entry (focus, Bump Incr))
+      | Minus -> inject (Entry (focus, Bump Decr))
+      | _ -> Vdom.Event.Ignore
     )
   in
   (* Right now, the incrementality of this is terrible.  Waiting on better support from
      Incremental. *)
   let input =
     Node.input [ Attr.create "type" "text"
-               ; Attr.on_input (fun _ev text -> schedule (Set_search_string text))
+               ; Attr.on_input (fun _ev text -> inject (Set_search_string text))
                ] []
   in
   let entries       = m >>| Model.entries       in
@@ -199,7 +209,7 @@ let view (m:Model.t Incr.t) ~schedule ~viewport_changed:_ =
       let%bind name = name and search_string = search_string in
       if not (Model.name_found_by_search ~search_string name) then (Incr.const None)
       else (
-        let focus_me () = schedule (Action.Set_outer_focus entry_id) in
+        let focus_me = inject (Action.Set_outer_focus entry_id) in
         let focus =
           match%map focus with
           | None -> Entry.Unfocused
@@ -212,9 +222,9 @@ let view (m:Model.t Incr.t) ~schedule ~viewport_changed:_ =
         in
         Some view
       ))
-  and on_keypress = on_keypress
+  and on_keydown = on_keydown
   in
-  Node.body [on_keypress] (input :: Map.data entries)
+  Node.body [on_keydown] (input :: Map.data entries)
 
 let update_visibility m =
   let filtered_entries = Model.filtered_entries m in
