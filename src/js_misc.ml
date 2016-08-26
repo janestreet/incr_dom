@@ -8,6 +8,9 @@ module Rect = struct
     ; bottom : 'a
     ; right  : 'a
     } [@@deriving sexp, bin_io, compare, fields]
+
+  let height t = t.bottom - t.top
+  let width t = t.right - t.left
 end
 
 type rows_or_columns = Rows | Columns [@@deriving sexp, bin_io, variants, compare]

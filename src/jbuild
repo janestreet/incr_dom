@@ -1,15 +1,16 @@
-(library (
-  (name incr_dom)
+(library 
+ ((name incr_dom)
   (public_name incr_dom)
   (js_of_ocaml ())
   (preprocess (((pps (ppx_js_driver JANE_KERNEL -ite-check)) All)))
   (libraries (
-    js_of_ocaml
-    virtual_dom
-    core_kernel
-    js_of_ocaml_async
-    async_kernel
-    incremental_kernel
-    incr_map
-  ))
-))
+              js_of_ocaml
+              virtual_dom
+              core_kernel
+              js_of_ocaml_async
+              async_kernel
+              incremental_kernel
+              incr_map
+              incr_select
+             ))
+ ))

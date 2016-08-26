@@ -18,6 +18,7 @@ depends: [
   "core_kernel"
   "fieldslib"
   "incr_map"
+  "incr_select"
   "incremental_kernel"
   "js-build-tools"     {build}
   "js_of_ocaml"
