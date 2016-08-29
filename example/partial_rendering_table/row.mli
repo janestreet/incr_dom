@@ -1,0 +1,31 @@
+open! Core_kernel.Std
+open! Incr_dom.Std
+
+module Id : Identifiable
+
+module Model : sig
+  type t =
+    { data : string
+    ; height : int
+    ; font_size : int
+    } [@@deriving sexp_of, fields]
+
+  val create : data:string -> height:int -> t
+end
+
+module Action : sig
+  type t =
+    | Change_data of string
+    | Increase_font
+    | Increase_font_by of int
+  [@@deriving sexp_of]
+
+  val apply : t -> Model.t -> Model.t
+  val should_log : t -> bool
+end
+
+val view
+  :  Model.t Incr.t
+  -> row_id:Id.t
+  -> inject:(Action.t -> Vdom.Event.t)
+  -> Vdom.Node.t Incr.t
