@@ -34,4 +34,4 @@ depends: [
   "virtual_dom"
 ]
 available: [ ocaml-version >= "4.03.0" ]
-conclicts: [ "oasis" {= "0.4.7"} ]
+conflicts: [ "oasis" {= "0.4.7"} ]
