@@ -241,18 +241,14 @@ let find_row_element id =
   getElementById_option (Row.Id.to_dom id)
 
 let at_height heights spacing height =
-  Height_splay.search heights height
-    ~f:(fun ~left:(lh, ls) ~key:_ ~data ~right:_ h ->
+  Height_splay.search heights
+    ~f:(fun ~left:(lh, ls) ~key:_ ~data ~right:_ ->
       let sph = (spacing + 1) / 2 in
       let left = lh + ls * spacing + sph in
       let center = left + data + spacing in
-      if h < left then (
-        `Left h
-      ) else if h < center then (
-        `Stop
-      ) else (
-        `Right (h - (center - sph))
-      )
+      if      height < left   then `Left
+      else if height < center then `Stop
+      else `Right
     )
 
 let first_height heights =

@@ -156,14 +156,11 @@ let on_startup ~schedule _model _derived =
   )
 
 let search_height heights value =
-  Heights.search heights value
-    ~f:(fun ~left ~key:_ ~data ~right:_ needle ->
-      if needle < left then
-        `Left needle
-      else if needle < left + data then
-        `Stop
-      else
-        `Right (needle - left - data)
+  Heights.search heights
+    ~f:(fun ~left ~key:_ ~data ~right:_ ->
+      if      value < left        then `Left
+      else if value < left + data then `Stop
+      else `Right
     )
 
 let update_visibility (model : Model.t) (derived : Derived_model.t) ~recompute_derived =
