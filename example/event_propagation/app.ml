@@ -10,8 +10,13 @@ module Model = struct
     ; propagation_stopped : bool
     ; outer_click_count : int
     ; outer_keydown_count : int
-    } [@@deriving sexp, fields]
+    } [@@deriving sexp, fields, compare]
+
+  let cutoff t1 t2 =
+    compare t1 t2 = 0
 end
+
+module State = struct type t = unit end
 
 module Action = struct
   type t =
@@ -21,19 +26,18 @@ module Action = struct
     | Set_propagation_stopped of bool
     [@@deriving sexp]
 
-  let apply t ~schedule:_ (model : Model.t) =
-    match t with
-    | Outer_click -> { model with outer_click_count = model.outer_click_count + 1 }
-    | Outer_keydown -> { model with outer_keydown_count = model.outer_keydown_count + 1 }
-    | Set_default_prevented default_prevented -> { model with default_prevented }
-    | Set_propagation_stopped propagation_stopped -> { model with propagation_stopped }
-
   let should_log _ = false
 end
 
-let update_visibility m = m
+let apply_action action (model : Model.t) _state =
+  match (action : Action.t) with
+  | Outer_click -> { model with outer_click_count = model.outer_click_count + 1 }
+  | Outer_keydown -> { model with outer_keydown_count = model.outer_keydown_count + 1 }
+  | Set_default_prevented default_prevented -> { model with default_prevented }
+  | Set_propagation_stopped propagation_stopped -> { model with propagation_stopped }
 
-let on_startup ~schedule:_ _ = ()
+let update_visibility m = m
+let on_startup ~schedule:_ _ = Async_kernel.Std.return ()
 
 let view (m : Model.t Incr.t) ~inject =
   let open Vdom in
@@ -111,7 +115,7 @@ let view (m : Model.t Incr.t) ~inject =
         ]
     ]
 
-let on_display ~schedule:_ ~old:_ _ = ()
+let on_display ~old:_ _ _ = ()
 
 let create () =
   { Model.

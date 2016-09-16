@@ -15,18 +15,18 @@ open! Async_kernel.Std
 
 val simple
   :  ?bind_to_element_with_id : string
-  -> initial_state : 'model
+  -> initial_model : 'model
   -> (module App_intf.S_simple with type Model.t = 'model)
   -> unit
 
 val imperative
   :  ?bind_to_element_with_id : string
-  -> initial_state : 'model
+  -> initial_model : 'model
   -> (module App_intf.S_imperative with type Model.t = 'model)
   -> unit
 
 val derived
   :  ?bind_to_element_with_id : string
-  -> initial_state : 'model
+  -> initial_model : 'model
   -> (module App_intf.S_derived with type Model.t = 'model)
   -> unit

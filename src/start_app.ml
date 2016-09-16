@@ -89,15 +89,19 @@ end
 let derived
       (type model)
       ?bind_to_element_with_id
-      ~initial_state
+      ~initial_model
       (module App : App_intf.S_derived with type Model.t = model)
   =
   (* This is idempotent and so fine to do. *)
   Async_js.init ();
   don't_wait_for (
-    document_loaded >>= fun () ->
-    let state = Incr.Var.create initial_state in
-    let derived_state_incr = App.Derived_model.create (Incr.Var.watch state) in
+    let%bind () = document_loaded in
+    let model_v = Incr.Var.create initial_model in
+    let model = Incr.Var.watch model_v in
+    Incr.set_cutoff model
+      (Incr.Cutoff.create (fun ~old_value ~new_value ->
+         App.Model.cutoff old_value new_value));
+    let derived_model_incr = App.Derived_model.create model in
 
     let (r, w) = Pipe.create () in
     let schedule action = Pipe.write_without_pushback w action in
@@ -121,16 +125,16 @@ let derived
     let view =
       Incr.observe
         (App.view
-           (Incr.Var.watch state)
-           derived_state_incr
+           model
+           derived_model_incr
            ~inject:Event.inject)
     in
-    let derived_state = Incr.observe derived_state_incr in
-    let get_derived_state () = Incr.stabilize (); Incr.Observer.value_exn derived_state in
+    let derived_model = Incr.observe derived_model_incr in
+    let get_derived_model () = Incr.stabilize (); Incr.Observer.value_exn derived_model in
     let extract_immutable_summary () =
       App.Model_summary.create
-        (Incr.Var.value state)
-        (Incr.Observer.value_exn derived_state)
+        (Incr.Var.value model_v)
+        (Incr.Observer.value_exn derived_model)
     in
 
     Incr.stabilize ();
@@ -163,49 +167,51 @@ let derived
         : Dom.event_listener_id)
     in
     call_viewport_changed_on_event "scroll"
-      (Js_misc.get_scroll_container (html_dom :> Dom.node Js.t));
+      (Js_misc.get_scroll_container html_dom);
     call_viewport_changed_on_event "resize" Dom_html.window;
 
-    App.on_startup
-      ~schedule
-      (Incr.Var.value state)
-      (Incr.Observer.value_exn derived_state);
+    let%bind state =
+      App.on_startup
+        ~schedule
+        (Incr.Var.value model_v)
+        (Incr.Observer.value_exn derived_model)
+    in
 
     let prev_immutable_summary = ref immutable_summary in
     let prev_html = ref html in
     let prev_elt = ref elt in
 
     let recompute_derived model =
-      Incr.Var.set state model;
+      Incr.Var.set model_v model;
       Incr.stabilize ();
-      Incr.Observer.value_exn derived_state
+      Incr.Observer.value_exn derived_model
     in
 
     let update_visibility () =
       Visibility.mark_clean visibility;
       Incr.stabilize ();
-      let new_state =
+      let new_model =
         App.update_visibility
           ~recompute_derived
-          (Incr.Var.value state)
-          (Incr.Observer.value_exn derived_state)
+          (Incr.Var.value model_v)
+          (Incr.Observer.value_exn derived_model)
       in
-      Incr.Var.set state new_state
+      Incr.Var.set model_v new_model
     in
 
     let apply_action action =
       if App.Action.should_log action then begin
         logf !"Action: %{sexp:App.Action.t}" action
       end;
-      let old_state = Incr.Var.value state in
-      let new_state =
-        App.Action.apply
+      let old_model = Incr.Var.value model_v in
+      let new_model =
+        App.apply_action
           action
-          ~schedule
-          old_state
-          ~stabilize_and_get_derived:get_derived_state
+          old_model
+          state
+          ~stabilize_and_get_derived:get_derived_model
       in
-      Incr.Var.set state new_state
+      Incr.Var.set model_v new_model
     in
 
     let rec apply_actions pipe =
@@ -258,11 +264,11 @@ let derived
 
       timer_start "on_display";
       App.on_display
-        ~schedule
         (* Retrieve the immutable_summary from the previous iteration *)
         ~old:!prev_immutable_summary
-        (Incr.Var.value state)
-        (Incr.Observer.value_exn derived_state);
+        (Incr.Var.value model_v)
+        (Incr.Observer.value_exn derived_model)
+        state;
       timer_stop "on_display";
 
       prev_immutable_summary := immutable_summary;
@@ -280,13 +286,13 @@ let derived
       if not (Visibility.is_dirty visibility) && Pipe.is_empty r then (
         don't_wait_for (
           (* Wait until actions have been enqueued before scheduling an animation frame *)
-          Deferred.any_unit
-            [ Deferred.ignore (Pipe.values_available r : ([ `Eof | `Ok ] Deferred.t))
-            ; Visibility.when_dirty visibility
-            ]
-          >>| fun () ->
-          request_animation_frame callback
-        )
+          let%map () =
+            Deferred.any_unit
+              [ Deferred.ignore (Pipe.values_available r : ([ `Eof | `Ok ] Deferred.t))
+              ; Visibility.when_dirty visibility
+              ]
+          in
+          request_animation_frame callback)
       ) else (
         perform_update r;
         request_animation_frame callback
@@ -304,6 +310,7 @@ module Make_simple_derived (App : App_intf.S_simple) :
     and type Action.t = App.Action.t)
 = struct
   module Model = App.Model
+  module State = App.State
   module Derived_model = struct
     type t = unit
     let create (_ : Model.t Incr.t) = Incr.const ()
@@ -314,13 +321,15 @@ module Make_simple_derived (App : App_intf.S_simple) :
   end
   module Action = struct
     include App.Action
-    let apply t ~schedule model ~stabilize_and_get_derived:(_ : unit -> Derived_model.t) =
-      apply t ~schedule model
   end
+  let apply_action
+        t model state ~stabilize_and_get_derived:(_ : unit -> Derived_model.t)
+    =
+    App.apply_action t model state
   let update_visibility model () ~recompute_derived:_ = App.update_visibility model
   let on_startup ~schedule model () = App.on_startup ~schedule model
   let view model (_ : unit Incr.t) ~inject = App.view model ~inject
-  let on_display ~schedule ~old model () = App.on_display ~schedule ~old model
+  let on_display ~old model () state = App.on_display ~old model state
 end
 
 (** Trivially lift the imperative App_intf into a derived one. *)
@@ -331,6 +340,7 @@ module Make_derived (App : App_intf.S_imperative) :
     and type Derived_model.t = unit)
 = struct
   module Model = App.Model
+  module State = App.State
   module Derived_model = struct
     type t = unit
     let create (_ : Model.t Incr.t) = Incr.const ()
@@ -339,35 +349,34 @@ module Make_derived (App : App_intf.S_imperative) :
     include App.Model_summary
     let create model () = create model
   end
-  module Action = struct
-    include App.Action
-    let apply t ~schedule model ~stabilize_and_get_derived:(_ : unit -> Derived_model.t) =
-      apply t ~schedule model
-  end
+  module Action = App.Action
+  let apply_action
+        t model state ~stabilize_and_get_derived:(_ : unit -> Derived_model.t) =
+    App.apply_action t model state
   let update_visibility model () ~recompute_derived:_ = App.update_visibility model
   let on_startup ~schedule model () = App.on_startup ~schedule model
   let view model (_ : unit Incr.t) ~inject = App.view model ~inject
-  let on_display ~schedule ~old model () = App.on_display ~schedule ~old model
+  let on_display ~old model () state = App.on_display ~old model state
 end
 
 let simple
       (type model)
       ?bind_to_element_with_id
-      ~initial_state
+      ~initial_model
       (module App : App_intf.S_simple with type Model.t = model)
   =
   derived
     ?bind_to_element_with_id
-    ~initial_state
+    ~initial_model
     (module Make_simple_derived(App))
 
 let imperative
       (type model)
       ?bind_to_element_with_id
-      ~initial_state
+      ~initial_model
       (module App : App_intf.S_imperative with type Model.t = model)
   =
   derived
     ?bind_to_element_with_id
-    ~initial_state
+    ~initial_model
     (module Make_derived(App))

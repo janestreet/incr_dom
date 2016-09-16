@@ -10,7 +10,7 @@ module Field = struct
     | Speed
     | Aggro
     | Tries
-  [@@deriving sexp]
+  [@@deriving sexp, compare]
 
   let to_dom t =
     "edit-" ^ (Sexp.to_string (sexp_of_t t))
@@ -31,7 +31,7 @@ module Model = struct
     ; aggro : string
     ; tries : string
     ; focus : Field.t
-    } [@@deriving sexp_of, fields]
+    } [@@deriving sexp_of, fields, compare]
 
   let app old inp parse =
     if String.is_empty inp then (

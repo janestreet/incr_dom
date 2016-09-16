@@ -5,4 +5,4 @@ open! Import
 let () =
   Start_app.simple
     (module Entries)
-    ~initial_state:(Entries.example ~entries:1000)
+    ~initial_model:(Entries.example ~entries:1000)

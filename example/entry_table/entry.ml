@@ -34,7 +34,7 @@ module Model = struct
       ; blimp     : float Dirpair.t
       ; snip      : float Dirpair.t
       ; collapsed : bool
-      } [@@deriving sexp, fields]
+      } [@@deriving sexp, fields, compare]
 
     let get t ((ff:Focusable_field.t), dir) =
       let dp = match ff with
@@ -58,7 +58,7 @@ module Model = struct
   type t = { basic: Basic.t
            ; live: float Dirpair.t
            }
-  [@@deriving fields, sexp]
+  [@@deriving fields, sexp, compare]
 
   let name t = t.basic.name
 

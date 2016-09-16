@@ -51,4 +51,4 @@ val find_visible_range
     If there is no scrollable element above the node passed in, then the document
     will be returned
 *)
-val get_scroll_container : Dom.node Js.t -> Dom.node Js.t
+val get_scroll_container : #Dom.node Js.t -> Dom.node Js.t

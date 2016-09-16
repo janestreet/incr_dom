@@ -1,8 +1,0 @@
-This is a example to explore the techniques to implement big tables in incr-dom.
-
-The core ideal is to reduce the resource spent on invisible rows. That includes:
-
-- use [Incr.Map] interfaces for efficient map diffing
-- avoid updating big row map too much
-- the incremental graph should fire as less as possible
-- the dom and html should be as tiny as possible

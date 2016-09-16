@@ -10,7 +10,7 @@ module Model = struct
     { data : string
     ; height : int
     ; font_size : int
-    } [@@deriving sexp_of, fields]
+    } [@@deriving sexp_of, fields, compare]
 
   let create ~data ~height =
     { data; height; font_size = 16 }

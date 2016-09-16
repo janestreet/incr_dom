@@ -12,7 +12,7 @@ open Dir.Export
 
 module Dirpair = struct
 
-  type 'a t = { buy: 'a; sell: 'a} [@@deriving sexp]
+  type 'a t = { buy: 'a; sell: 'a} [@@deriving sexp, compare]
 
   module Export = struct
     type 'a _dirpair = 'a t = { buy: 'a; sell: 'a }

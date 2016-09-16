@@ -36,7 +36,7 @@ module Model = struct
     ; scroll_pos : int * int
     ; focus : Row.Id.t option
     ; edit : Edit.Model.t option
-    } [@@deriving sexp_of, fields]
+    } [@@deriving sexp_of, fields, compare]
 
   let empty =
     { rows = Row.Id.Map.empty
@@ -52,6 +52,8 @@ module Model = struct
 
   let editing t =
     Option.is_some t.edit && Option.is_some t.focus
+
+  let cutoff t1 t2 = compare t1 t2 = 0
 end
 
 module Height_splay = struct
@@ -61,11 +63,11 @@ module Height_splay = struct
         type data = int
         type accum = int * int
         let identity = (0, 0)
-        let combine ~left:(lh, ls) ~key:_ ~data ~right:(rh, rs) =
-          (lh + data + rh, ls + 1 + rs)
+        let singleton ~key:_ ~data = (data, 1)
+        let combine (lh, ls) (rh, rs) = (lh + rh, ls + rs)
       end)
 
-  let height spacing t =
+  let height t ~spacing =
     let (h, len) = accum t in
     h + len * spacing
 end
@@ -123,90 +125,93 @@ module Action = struct
     | Edit_cancel
   [@@deriving sexp]
 
-  let apply action ~schedule (model : Model.t) ~stabilize_and_get_derived =
-    let open Option.Let_syntax in
-    match action with
-    | Row (key, action) ->
-      ( match Map.find model.rows key with
-        | None -> model
-        | Some data ->
-          let data = Row.Action.apply action data in
-          { model with rows = Map.add model.rows ~key ~data }
-      )
-    | Focus_row id ->
-      if Model.editing model then model
-      else { model with focus = Some id }
-    | Edit_action action ->
-      { model with
-        edit =
-          let%map edit = model.edit in
-          Edit.Action.apply action edit
-      }
-    | Move_edit_focus dir ->
-      if Model.editing model then (
-        { model with
-          edit =
-            let%map edit = model.edit in
-            Edit.Action.apply (Move_focus dir) edit
-        }
-      ) else (
-        model
-      )
-    | Move_row_focus dir ->
-      if Model.editing model then (
-        model
-      ) else (
-        let (d : Derived_model.t) = stabilize_and_get_derived () in
-        let bound_of_dir = function
-          | `Up   -> `Less_than
-          | `Down -> `Greater_than
-        in
-        let next_focus (dir : [ `Up | `Down ]) =
-          (* Try to move the focus *)
-          let next_focus =
-            let%bind focus = model.focus in
-            let%bind data = Map.find model.rows focus in
-            let key = d.get_key ~key:focus ~data in
-            let%map (key, _) = Map.closest_key d.rows (bound_of_dir dir) key in
-            Key.id key
-          in
-          match next_focus, model.focus with
-          (* Default to the old focus *)
-          | Some focus, _ | None, Some focus -> Some focus
-          | None, None ->
-            (* With no focus, use the visible range *)
-            match (dir, model.visible_range) with
-            | (`Up, Some (_, max)) -> Some (Key.id max)
-            | (`Down, Some (min, _)) -> Some (Key.id min)
-            | _ -> None
-        in
-        { model with focus = next_focus dir }
-      )
-    | Unfocus -> schedule Edit_cancel; { model with focus = None }
-    | Edit_start ->
-      if Model.editing model || Option.is_none (Model.focus model) then (
-        model
-      ) else (
-        { model with edit = Some Edit.Model.empty }
-      )
-    | Edit_commit ->
-      ( let%bind edit = model.edit in
-        let%bind focus = model.focus in
-        let%bind row = Map.find model.rows focus in
-        let%map  new_row = Edit.Model.apply edit row in
-        { model with rows = Map.add model.rows ~key:focus ~data:new_row; edit = None }
-      ) |> Option.value ~default:model
-    | Edit_cancel ->
-      if Option.is_some model.edit then (
-        { model with edit = None }
-      ) else (
-        model
-      )
-
   let should_log _ = true
 end
 
-let on_startup ~schedule (m : Model.t) _d =
+module State = struct
+  type t = { schedule : Action.t -> unit }
+end
+
+let apply_action
+      (action:Action.t) (model : Model.t)  (state: State.t)
+      ~stabilize_and_get_derived
+  =
+  let open Option.Let_syntax in
+  match action with
+  | Row (key, action) ->
+    ( match Map.find model.rows key with
+      | None -> model
+      | Some data ->
+        let data = Row.Action.apply action data in
+        { model with rows = Map.add model.rows ~key ~data }
+    )
+  | Focus_row id ->
+    if Model.editing model then model
+    else { model with focus = Some id }
+  | Edit_action action ->
+    { model with
+      edit =
+        let%map edit = model.edit in
+        Edit.Action.apply action edit
+    }
+  | Move_edit_focus dir ->
+    if Model.editing model then (
+      { model with
+        edit =
+          let%map edit = model.edit in
+          Edit.Action.apply (Move_focus dir) edit
+      }
+    ) else (
+      model
+    )
+  | Move_row_focus dir ->
+    if Model.editing model then (
+      model
+    ) else (
+      let (d : Derived_model.t) = stabilize_and_get_derived () in
+      let bound_of_dir = function
+        | `Up   -> `Less_than
+        | `Down -> `Greater_than
+      in
+      let next_focus (dir : [ `Up | `Down ]) =
+        (* Try to move the focus *)
+        let next_focus =
+          let%bind focus = model.focus in
+          let%bind data = Map.find model.rows focus in
+          let key = d.get_key ~key:focus ~data in
+          let%map (key, _) = Map.closest_key d.rows (bound_of_dir dir) key in
+          Key.id key
+        in
+        match next_focus, model.focus with
+        (* Default to the old focus *)
+        | Some focus, _ | None, Some focus -> Some focus
+        | None, None ->
+          (* With no focus, use the visible range *)
+          match (dir, model.visible_range) with
+          | (`Up, Some (_, max)) -> Some (Key.id max)
+          | (`Down, Some (min, _)) -> Some (Key.id min)
+          | _ -> None
+      in
+      { model with focus = next_focus dir }
+    )
+  | Unfocus -> state.schedule Edit_cancel; { model with focus = None }
+  | Edit_start ->
+    if Model.editing model || Option.is_none (Model.focus model) then (
+      model
+    ) else (
+      { model with edit = Some Edit.Model.empty }
+    )
+  | Edit_commit ->
+    ( let%bind edit = model.edit in
+      let%bind focus = model.focus in
+      let%bind row = Map.find model.rows focus in
+      let%map  new_row = Edit.Model.apply edit row in
+      { model with rows = Map.add model.rows ~key:focus ~data:new_row; edit = None }
+    ) |> Option.value ~default:model
+  | Edit_cancel ->
+    if Option.is_some model.edit then { model with edit = None } else model
+
+let on_startup ~schedule (m : Model.t) (_ : Derived_model.t) =
   let rows = Map.length m.rows in
   Clock_ns.every (Time_ns.Span.of_ms 50.) (fun () ->
     let row = Row.Id.of_int (Random.int rows) in
@@ -218,6 +223,7 @@ let on_startup ~schedule (m : Model.t) _d =
     let price = Random.float 300. in
     schedule (Action.Row (row, Set_price price));
   );
+  Deferred.return { State.schedule }
 ;;
 
 let px_of_int v = (Int.to_string v) ^ "px"
@@ -242,13 +248,10 @@ let find_row_element id =
 
 let at_height heights spacing height =
   Height_splay.search heights
-    ~f:(fun ~left:(lh, ls) ~key:_ ~data ~right:_ ->
+    ~f:(fun ~left:(lh, ls) ~right:_ ->
       let sph = (spacing + 1) / 2 in
       let left = lh + ls * spacing + sph in
-      let center = left + data + spacing in
-      if      height < left   then `Left
-      else if height < center then `Stop
-      else `Right
+      if height < left then `Left else `Right
     )
 
 let first_height heights =
@@ -330,8 +333,10 @@ let update_visibility (model : Model.t) (derived : Derived_model.t) ~recompute_d
       ~f:(Fn.compose height Js_misc.viewport_rect_of_element)
   in
   let scroll_top = -(top body_rect) + thead_height in
-  let height = (height main_rect) - thead_height in
-  let scroll_bot = scroll_top + height in
+  let scroll_bot =
+    let height = (height main_rect) - thead_height in
+    scroll_top + height
+  in
 
   let scroll_pos = (scroll_top, scroll_bot) in
 
@@ -362,7 +367,7 @@ let update_visibility (model : Model.t) (derived : Derived_model.t) ~recompute_d
 
   let visible_range =
     Option.some_if
-      (scroll_top < Height_splay.height model.cellspacing heights)
+      (scroll_top < Height_splay.height ~spacing:model.cellspacing heights)
       (start_key, end_key)
   in
 
@@ -423,11 +428,8 @@ let view m d ~(inject: Action.t -> Vdom.Event.t) =
         | e -> e
       in
 
-      if to_send <> Event.Ignore then (
-        Event.Many [ to_send; Event.Prevent_default ]
-      ) else (
-        Event.Ignore
-      )
+      if to_send <> Event.Ignore then (Event.Many [ to_send; Event.Prevent_default ])
+      else Event.Ignore
     )
   in
 
@@ -474,7 +476,7 @@ let view m d ~(inject: Action.t -> Vdom.Event.t) =
     and     heights = d >>| Derived_model.heights
     and     cellspacing = cellspacing
     in
-    let height = Height_splay.height cellspacing in
+    let height = Height_splay.height ~spacing:cellspacing in
     match visible_range with
     | None -> (0, height heights)
     | Some (min_key, max_key) ->
@@ -547,10 +549,10 @@ let view m d ~(inject: Action.t -> Vdom.Event.t) =
 
 
 let on_display
-      ~(schedule: Action.t -> unit)
       ~(old : Model.t)
       (m : Model.t)
       (d : Derived_model.t)
+      (state : State.t)
   =
   let open Option.Let_syntax in
 
@@ -561,7 +563,7 @@ let on_display
       let%bind row = Map.find m.rows focus in
       let key = d.get_key ~key:focus ~data:row in
       let%map (lo, hi) = m.visible_range in
-      if Key.( key < lo || key > hi ) then (schedule Unfocus)
+      if Key.( key < lo || key > hi ) then (state.schedule Unfocus)
     in
     ignore (result : unit option)
   ) else if old.focus <> m.focus then (
@@ -575,8 +577,8 @@ let on_display
       let before, at, _ = Height_splay.split d.heights key in
       let%map _ = at in
 
-      let start_height = Height_splay.height m.cellspacing before in
-      let end_height = start_height + row.Row.Model.height + 2*m.cellspacing in
+      let start_height = Height_splay.height ~spacing:m.cellspacing before in
+      let end_height = start_height + row.Row.Model.height + 2 * m.cellspacing in
       let (scroll_top, scroll_bot) = m.scroll_pos in
 
       if start_height < scroll_top then (
@@ -614,4 +616,3 @@ let init () =
   { Model.empty with
     rows = Row.Id.Map.of_alist_exn rows
   }
-

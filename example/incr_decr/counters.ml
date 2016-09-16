@@ -4,7 +4,7 @@ open Incr_dom.Std
 module Model = struct
   type t = {
     counters : int Int.Map.t
-  } [@@deriving sexp, fields]
+  } [@@deriving sexp, fields, compare]
 
   let add_new t =
     let counters = Int.Map.add t.counters ~key:(Map.length t.counters) ~data:0 in
@@ -15,6 +15,8 @@ module Model = struct
     let old_val = Map.find_exn t.counters pos in
     let counters = Int.Map.add t.counters ~key:pos ~data:(old_val + diff) in
     { counters }
+
+  let cutoff t1 t2 = compare t1 t2 = 0
 end
 
 module Action = struct
@@ -23,18 +25,24 @@ module Action = struct
     | Update of int * int (* pos, diff *)
   [@@deriving sexp]
 
-  let apply t ~schedule:_ model = match t with
-    | New_counter -> Model.add_new model
-    | Update (pos, diff) -> Model.update model pos diff
-
   let should_log _ = true
 end
 
+module State = struct
+  type t = unit
+end
+
+let apply_action action model _state =
+  match (action:Action.t) with
+  | New_counter -> Model.add_new model
+  | Update (pos, diff) -> Model.update model pos diff
+
 let update_visibility m = m
 
-let on_startup ~schedule:_ _ = ()
+let on_startup ~schedule:_ _ =
+  Async_kernel.Std.return ()
 
-let on_display ~schedule:_ ~old:_ _ = ()
+let on_display ~old:_ _ _ = ()
 
 let view (m : Model.t Incr.t) ~inject =
   let open Incr.Let_syntax in

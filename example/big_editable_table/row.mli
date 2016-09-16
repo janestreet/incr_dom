@@ -2,7 +2,7 @@ open! Core_kernel.Std
 open! Incr_dom.Std
 
 module Id : sig
-  type t
+  type t [@@deriving compare]
   include Identifiable with type t := t
   val to_dom : t -> string
   val of_int : int -> t
@@ -20,7 +20,7 @@ module Model : sig
     ; position : int
     ; height : int
     }
-  [@@deriving sexp_of]
+  [@@deriving sexp_of, compare]
 
   val empty : t
 end

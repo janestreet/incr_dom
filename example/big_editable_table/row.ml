@@ -22,7 +22,7 @@ module Model = struct
     ; position : int
 
     ; height : int
-    } [@@deriving sexp_of]
+    } [@@deriving sexp_of, compare]
 
   let empty =
     { percentage = 0.

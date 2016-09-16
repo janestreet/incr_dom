@@ -8,7 +8,7 @@ module Model : sig
     { data : string
     ; height : int
     ; font_size : int
-    } [@@deriving sexp_of, fields]
+    } [@@deriving sexp_of, fields, compare]
 
   val create : data:string -> height:int -> t
 end

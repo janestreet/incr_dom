@@ -13,4 +13,4 @@ let () =
   in
   Start_app.derived
     (module App)
-    ~initial_state:(App.Model.create (Option.value ~default:50000 count))
+    ~initial_model:(App.Model.create (Option.value ~default:50000 count))

@@ -13,7 +13,7 @@ module Model : sig
     ; aggro : string
     ; tries : string
     ; focus : Field.t
-    } [@@deriving sexp_of, fields]
+    } [@@deriving sexp_of, fields, compare]
 
   val apply : t -> Row.Model.t -> Row.Model.t option
   val empty : t

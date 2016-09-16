@@ -43,7 +43,7 @@ module Model = struct
     ; rows : Row.Model.t Row.Id.Map.t
     ; filter_string : string
     ; sort : Key.sort
-    } [@@deriving sexp_of, fields]
+    } [@@deriving sexp_of, fields, compare]
 
   let create size =
     { visible_range = None
@@ -57,6 +57,8 @@ module Model = struct
              )
            ))
     }
+
+  let cutoff t1 t2 = compare t1 t2 = 0
 end
 
 (* We keep a map from each row to its height in a splay tree to efficiently calculate the
@@ -68,7 +70,8 @@ module Heights =
       type data = int
       type accum = int
       let identity = 0
-      let combine ~left ~key:_ ~data ~right = left + data + right
+      let singleton ~key:_ ~data = data
+      let combine = (+)
     end)
 
 module Derived_model = struct
@@ -116,51 +119,57 @@ module Action = struct
     | Update_sort of Key.sort
     [@@deriving sexp_of]
 
-  let apply action ~schedule:_ (model : Model.t) ~stabilize_and_get_derived:_ =
-    match action with
-    | Change_row (key, action) ->
-      ( match Map.find model.rows key with
-        | None -> model
-        | Some row ->
-          { model with
-            rows = Map.add model.rows ~key ~data:(Row.Action.apply action row)
-          }
-      )
-    | Bump_row_height ->
-      (* Hack to find random key, for testing *)
-      let key =
-        Row.Id.of_string @@ Int.to_string @@ Random.int (Map.length model.rows)
-      in
-      ( match Map.find model.rows key with
-        | None -> model
-        | Some row ->
-          { model with
-            rows =
-              Map.add model.rows
-                ~key
-                ~data:(Row.Action.apply (Row.Action.Increase_font_by 10) row)
-          }
-      )
-    | Update_filter filter_string -> { model with filter_string }
-    | Update_sort   sort          -> { model with sort }
-
   let should_log = function
     | Bump_row_height -> false
     | Change_row (_, action) -> Row.Action.should_log action
     | Update_filter _ | Update_sort _ -> true
 end
 
+module State = struct type t = unit end
+
+let apply_action
+      (action:Action.t) (model : Model.t) (_:State.t)
+      ~stabilize_and_get_derived:_
+  =
+  match action with
+  | Change_row (key, action) ->
+    ( match Map.find model.rows key with
+      | None -> model
+      | Some row ->
+        { model with
+          rows = Map.add model.rows ~key ~data:(Row.Action.apply action row)
+        }
+    )
+  | Bump_row_height ->
+    (* Hack to find random key, for testing *)
+    let key =
+      Row.Id.of_string @@ Int.to_string @@ Random.int (Map.length model.rows)
+    in
+    ( match Map.find model.rows key with
+      | None -> model
+      | Some row ->
+        { model with
+          rows =
+            Map.add model.rows
+              ~key
+              ~data:(Row.Action.apply (Row.Action.Increase_font_by 10) row)
+        }
+    )
+  | Update_filter filter_string -> { model with filter_string }
+  | Update_sort   sort          -> { model with sort }
+
+
 let on_startup ~schedule _model _derived =
   Clock_ns.every (Time_ns.Span.of_ms 50.) (fun () ->
     schedule Action.Bump_row_height
-  )
+  );
+  Deferred.return ()
 
+(* Finds the last node for which the total height is at most [value]. *)
 let search_height heights value =
   Heights.search heights
-    ~f:(fun ~left ~key:_ ~data ~right:_ ->
-      if      value < left        then `Left
-      else if value < left + data then `Stop
-      else `Right
+    ~f:(fun ~left ~right:_ ->
+      if value < left then `Left else `Right
     )
 
 let update_visibility (model : Model.t) (derived : Derived_model.t) ~recompute_derived =
@@ -295,4 +304,4 @@ let view model derived ~inject =
     ]
 ;;
 
-let on_display ~schedule:_ ~old:_ _new_model _new_derived = ()
+let on_display ~old:_ _new_model _new_derived _state = ()

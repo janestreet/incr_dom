@@ -15,93 +15,55 @@ end
 
 type rows_or_columns = Rows | Columns [@@deriving sexp, bin_io, variants, compare]
 
-(* The javascript code for assessing visibility in this module is adapted from:
+let innerHeight () =
+  Js.Optdef.case Dom_html.window##.innerHeight
+    (fun () -> Dom_html.document##.documentElement##.clientHeight)
+    Fn.id
 
-    http://stackoverflow.com/questions/123999/how-to-tell-if-a-dom-element-is-visible-in-the-current-viewport/7557433#7557433
-*)
+let innerWidth () =
+  Js.Optdef.case Dom_html.window##.innerWidth
+    (fun () -> Dom_html.document##.documentElement##.clientWidth)
+    Fn.id
 
-let element_is_in_viewport :  Dom_html.element Js.t -> bool =
-  let f = Js.Unsafe.eval_string {js|
-       (function (el) {
-
-          //special bonus for those using jQuery
-          if (typeof jQuery === "function" && el instanceof jQuery) {
-              el = el[0];
-          }
-
-          var rect = el.getBoundingClientRect();
-
-          return (
-              rect.top >= 0 &&
-              rect.left >= 0 &&
-              rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-              rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-          );
-         })
-      |js}
-  in
-  (fun elt -> Js.Unsafe.fun_call f [| Js.Unsafe.inject elt |] |> Js.to_bool)
-;;
+let element_is_in_viewport (elt : Dom_html.element Js.t) =
+  let rect = elt##getBoundingClientRect in
+  int_of_float rect##.top >= 0
+  && int_of_float rect##.left >= 0
+  && int_of_float rect##.bottom <= innerHeight ()
+  && int_of_float rect##.right <= innerWidth ()
 
 (** Scrolls to the item marked as "keep-in-view" *)
 let scroll ?(id="keep-in-view") () =
-  match Js.Opt.to_option (Dom_html.document##getElementById (Js.string id)) with
-  | None -> ()
-  | Some elt ->
-    if not (element_is_in_viewport elt) then (
-      elt##scrollIntoView (Js.bool true))
+  match Dom_html.getElementById id with
+  | exception Not_found -> ()
+  | elt ->
+    if not (element_is_in_viewport elt)
+    then (elt##scrollIntoView Js._true)
 ;;
 
 (* Not yet supported on Chrome.  Maybe we should use jQuery?
    {[
-     let scroll_into_view : Dom_html.element Js.t -> unit =
-       let f = Js.Unsafe.eval_string {js|
-         (function (el) { el.scrollIntoView({block: "start", behavior: "smooth"}); })
-       |js}
-       in
-       (fun elt -> Js.Unsafe.fun_call f [| Js.Unsafe.inject elt |])
+     let scroll_into_view (elt : Dom_html.element Js.t) : unit =
+       elt##scrollIntoView (object%js
+         val block = Js.string "start"
+         val behavior = Js.string "smooth"
+       end)
    ]}
 *)
 
-(* [viewport_rect_of_element el] gets bounding rect of of [el]. The bounding rect is
+(* [viewport_rect_of_element el] gets bounding rect of [elt]. The bounding rect is
    relative to the view port *)
-let viewport_rect_of_element : Dom_html.element Js.t -> int Rect.t =
-  let f = Js.Unsafe.eval_string {js|
-       (function (el) {
-
-          //special bonus for those using jQuery
-          if (typeof jQuery === "function" && el instanceof jQuery) {
-              el = el[0];
-          }
-
-          var rect = el.getBoundingClientRect();
-
-          return [ rect.top, rect.left, rect.bottom, rect.right ]
-         })
-      |js}
-  in
-  (fun elt ->
-     match Js.Unsafe.fun_call f [| Js.Unsafe.inject elt |] |> Js.to_array with
-     | [| top; left; bottom; right |] -> { Rect.top; left; bottom; right }
-     | _ -> failwith "viewport_rect_of_element : element not found"
-  )
+let viewport_rect_of_element (elt : Dom_html.element Js.t) : int Rect.t =
+  let rect = elt##getBoundingClientRect in
+  { Rect.top = int_of_float rect##.top
+  ; left     = int_of_float rect##.left
+  ; bottom   = int_of_float rect##.bottom
+  ; right    = int_of_float rect##.right
+  }
 ;;
 
-let viewport_rect : unit -> int Rect.t =
-  let f = Js.Unsafe.eval_string {js|
-       (function () {
-          // "||" here means if the left side is not defined then use the right side
-          var height = window.innerHeight || document.documentElement.clientHeight;
-          var width  = window.innerWidth  || document.documentElement.clientWidth;
-          return [ height, width ]
-         })
-      |js}
-  in
-  (fun () ->
-     match Js.Unsafe.fun_call f [| |] |> Js.to_array with
-     | [| bottom; right |] -> { Rect.top = 0; left = 0; bottom; right }
-     | _ -> failwith "viewport_rect : unexpected exception"
-  )
+let viewport_rect () =
+  { Rect.top = 0; left = 0; bottom = innerHeight (); right = innerWidth () }
 ;;
 
 (** Simple wrapper for the binary-search functor   *)
@@ -171,9 +133,9 @@ let find_visible_range ~length ~nth_element_id layout =
   )
 ;;
 
-let get_scroll_container : Dom.node Js.t -> Dom.node Js.t =
-  let f =
-    Js.Unsafe.pure_js_expr {js|
+
+let get_scroll_container_js_expr =
+  Js.Unsafe.pure_js_expr {js|
       (function (element) {
         var doc = element.ownerDocument || document;
         var win = doc.defaultView || window;
@@ -198,6 +160,7 @@ let get_scroll_container : Dom.node Js.t -> Dom.node Js.t =
         return doc;
       })
     |js}
-  in
-  fun el -> Js.Unsafe.fun_call f [| Js.Unsafe.inject el |]
+
+let get_scroll_container (el : #Dom.node Js.t) : Dom.node Js.t =
+  Js.Unsafe.fun_call get_scroll_container_js_expr [| Js.Unsafe.inject el |]
 ;;

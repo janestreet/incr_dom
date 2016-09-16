@@ -1,26 +1,38 @@
 open! Core_kernel.Std
 open Virtual_dom.Std
+open Async_kernel.Std
 
 (** The interface for a basic, incrementally rendered application. *)
 module type S_simple = sig
+
   module Model : sig
     type t
+
+    (** A function for testing whether the model has changed enough to require refiring
+        the incremental graph.
+
+        It's best if the values in the model support a semantically reasonable cutoff
+        function which lets you avoid infinite recomputation loops that can otherwise be
+        triggered by the visibility checks. For this reason, it's typically a good idea to
+        avoid having simple closures stored in the model.
+
+        That said, it does work if you put phys_equal in for the cutoff. *)
+    val cutoff : t -> t -> bool
   end
 
   module Action : sig
     type t [@@deriving sexp_of]
-
-    (** [apply] performs modifications to the model as dictated by the action.
-
-        [schedule] allows you to specify additional actions to be performed *)
-    val apply
-      :  t
-      -> schedule:(t -> unit)
-      -> Model.t
-      -> Model.t
-
     val should_log : t -> bool
   end
+
+  module State : sig
+    (** Represents the imperative state associated with an application, typically used for
+        housing things like communication Async-RPC connections. *)
+    type t
+  end
+
+  (** [apply_action] performs modifications to the model as dictated by the action. *)
+  val apply_action : Action.t -> Model.t -> State.t -> Model.t
 
   (** If you selectively render certain parts of the model based on what is visible on the
       screen, use [update_visibility] to query the state of the DOM and make the required
@@ -47,14 +59,14 @@ module type S_simple = sig
   val on_startup
     :  schedule:(Action.t -> unit)
     -> Model.t
-    -> unit
+    -> State.t Deferred.t
 
   (** [on_display] is called every time the DOM is updated, with the model just before the
       update and the model just after the update. Use [on_display] to initiate actions. *)
   val on_display
-    :  schedule:(Action.t -> unit)
-    -> old:Model.t
+    :  old:Model.t
     -> Model.t
+    -> State.t
     -> unit
 end
 
@@ -63,7 +75,10 @@ end
 module type S_imperative = sig
   module Model : sig
     type t
+    val cutoff : t -> t -> bool
   end
+
+  module State : sig type t end
 
   (** [Model_summary] allows you to make the [Model] be mutable, but persist the necessary
       information to discover edge transitions in [on_display]. The old model is persisted
@@ -82,14 +97,10 @@ module type S_imperative = sig
   module Action : sig
     type t [@@deriving sexp_of]
 
-    val apply
-      :  t
-      -> schedule:(t -> unit)
-      -> Model.t
-      -> Model.t
-
     val should_log : t -> bool
   end
+
+  val apply_action : Action.t -> Model.t -> State.t -> Model.t
 
   val update_visibility : Model.t -> Model.t
 
@@ -101,12 +112,12 @@ module type S_imperative = sig
   val on_startup
     :  schedule:(Action.t -> unit)
     -> Model.t
-    -> unit
+    -> State.t Deferred.t
 
   val on_display
-    :  schedule:(Action.t -> unit)
-    -> old:Model_summary.t
+    :  old:Model_summary.t
     -> Model.t
+    -> State.t
     -> unit
 end
 
@@ -116,6 +127,7 @@ end
 module type S_derived = sig
   module Model : sig
     type t
+    val cutoff : t -> t -> bool
   end
 
   (** [Derived_model] is the data container that allows you to share computations between
@@ -145,18 +157,20 @@ module type S_derived = sig
     val create : Model.t -> Derived_model.t -> t
   end
 
+  module State : sig type t end
+
   module Action : sig
     type t [@@deriving sexp_of]
 
-    val apply
-      :  t
-      -> schedule:(t -> unit)
-      -> Model.t
-      -> stabilize_and_get_derived:(unit -> Derived_model.t)
-      -> Model.t
-
     val should_log : t -> bool
   end
+
+  val apply_action
+    :  Action.t
+    -> Model.t
+    -> State.t
+    -> stabilize_and_get_derived:(unit -> Derived_model.t)
+    -> Model.t
 
   (** [update_visbility] gives you access to both the model and the derived model.
 
@@ -180,13 +194,12 @@ module type S_derived = sig
     :  schedule:(Action.t -> unit)
     -> Model.t
     -> Derived_model.t
-    -> unit
+    -> State.t Deferred.t
 
   val on_display
-    :  schedule:(Action.t -> unit)
-    -> old:Model_summary.t
+    :  old:Model_summary.t
     -> Model.t
     -> Derived_model.t
+    -> State.t
     -> unit
 end
-
