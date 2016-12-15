@@ -69,7 +69,7 @@ let viewport_rect () =
 (** Simple wrapper for the binary-search functor   *)
 let binary_search (type elt) ~length ~get ~compare mode x =
   let module Bs =
-    Binary_searchable.Make_without_tests(struct
+    Binary_searchable.Make(struct
       type nonrec elt = elt
       type nonrec t   = unit
 

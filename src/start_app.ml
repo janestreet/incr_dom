@@ -2,7 +2,6 @@ open! Core_kernel.Std
 open Virtual_dom.Std
 open Async_kernel.Std
 open Js_of_ocaml
-open Js_of_ocaml_async
 open Common
 
 let document_loaded : unit Deferred.t =
@@ -37,9 +36,17 @@ let timer_stop s =
     changes will not be included in the repaint and will be saved until the following one.
 *)
 let request_animation_frame callback =
+  (* We capture the current context to use it later when handling callbacks from
+     requestAnimationFrame, since exceptions raised to that would otherwise not go through
+     our ordinary Async monitor. *)
+  let current_context = Async_kernel.Scheduler.(current_execution_context (t ())) in
   ignore (
     Dom_html.window##requestAnimationFrame
-      (Js.wrap_callback (fun _timestamp -> callback ()))
+      (Js.wrap_callback (fun _timestamp ->
+         ignore (
+           Async_kernel.Scheduler.within_context
+             current_context
+             callback : (unit, unit) Result.t)))
     : Dom_html.animation_frame_request_id)
 ;;
 

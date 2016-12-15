@@ -4,16 +4,11 @@
     async_kernel
     core_kernel
     js_of_ocaml
-    js_of_ocaml_async
+    async_js_extended
     virtual_dom
     incr_dom
     splay_tree
     ))
-  (js_of_ocaml ((flags (;;--source-map-inline
-                       ;;--debuginfo
-                       ;;--enable with-js-error
-                       ;; --pretty
-                       ;; --no-inline
-                       ))))
-  (preprocess (((pps (ppx_js_driver JANE_KERNEL)) All)))
+  (js_of_ocaml ())
+  (preprocess (pps (js_of_ocaml.ppx.driver ppx_jane.kernel)))
   ))

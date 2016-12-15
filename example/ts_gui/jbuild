@@ -5,9 +5,10 @@
               js_of_ocaml
               virtual_dom
               incr_dom
+              incr_dom_widgets
               splay_tree
               async_kernel
              ))
   (js_of_ocaml ())
-  (preprocess (((pps (ppx_js_driver JANE_KERNEL -ite-check)) All)))
+  (preprocess (pps (js_of_ocaml.ppx.driver ppx_jane.kernel -ite-check)))
  ))

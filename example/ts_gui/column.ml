@@ -1,4 +1,5 @@
 open Core_kernel.Std
+open Import
 
 module type T = sig
   type row
@@ -8,7 +9,7 @@ module type T = sig
   val set : row -> Contents.t -> row
   val editable : bool
   val focus_on_edit : bool
-  val sort_by : Contents.t -> Sort_key.t
+  val sort_by : Contents.t -> Table.Sort_key.t
 end
 
 type 'a t = (module T with type row = 'a)
@@ -25,7 +26,7 @@ let create (type row) (type contents)
   let sort_by =
     match sort_by with
     | Some f -> f
-    | None -> (fun x ->  Sort_key.String (Contents.to_string x))
+    | None -> (fun x -> Table.Sort_key.String (Contents.to_string x))
   in
   (module struct
     type nonrec row = row
@@ -76,3 +77,8 @@ let set (type row) (module T : T with type row = row) row string =
 
 let sort_by (type row) (module T : T with type row = row) row =
   T.sort_by (T.get row)
+
+let to_table_widget_column t =
+  let name = name t in
+  let sort_by = sort_by t in
+  {Table.Column.name; sort_by}

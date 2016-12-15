@@ -12,7 +12,7 @@ end
 module Action : sig
   type t [@@deriving sexp]
   val kick_price : t
-  val kick_fill_time : t
+  val kick_position : t
 end
 
 module Mode : sig
@@ -24,9 +24,9 @@ val apply_action : Action.t -> Model.t -> Model.t
 
 val view
   :  Model.t Incr.t
-  -> row_id:string
+  -> id:string
   -> mode:Mode.t Incr.t
-  -> sort_column:string option
+  -> sort_column:int option
   -> focus_me:Vdom.Event.t
   -> remember_edit:(column:string -> string -> Vdom.Event.t)
   -> Vdom.Node.t Incr.t

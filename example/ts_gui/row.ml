@@ -1,19 +1,18 @@
 open! Core_kernel.Std
-open! Incr_dom.Std
-open! Incr.Let_syntax
+open! Import
 
 module Model = struct
   type t =
     { symbol    : string
     ; edge      : float
     ; max_edge  : float
-    ; trader    : string
     ; bsize     : int
     ; bid       : float
     ; ask       : float
     ; asize     : int
     ; position  : int
-    ; last_fill : Time.t
+    ; last_fill : Time.t option
+    ; trader    : string
     }
   [@@deriving compare, fields]
 
@@ -22,14 +21,25 @@ module Model = struct
     let add ?(editable=false) ?focus_on_edit ?sort_by  m =
       append (fun field -> Column.of_field field m ~editable ?sort_by ?focus_on_edit)
     in
-    let num_f x = Sort_key.Float x in
-    let num_i x ~f = Sort_key.Float (Float.of_int (f x)) in
+    let num_f x = Table.Sort_key.Float x in
+    let num_i x ~f = Table.Sort_key.Float (Float.of_int (f x)) in
     let num_i = num_i ~f:Fn.id in
     let time t =
-      Sort_key.Float (Float.of_int64 @@ Int63.to_int64
-                      @@ Time.to_int63_ns_since_epoch t)
+      Table.Sort_key.Float (
+        Option.value ~default:Time_ns.epoch t
+        |> Time.to_int63_ns_since_epoch
+        |> Int63.to_int64 |> Float.of_int64)
     in
-    let lex_s x = Sort_key.String x in
+    let lex_s x = Table.Sort_key.String x in
+    let module Time_opt = struct
+      type t = Time.t option
+      let to_string = function
+        | None -> "-"
+        | Some x -> Time.to_string x
+      let of_string = function
+        | "-" -> None
+        | s -> Time.of_string s
+    end in
     Fields.fold ~init:[]
       ~symbol:   (add (module String) ~sort_by:lex_s)
       ~edge:     (add (module Float) ~editable:true ~focus_on_edit:() ~sort_by:num_f)
@@ -40,7 +50,7 @@ module Model = struct
       ~ask:      (add (module Float) ~sort_by:num_f)
       ~asize:    (add (module Int) ~sort_by:num_i)
       ~position: (add (module Int) ~sort_by:num_i)
-      ~last_fill: (add (module Time) ~sort_by:time)
+      ~last_fill:(add (module Time_opt) ~sort_by:time)
     |> List.rev
 
   let matches_pattern t pattern =
@@ -48,7 +58,7 @@ module Model = struct
       String.is_substring ~substring:pattern
         (String.lowercase s)
     in
-    matches t.symbol || matches t.trader
+    matches t.symbol
 
   let apply_edit t ~column value =
     match List.find columns ~f:(fun col -> Column.name col = column) with
@@ -63,31 +73,28 @@ end
 module Action = struct
   type t =
     | Kick_price
-    | Kick_fill_time
+    | Kick_position
   [@@deriving sexp]
 
   let kick_price = Kick_price
-  let kick_fill_time = Kick_fill_time
+  let kick_position = Kick_position
 end
 
 let kick_price (m:Model.t) =
-  let move = Float.of_int (Random.int 5 - 2) /. 100. in
+  let move = Float.of_int (Random.int 15 - 7) /. 100. in
   let spread = m.ask -. m.bid in
-  let bid = Float.max 10. (m.bid +. move) in
+  let bid = Float.max 0.20 (m.bid +. move) in
   let ask = bid +. spread in
   { m with bid; ask }
 
-let kick_fill_time (m:Model.t) =
-  let position =
-    let op = if (Random.bool ()) then Int.(+) else Int.(-) in
-    op m.position (Random.int 200)
-  in
-  { m with position; last_fill = Time.now () }
+let kick_position (m:Model.t) =
+  let position = m.position + 10 * (Random.int 21 - 10) in
+  { m with position; last_fill = Some (Time.now ()) }
 
 let apply_action (action : Action.t) (m:Model.t) =
   match action with
   | Kick_price     -> kick_price m
-  | Kick_fill_time -> kick_fill_time m
+  | Kick_position -> kick_position m
 
 module Mode = struct
   type t = Unfocused | Focused | Editing
@@ -119,7 +126,7 @@ let column_cell m col ~editing ~remember_edit =
 
 let view
       (m:Model.t Incr.t)
-      ~row_id
+      ~id
       ~(mode: Mode.t Incr.t)
       ~sort_column
       ~focus_me
@@ -129,12 +136,15 @@ let view
   let on_click = Attr.on_click (fun _ -> focus_me) in
   let style =
     let%bind last_fill = m >>| Model.last_fill in
-    let start_fading = Time_ns.add last_fill (Time_ns.Span.of_sec 1.0) in
-    let end_fading   = Time_ns.add start_fading (Time_ns.Span.of_sec 1.0) in
-    Incr.step_function ~init:(Some "new")
-      [ start_fading, Some "fading"
-      ; end_fading, None
-      ]
+    match last_fill with
+    | None -> Incr.const None
+    | Some last_fill ->
+      let start_fading = Time_ns.add last_fill (Time_ns.Span.of_sec 1.0) in
+      let end_fading   = Time_ns.add start_fading (Time_ns.Span.of_sec 1.0) in
+      Incr.step_function ~init:(Some "new")
+        [ start_fading, Some "fading"
+        ; end_fading, None
+        ]
   in
   let%map m = m and mode = mode and style = style in
   let focused_attr =
@@ -147,18 +157,17 @@ let view
     | Editing -> true
     | Focused | Unfocused -> false
   in
-  let key = "row-" ^ row_id in
-  Node.tr ~key
-    (Attr.id key :: on_click :: focused_attr)
-    (List.map Model.columns
-       ~f:(fun col ->
+  Node.tr ~key:id
+    (Attr.id id :: on_click :: focused_attr)
+    (List.mapi Model.columns
+       ~f:(fun i col ->
          let attrs =
            let highlighting =
              if String.(=) (Column.name col) "position"
              then (Option.map style ~f:(fun x -> Attr.class_ x) |> Option.to_list)
              else []
            in
-           if [%compare.equal:string option] (Some (Column.name col)) sort_column
+           if [%compare.equal:int option] (Some i) sort_column
            then begin
              match mode with
              | Focused | Editing -> highlighting
@@ -180,8 +189,8 @@ let random_stock () : Model.t =
   let ask = fair +. Float.of_int (Random.int 20) /. 100. in
   let edge = Float.of_int (Random.int 10) /. 100. in
   let max_edge = edge +. Float.of_int (Random.int 10) /. 100. in
-  let position = Random.int 500 * 100 in
-  let last_fill = Time.now () in
+  let position = (Random.int 500 - 250) * 100 in
+  let last_fill = None in
   let trader =
     let names = ["hsimmons"; "bkent"; "qhayes"; "gfernandez"] in
     List.nth_exn names (Random.int (List.length names))
