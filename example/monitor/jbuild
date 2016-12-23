@@ -7,5 +7,5 @@
               async_kernel
              ))
   (js_of_ocaml ())
-  (preprocess (pps (js_of_ocaml.ppx.driver ppx_jane.kernel -ite-check)))
+  (preprocess (pps (js_of_ocaml.ppx.driver ppx_jane -ite-check)))
  ))
