@@ -125,9 +125,9 @@ let big_kick (m:Model.t) ids =
 
 let apply_action
       (action:Action.t) (m:Model.t) _
-      ~(stabilize_and_get_derived : unit -> Derived_model.t)
+      ~(recompute_derived : Model.t -> Derived_model.t)
   =
-  let d = lazy (stabilize_and_get_derived ()) in
+  let d = lazy (recompute_derived m) in
   match action with
   | Escape                -> escape m (force d)
   | Set_pattern s         -> Model.set_pattern m s
@@ -321,6 +321,7 @@ let init () : Model.t =
       ~scroll_margin:50
       ~float_header:true
       ~height_guess
+      ()
   in
   { rows
   ; pattern = ""

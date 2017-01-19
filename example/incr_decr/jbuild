@@ -1,10 +1,6 @@
 (executables
  ((names (main))
-  (libraries (
-    async_kernel
-    core_kernel
-    incr_dom
-    ))
+  (libraries (incr_dom))
   (js_of_ocaml ())
   (preprocess (pps (js_of_ocaml.ppx.driver ppx_jane -ite-check)))
   ))

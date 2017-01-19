@@ -1,5 +1,5 @@
 open! Core_kernel.Std
-open Virtual_dom.Std
+open Virtual_dom
 open Async_kernel.Std
 
 (** The interface for a basic, incrementally rendered application. *)
@@ -169,7 +169,7 @@ module type S_derived = sig
     :  Action.t
     -> Model.t
     -> State.t
-    -> stabilize_and_get_derived:(unit -> Derived_model.t)
+    -> recompute_derived:(Model.t -> Derived_model.t)
     -> Model.t
 
   (** [update_visbility] gives you access to both the model and the derived model.

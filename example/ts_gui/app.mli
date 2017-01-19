@@ -1,5 +1,5 @@
 open! Core_kernel.Std
-open! Incr_dom.Std
+open! Incr_dom
 
 include App_intf.S_derived
 

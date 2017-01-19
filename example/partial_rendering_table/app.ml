@@ -1,8 +1,17 @@
 open! Core_kernel.Std
-open! Incr_dom.Std
+open! Incr_dom
 open! Js_of_ocaml
 open! Async_kernel.Std
 open Splay_tree.Std
+
+(* This module is a simple implementation of partial rendering, which incrementally
+   computes the set of DOM nodes in view, along with a small window around the edge.  This
+   works by keeping track of the heights of all elements in a splay tree that allows us to
+   query for nodes by height. We assume a default height for any node that has never been
+   rendered.
+
+   Note that this idea has been more fully realized by some reusable modules in the
+   [Incr_dom_widgets] library *)
 
 open Incr.Let_syntax
 
@@ -129,7 +138,7 @@ module State = struct type t = unit end
 
 let apply_action
       (action:Action.t) (model : Model.t) (_:State.t)
-      ~stabilize_and_get_derived:_
+      ~recompute_derived:_
   =
   match action with
   | Change_row (key, action) ->

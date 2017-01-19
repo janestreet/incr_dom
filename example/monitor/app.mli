@@ -1,6 +1,11 @@
 open! Core_kernel.Std
-open! Incr_dom.Std
+open! Async_kernel.Std
+open! Incr_dom
 
 include App_intf.S_simple
 
-val init : string -> Model.t
+val init
+  :  ?init_loc:string
+  -> Monitor.t
+  -> stop : unit Ivar.t
+  -> Model.t

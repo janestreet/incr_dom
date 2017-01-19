@@ -1,5 +1,5 @@
 open! Core_kernel.Std
-open Incr_dom.Std
+open Incr_dom
 
 module Model = struct
   type t = {
@@ -59,11 +59,11 @@ let view (m : Model.t Incr.t) ~inject =
       [ Node.text txt ]
   in
   let%map elements =
-    Incr.Map.filter_mapi' (m >>| Model.counters) ~f:(fun ~key:pos ~data:value ->
+    Incr.Map.mapi' (m >>| Model.counters) ~f:(fun ~key:pos ~data:value ->
       let button_minus = button "-" pos (-1) in
       let button_plus = button "+" pos 1 in
       let%map value = value in
-      Some (Node.div []
-              [ button_minus; Node.text (Int.to_string value); button_plus ]))
+      Node.div []
+        [ button_minus; Node.text (Int.to_string value); button_plus ])
   in
   Node.body [] (add_new_counter_button :: (Map.data elements))

@@ -3,6 +3,8 @@ open! Core_kernel.Std
 open! Import
 open Js_of_ocaml
 
+let log_s = Async_js.log_s
+
 module Model = struct
   type t = { entries : Entry.Model.t Entry_id.Map.t
            ; focus : (Entry_id.t * Focus_point.t option) option
@@ -141,7 +143,8 @@ let apply_action action (m:Model.t) (_:State.t) =
   | Raise_js ->
     Js_of_ocaml.Js.Unsafe.js_expr "xxxxxxxxxxxxx.yy()"
   | Dump_state ->
-    logf !"%{sexp:Model.t}" m; m
+    log_s [%message "Model" (m:Model.t)];
+    m
   | Nop -> m
   | Set_search_string search_string -> { m with search_string }
 ;;
@@ -199,7 +202,7 @@ let view (m:Model.t Incr.t) ~inject =
   let visible_range = m >>| Model.visible_range in
   let%map entries =
     Incr.Map.filter_mapi' entries ~f:(fun ~key:entry_id ~data:entry ->
-      logf !"creating %{Entry_id}" entry_id;
+      log_s [%message "creating entry" (entry_id:Entry_id.t)];
       let name = entry >>| Entry.Model.name in
       let visible =
         match%map visible_range with

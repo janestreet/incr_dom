@@ -21,4 +21,8 @@ let to_string t =
   let str = date##toTimeString |> Js.to_string in
   fst (String.lsplit2_exn ~on:' ' str)
 
+(* This function cannot be invoked, as we do not allow editing of times. However, since it
+   is being displayed, and all columns support editing (even though we don't actually edit
+   all of them) this function must be implemented.
+*)
 let of_string _ = assert false

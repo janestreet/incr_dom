@@ -2,5 +2,7 @@ A simple example intended to test error handling in Incr_dom, in
 particular to make sure that uncaught errors are captured by Async's
 monitors.
 
+This example also tests the use of the [stop] argument to [Start_app.simple].
+
 You can specify which kind of action should fail with the dropdown, or
 by putting =?Exn_location= at the end of the URL.

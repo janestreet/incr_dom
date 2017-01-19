@@ -1,11 +1,6 @@
 (executables
  ((names (main))
   (libraries (
-    async_kernel
-    core_kernel
-    js_of_ocaml
-    async_js_extended
-    virtual_dom
     incr_dom
     splay_tree
     ))

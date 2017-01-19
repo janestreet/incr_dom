@@ -1,6 +1,7 @@
 open Core_kernel.Std
 open Async_kernel.Std
-open Incr_dom.Std
+open Incr_dom
+open Js_of_ocaml
 open Vdom
 
 module Exn_location = struct
@@ -12,7 +13,7 @@ module Exn_location = struct
     | Stabilization2
     | Startup
     | On_display
-    | On_keydown (* Exception in event handler is NOT currently caught by monitor *)
+    | On_keydown (* Exception in event handler does NOT cause the incr_dom app to stop *)
   [@@deriving sexp, compare, enumerate]
 
   let to_string t = sexp_of_t t |> Sexp.to_string_hum
@@ -24,10 +25,12 @@ end
 
 module Model = struct
   type mode = M1 | M2 [@@deriving compare]
-  type t = { mode: mode
-           ; exn_location: Exn_location.t
+  type t = { mode         : mode
+           ; exn_location : Exn_location.t
+           ; monitor      : Monitor.t
+           ; stop         : unit Ivar.t
            }
-  [@@deriving compare, fields]
+  [@@deriving fields]
 
   let cutoff t1 t2 = compare t1 t2 = 0
 end
@@ -36,6 +39,7 @@ module Action = struct
   type t =
     | Switch
     | Set_exn_location of Exn_location.t
+    | Stop
   [@@deriving sexp]
 
   let should_log _ = true
@@ -58,18 +62,29 @@ let apply_action (action:Action.t) (m:Model.t) _state =
   | Set_exn_location exn_location ->
     { m with exn_location }
   | Switch ->
-    match m.mode with
+    begin match m.mode with
     | M1 -> { m with mode = M2 }
     | M2 -> { m with mode = M1 }
+    end
+  | Stop ->
+    Ivar.fill_if_empty m.stop ();
+    m
 
 let update_visibility m =
   maybe_fail m Visibility;
   m
 
-let key_handler m ~(inject : Action.t -> Vdom.Event.t) =
-  Attr.on_keydown (fun _ ->
-    maybe_fail m On_keydown;
-    inject Switch)
+let key_handler (m:Model.t) ~(inject : Action.t -> Vdom.Event.t) =
+  Attr.on_keydown (fun ev ->
+    Async_kernel.Scheduler.within_v ~monitor:m.monitor (fun () ->
+      maybe_fail m On_keydown;
+      match Dom_html.Keyboard_code.of_event ev with
+      | KeyS -> inject Switch
+      | KeyX -> inject Stop
+      | _    -> Vdom.Event.Ignore
+    )
+    |> Option.value ~default:Vdom.Event.Ignore
+  )
 
 let view (m:Model.t Incr.t) ~(inject : Action.t -> Vdom.Event.t) =
   let open Incr.Let_syntax in
@@ -114,11 +129,13 @@ let on_display ~old:_ (m:Model.t) _state =
   maybe_fail m On_display;
   ()
 
-let init exn_location : Model.t =
+let init ?init_loc monitor ~stop : Model.t =
   let exn_location =
-    if exn_location = "" then Exn_location.None
-    else (match Exn_location.of_string exn_location with
-      | Some x -> x | None -> Exn_location.Startup)
+    match init_loc with
+    | None     -> Exn_location.None
+    | Some loc ->
+      match Exn_location.of_string loc with
+      | Some x -> x
+      | None   -> Exn_location.Startup
   in
-  (* Manually set exn_location to Startup to see it fail on startup. *)
-  { mode = M1; exn_location }
+  { mode = M1; exn_location; monitor; stop }

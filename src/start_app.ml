@@ -1,8 +1,7 @@
 open! Core_kernel.Std
-open Virtual_dom.Std
+open Virtual_dom
 open Async_kernel.Std
 open Js_of_ocaml
-open Common
 
 let document_loaded : unit Deferred.t =
   let ready_state = Js.to_string Dom_html.document##.readyState in
@@ -96,6 +95,7 @@ end
 let derived
       (type model)
       ?bind_to_element_with_id
+      ?(stop=Deferred.never ())
       ~initial_model
       (module App : App_intf.S_derived with type Model.t = model)
   =
@@ -137,7 +137,6 @@ let derived
            ~inject:Event.inject)
     in
     let derived_model = Incr.observe derived_model_incr in
-    let get_derived_model () = Incr.stabilize (); Incr.Observer.value_exn derived_model in
     let extract_immutable_summary () =
       App.Model_summary.create
         (Incr.Var.value model_v)
@@ -208,7 +207,7 @@ let derived
 
     let apply_action action =
       if App.Action.should_log action then begin
-        logf !"Action: %{sexp:App.Action.t}" action
+        Async_js.Debug.log_s [%message "Action" (action : App.Action.t)]
       end;
       let old_model = Incr.Var.value model_v in
       let new_model =
@@ -216,7 +215,7 @@ let derived
           action
           old_model
           state
-          ~stabilize_and_get_derived:get_derived_model
+          ~recompute_derived
       in
       Incr.Var.set model_v new_model
     in
@@ -290,7 +289,8 @@ let derived
        refresh the UI. All the actions will be processed and the changes propagated
        to the DOM in one frame. *)
     let rec callback () =
-      if not (Visibility.is_dirty visibility) && Pipe.is_empty r then (
+      if Deferred.is_determined stop then ()
+      else if not (Visibility.is_dirty visibility) && Pipe.is_empty r then (
         don't_wait_for (
           (* Wait until actions have been enqueued before scheduling an animation frame *)
           let%map () =
@@ -330,7 +330,7 @@ module Make_simple_derived (App : App_intf.S_simple) :
     include App.Action
   end
   let apply_action
-        t model state ~stabilize_and_get_derived:(_ : unit -> Derived_model.t)
+        t model state ~recompute_derived:(_ : Model.t -> Derived_model.t)
     =
     App.apply_action t model state
   let update_visibility model () ~recompute_derived:_ = App.update_visibility model
@@ -358,7 +358,7 @@ module Make_derived (App : App_intf.S_imperative) :
   end
   module Action = App.Action
   let apply_action
-        t model state ~stabilize_and_get_derived:(_ : unit -> Derived_model.t) =
+        t model state ~recompute_derived:(_ : Model.t -> Derived_model.t) =
     App.apply_action t model state
   let update_visibility model () ~recompute_derived:_ = App.update_visibility model
   let on_startup ~schedule model () = App.on_startup ~schedule model
@@ -369,21 +369,25 @@ end
 let simple
       (type model)
       ?bind_to_element_with_id
+      ?stop
       ~initial_model
       (module App : App_intf.S_simple with type Model.t = model)
   =
   derived
     ?bind_to_element_with_id
+    ?stop
     ~initial_model
     (module Make_simple_derived(App))
 
 let imperative
       (type model)
       ?bind_to_element_with_id
+      ?stop
       ~initial_model
       (module App : App_intf.S_imperative with type Model.t = model)
   =
   derived
     ?bind_to_element_with_id
+    ?stop
     ~initial_model
     (module Make_derived(App))
