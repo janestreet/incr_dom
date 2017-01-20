@@ -20,22 +20,34 @@ let () =
     Firebug.console##log (Js.string "Stopped incr_dom app"));
   let all_messages = ref [] in
   Monitor.detach_and_iter_errors monitor ~f:(fun exn ->
+    let exn = Monitor.extract_exn exn in
     Ivar.fill_if_empty stop ();
-    let message = Exn.to_string (Monitor.extract_exn exn) in
+    let js_error = Js.extract_js_error exn in
+    (* Raise the exception to the top-level outside of async so that Chrome can print out
+       its source-mapped backtrace (and the async program can continue to run). *)
+    ignore (Dom_html.setTimeout (fun () -> Option.iter js_error ~f:Js.raise_js_error) 0.);
+    let backtrace =
+      Option.value_map js_error
+        ~f:(fun js_error ->
+          Option.value_map (Js.Optdef.to_option js_error##.stack)
+            ~f:Js.to_string
+            ~default:"no backtrace found"
+        )
+        ~default:"no js error found"
+    in
+    let message = sprintf !"%{Exn} (%s)" exn backtrace in
     all_messages := message :: !all_messages;
     (* Once the incr_dom app has stopped running, we modify the dom directly *)
-    upon (Ivar.read stop) (fun () ->
-      let dom =
-        let open Vdom in
-        Node.body []
-          [ Node.h2 [] [ Node.text "Error!" ]
-          ; Node.ul []
-              (List.rev_map !all_messages ~f:(fun text -> Node.li [] [ Node.text text ]))
-          ]
-        |> Node.to_dom
-      in
-      Dom_html.document##.body := dom
-    )
+    let dom =
+      let open Vdom in
+      Node.body []
+        [ Node.h2 [] [ Node.text "Error!" ]
+        ; Node.ul []
+            (List.rev_map !all_messages ~f:(fun text -> Node.li [] [ Node.text text ]))
+        ]
+      |> Node.to_dom
+    in
+    Dom_html.document##.body := dom
   );
   Async_kernel.Scheduler.within ~monitor (fun () ->
     Start_app.simple
