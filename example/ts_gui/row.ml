@@ -1,5 +1,7 @@
+module My_time = Time
 open! Core_kernel.Std
 open! Import
+module Time = My_time
 
 module Model = struct
   type t =
@@ -27,7 +29,7 @@ module Model = struct
     let time t =
       Table.Sort_key.Float (
         Option.value ~default:Time_ns.epoch t
-        |> Time.to_int63_ns_since_epoch
+        |> Time_ns.to_int63_ns_since_epoch
         |> Int63.to_int64 |> Float.of_int64)
     in
     let lex_s x = Table.Sort_key.String x in
