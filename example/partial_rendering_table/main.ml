@@ -1,4 +1,4 @@
-open! Core_kernel.Std
+open! Core_kernel
 open! Js_of_ocaml
 open! Incr_dom
 

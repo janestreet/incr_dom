@@ -1,4 +1,4 @@
-open! Core_kernel.Std
+open! Core_kernel
 
 (* Things that really we should mostly get from a future Jane_kernel module... *)
 

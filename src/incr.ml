@@ -1,4 +1,4 @@
-open! Core_kernel.Std
+open! Core_kernel
 
 module Incr = Incremental_kernel.Incremental.Make ()
 include Incr

@@ -1,4 +1,4 @@
-open! Core_kernel.Std
+open! Core_kernel
 open! Async_kernel.Std
 open! Incr_dom
 open! Js_of_ocaml

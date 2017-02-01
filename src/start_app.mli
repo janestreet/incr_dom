@@ -1,4 +1,4 @@
-open! Core_kernel.Std
+open! Core_kernel
 open! Async_kernel.Std
 
 (** The calls in this module initialize new applications, including starting up Async and

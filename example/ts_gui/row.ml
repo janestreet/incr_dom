@@ -1,5 +1,5 @@
 module My_time = Time
-open! Core_kernel.Std
+open! Core_kernel
 open! Import
 module Time = My_time
 

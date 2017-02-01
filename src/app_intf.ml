@@ -1,4 +1,4 @@
-open! Core_kernel.Std
+open! Core_kernel
 open Virtual_dom
 open Async_kernel.Std
 
