@@ -1,7 +1,7 @@
 open! Core_kernel
 open! Incr_dom
 open! Js_of_ocaml
-open! Async_kernel.Std
+open! Async_kernel
 open Splay_tree.Std
 
 (* This module is a simple implementation of partial rendering, which incrementally

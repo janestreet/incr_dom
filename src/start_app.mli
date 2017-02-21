@@ -1,5 +1,5 @@
 open! Core_kernel
-open! Async_kernel.Std
+open! Async_kernel
 
 (** The calls in this module initialize new applications, including starting up Async and
     waiting for the initial creation of the DOM.
@@ -15,6 +15,7 @@ open! Async_kernel.Std
 
 val simple
   :  ?bind_to_element_with_id : string
+  -> ?debug : bool (* print info to JS console - default false *)
   -> ?stop : unit Deferred.t
   -> initial_model : 'model
   -> (module App_intf.S_simple with type Model.t = 'model)
@@ -22,6 +23,7 @@ val simple
 
 val imperative
   :  ?bind_to_element_with_id : string
+  -> ?debug : bool (* print info to JS console - default false *)
   -> ?stop : unit Deferred.t
   -> initial_model : 'model
   -> (module App_intf.S_imperative with type Model.t = 'model)
@@ -29,7 +31,12 @@ val imperative
 
 val derived
   :  ?bind_to_element_with_id : string
+  -> ?debug : bool (* print info to JS console - default false *)
   -> ?stop : unit Deferred.t
   -> initial_model : 'model
   -> (module App_intf.S_derived with type Model.t = 'model)
   -> unit
+
+(** Exposed to make it possible to perform initialization after the page has
+    rendered but BEFORE constructing an [initial_model]. *)
+val document_loaded: unit -> unit Deferred.t

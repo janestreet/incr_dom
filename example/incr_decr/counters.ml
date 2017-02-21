@@ -40,7 +40,7 @@ let apply_action action model _state =
 let update_visibility m = m
 
 let on_startup ~schedule:_ _ =
-  Async_kernel.Std.return ()
+  Async_kernel.return ()
 
 let on_display ~old:_ _ _ = ()
 

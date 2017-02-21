@@ -27,7 +27,7 @@
       }
 
       #table-container {
-        overflow: auto;
+        overflow: visible;
         min-height:400px;
         height: 100%;
         max-width: 900px;
@@ -84,6 +84,29 @@
         padding-right: 0px;
       }
 
+     .table-bordered tbody tr td {
+        border-bottom: 1px solid #ebebeb;
+        border-left: 1px solid #ebebeb;
+        border-top: 0;
+        border-right: 0;
+      }
+
+      .table-bordered thead tr th {
+        border-bottom: 2px solid #ebebeb;
+        border-left: 1px solid #ebebeb;
+        border-top: 1px solid #ebebeb !important;
+        border-right: 0;
+      }
+
+      .table-bordered {
+        border-bottom: 0;
+        border-left: 0;
+        border-top: 0;
+        border-right: 1px solid #ebebeb;
+        border-collapse: separate;
+        border-spacing: 0px;
+      }
+      
       .new {
         background-color: rgb(169,101,201);
         -webkit-transition: background-color 0s ease-in-out;

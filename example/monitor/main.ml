@@ -1,5 +1,5 @@
 open! Core_kernel
-open! Async_kernel.Std
+open! Async_kernel
 open! Incr_dom
 open! Js_of_ocaml
 
@@ -49,7 +49,7 @@ let () =
     in
     Dom_html.document##.body := dom
   );
-  Async_kernel.Scheduler.within ~monitor (fun () ->
+  Async_kernel_private.Scheduler.within ~monitor (fun () ->
     Start_app.simple
       ~stop:(Ivar.read stop)
       ~initial_model:(App.init ?init_loc monitor ~stop)

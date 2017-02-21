@@ -1,6 +1,6 @@
 open! Core_kernel
 open Virtual_dom
-open Async_kernel.Std
+open Async_kernel
 open Js_of_ocaml
 
 let document_loaded : unit Deferred.t =
@@ -18,12 +18,14 @@ let document_loaded : unit Deferred.t =
     Ivar.read loaded
   )
 
-let timer_start s =
-  Firebug.console##time (Js.string s)
+let timer_start s ~debug =
+  if debug
+  then (Firebug.console##time (Js.string s))
 ;;
 
-let timer_stop s =
-  Firebug.console##timeEnd (Js.string s)
+let timer_stop s ~debug =
+  if debug
+  then (Firebug.console##timeEnd (Js.string s))
 ;;
 
 (** [request_animation_frame] notifies the browser that you would like to do some
@@ -38,12 +40,12 @@ let request_animation_frame callback =
   (* We capture the current context to use it later when handling callbacks from
      requestAnimationFrame, since exceptions raised to that would otherwise not go through
      our ordinary Async monitor. *)
-  let current_context = Async_kernel.Scheduler.(current_execution_context (t ())) in
+  let current_context = Async_kernel_private.Scheduler.(current_execution_context (t ())) in
   ignore (
     Dom_html.window##requestAnimationFrame
       (Js.wrap_callback (fun _timestamp ->
          ignore (
-           Async_kernel.Scheduler.within_context
+           Async_kernel_private.Scheduler.within_context
              current_context
              callback : (unit, unit) Result.t)))
     : Dom_html.animation_frame_request_id)
@@ -95,6 +97,7 @@ end
 let derived
       (type model)
       ?bind_to_element_with_id
+      ?(debug = false)
       ?(stop=Deferred.never ())
       ~initial_model
       (module App : App_intf.S_derived with type Model.t = model)
@@ -228,19 +231,19 @@ let derived
     in
 
     let perform_update pipe =
-      timer_start "total";
+      timer_start "total" ~debug;
 
-      timer_start "update visibility";
+      timer_start "update visibility" ~debug;
       if Visibility.is_dirty visibility then (
         update_visibility ()
       );
-      timer_stop "update visibility";
+      timer_stop "update visibility" ~debug;
 
-      timer_start "apply actions";
+      timer_start "apply actions" ~debug;
       apply_actions pipe;
-      timer_stop "apply actions";
+      timer_stop "apply actions" ~debug;
 
-      timer_start "stabilize";
+      timer_start "stabilize" ~debug;
       let now =
         let date = new%js Js.date_now in
         Time_ns.Span.of_ms date##getTime
@@ -248,7 +251,7 @@ let derived
       in
       Incr.advance_clock ~to_:now;
       Incr.stabilize ();
-      timer_stop "stabilize";
+      timer_stop "stabilize" ~debug;
 
       (* Compute the immutable summary of the model immediately after
          stabilization for use on the next (not the current) iteration, because
@@ -256,33 +259,34 @@ let derived
       let immutable_summary = extract_immutable_summary () in
       let html = Incr.Observer.value_exn view in
 
-      timer_start "diff";
+      timer_start "diff" ~debug;
       let patch = Vdom.Node.Patch.create ~previous:!prev_html ~current:html in
-      timer_stop "diff";
+      timer_stop "diff" ~debug;
 
       if not (Vdom.Node.Patch.is_empty patch) then (
         Visibility.mark_dirty visibility;
       );
 
-      timer_start "patch";
+      timer_start "patch" ~debug;
       let elt = Vdom.Node.Patch.apply patch !prev_elt in
-      timer_stop "patch";
+      timer_stop "patch" ~debug;
 
-      timer_start "on_display";
+      timer_start "on_display" ~debug;
       App.on_display
         (* Retrieve the immutable_summary from the previous iteration *)
         ~old:!prev_immutable_summary
         (Incr.Var.value model_v)
         (Incr.Observer.value_exn derived_model)
         state;
-      timer_stop "on_display";
+      timer_stop "on_display" ~debug;
 
       prev_immutable_summary := immutable_summary;
       prev_html := html;
       prev_elt := elt;
 
-      timer_stop "total";
-      Firebug.console##debug (Js.string "-------")
+      timer_stop "total" ~debug;
+      if debug
+      then (Firebug.console##debug (Js.string "-------"))
     in
 
     (* We use [request_animation_frame] so that browser tells us where it's time to
@@ -369,12 +373,14 @@ end
 let simple
       (type model)
       ?bind_to_element_with_id
+      ?debug
       ?stop
       ~initial_model
       (module App : App_intf.S_simple with type Model.t = model)
   =
   derived
     ?bind_to_element_with_id
+    ?debug
     ?stop
     ~initial_model
     (module Make_simple_derived(App))
@@ -382,12 +388,17 @@ let simple
 let imperative
       (type model)
       ?bind_to_element_with_id
+      ?debug
       ?stop
       ~initial_model
       (module App : App_intf.S_imperative with type Model.t = model)
   =
   derived
     ?bind_to_element_with_id
+    ?debug
     ?stop
     ~initial_model
     (module Make_derived(App))
+
+
+let document_loaded () = document_loaded

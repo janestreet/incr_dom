@@ -1,6 +1,6 @@
 open! Core_kernel
 open Virtual_dom
-open Async_kernel.Std
+open Async_kernel
 
 (** The interface for a basic, incrementally rendered application. *)
 module type S_simple = sig

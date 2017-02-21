@@ -37,7 +37,7 @@ let apply_action action (model : Model.t) _state =
   | Set_propagation_stopped propagation_stopped -> { model with propagation_stopped }
 
 let update_visibility m = m
-let on_startup ~schedule:_ _ = Async_kernel.Std.return ()
+let on_startup ~schedule:_ _ = Async_kernel.return ()
 
 let view (m : Model.t Incr.t) ~inject =
   let open Vdom in

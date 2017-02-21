@@ -6,7 +6,7 @@ bug-reports: "https://github.com/janestreet/incr_dom/issues"
 dev-repo: "https://github.com/janestreet/incr_dom.git"
 license: "Apache-2.0"
 build: [
-  ["jbuilder" "build-package" "incr_dom" "-j" jobs]
+["jbuilder" "build-package" "incr_dom" "-j" jobs]
 ]
 depends: [
   "async_js"

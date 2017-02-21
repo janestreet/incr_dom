@@ -303,7 +303,7 @@ let on_display
 
 let on_startup ~schedule (m:Model.t) (_:Derived_model.t) =
   let state = { State.schedule } in
-  let open Async_kernel.Std in
+  let open Async_kernel in
   let ids = Map.keys m.rows |> Array.of_list in
   every (Time_ns.Span.of_ms 50.) (fun () -> State.schedule state (Big_kick ids));
   return state
@@ -319,7 +319,8 @@ let init () : Model.t =
   let table =
     Ts_table.Model.create
       ~scroll_margin:50
-      ~float_header:true
+      ~scroll_region:`Window
+      ~float_header:`Top
       ~height_guess
       ()
   in
