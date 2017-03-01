@@ -179,14 +179,14 @@ let key_handler ~inject =
 
 let row_renderer
       (m : Model.t Incr.t)
-      ~inject
+      ~(inject : Action.t -> Vdom.Event.t)
       : Row.Model.t Ts_table.row_renderer
   =
   let table_m = m >>| Model.table in
   let sort_column = table_m >>| Ts_table.Model.sort_column in
   let focus = table_m >>| Ts_table.Model.focus in
   let edit_state = m >>| Model.edit_state in
-  (fun ~row_id ~id ~data ->
+  (fun ~row_id ~row ->
      let mode =
        let%bind focus = focus in
        let focused = [%compare.equal:Row_id.t option] (Some row_id) focus in
@@ -199,12 +199,12 @@ let row_renderer
      in
      let%bind sort_column = sort_column in
      Row.view
-       data
-       ~id
+       row
        ~mode
        ~focus_me:(inject (Action.Table_action (Ts_table.Action.set_focus (Some row_id))))
        ~sort_column
-       ~remember_edit:(fun ~column value -> inject (Remember_edit {column;value})))
+       ~remember_edit:(fun ~column value -> inject (Remember_edit {column;value}))
+  )
 
 let view
       (m : Model.t Incr.t)
@@ -320,7 +320,8 @@ let init () : Model.t =
     Ts_table.Model.create
       ~scroll_margin:50
       ~scroll_region:`Window
-      ~float_header:`Top
+      ~float_header:`Edge
+      ~float_first_col:(`Px_from_edge (-1))
       ~height_guess
       ()
   in

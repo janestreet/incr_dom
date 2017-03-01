@@ -81,7 +81,7 @@ let sort_by (type row) (module T : T with type row = row) row =
 let to_table_widget_column t =
   let name = name t in
   let sort_by = sort_by t in
-  { Table.Column.
-    header = Vdom.Node.text name
-  ; sort_by
-  }
+  Table.Column.create
+    ~header:(Vdom.Node.text name)
+    ~sort_by
+    ()

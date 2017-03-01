@@ -1,5 +1,6 @@
 open! Core_kernel
 open! Incr_dom
+open! Import
 
 module Model : sig
   type t [@@deriving compare]
@@ -24,11 +25,10 @@ val apply_action : Action.t -> Model.t -> Model.t
 
 val view
   :  Model.t Incr.t
-  -> id:string
   -> mode:Mode.t Incr.t
   -> sort_column:int option
   -> focus_me:Vdom.Event.t
   -> remember_edit:(column:string -> string -> Vdom.Event.t)
-  -> Vdom.Node.t Incr.t
+  -> Table.Row_node_spec.t Incr.t
 
 val random_rows : int -> Model.t list

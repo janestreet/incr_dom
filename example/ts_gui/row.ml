@@ -3,6 +3,8 @@ open! Core_kernel
 open! Import
 module Time = My_time
 
+module Rn_spec = Table.Row_node_spec
+
 module Model = struct
   type t =
     { symbol    : string
@@ -128,7 +130,6 @@ let column_cell m col ~editing ~remember_edit =
 
 let view
       (m:Model.t Incr.t)
-      ~id
       ~(mode: Mode.t Incr.t)
       ~sort_column
       ~focus_me
@@ -159,25 +160,33 @@ let view
     | Editing -> true
     | Focused | Unfocused -> false
   in
-  Node.tr ~key:id
-    (Attr.id id :: on_click :: focused_attr)
-    (List.mapi Model.columns
-       ~f:(fun i col ->
-         let attrs =
-           let highlighting =
-             if String.(=) (Column.name col) "position"
-             then (Option.map style ~f:(fun x -> Attr.class_ x) |> Option.to_list)
-             else []
-           in
-           if [%compare.equal:int option] (Some i) sort_column
-           then begin
-             match mode with
-             | Focused | Editing -> highlighting
-             | Unfocused -> ((Attr.class_ "sort-column") :: highlighting)
-           end
-           else highlighting
-         in
-         Node.td attrs [column_cell ~editing ~remember_edit m col]))
+  let row_attrs =
+    Rn_spec.Attrs.create ~attrs:(on_click :: focused_attr) ()
+  in
+  let cells =
+    List.mapi Model.columns
+      ~f:(fun i col ->
+        let attrs =
+          let highlighting =
+            if String.(=) (Column.name col) "position"
+            then (Option.map style ~f:(fun x -> Attr.class_ x) |> Option.to_list)
+            else []
+          in
+          if [%compare.equal:int option] (Some i) sort_column
+          then begin
+            match mode with
+            | Focused | Editing -> highlighting
+            | Unfocused -> ((Attr.class_ "sort-column") :: highlighting)
+          end
+          else highlighting
+        in
+        { Rn_spec.Cell.
+          attrs = Rn_spec.Attrs.create ~attrs ()
+        ; node = column_cell ~editing ~remember_edit m col
+        }
+      )
+  in
+  { Rn_spec. row_attrs; cells }
 
 let random_stock () : Model.t =
   let symbol =
