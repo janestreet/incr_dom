@@ -1,7 +1,6 @@
 (executables
  ((names (main))
   (libraries (incr_dom))
-  (js_of_ocaml ())
   (preprocess (pps (js_of_ocaml.ppx.driver ppx_jane -ite-check)))
   ))
 

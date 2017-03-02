@@ -1,7 +1,6 @@
 (library
  ((name incr_dom)
   (public_name incr_dom)
-  (js_of_ocaml ())
   (preprocess (pps (js_of_ocaml.ppx.driver ppx_jane -ite-check)))
   (libraries (
     js_of_ocaml

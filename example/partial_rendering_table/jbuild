@@ -4,7 +4,6 @@
     incr_dom
     splay_tree
     ))
-  (js_of_ocaml ())
   (preprocess (pps (js_of_ocaml.ppx.driver ppx_jane)))
   ))
 
