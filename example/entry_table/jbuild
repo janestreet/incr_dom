@@ -1,7 +1,7 @@
 (executables
  ((names (main))
   (libraries (incr_dom async_js))
-  (preprocess (pps (js_of_ocaml.ppx.driver ppx_jane -ite-check)))
+  (preprocess (pps (js_of_ocaml.ppx.driver ppx_jane -ite-check ppx_driver.runner)))
   ))
 
 (jbuild_version jane_street)

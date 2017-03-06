@@ -15,11 +15,12 @@ depends: [
   "incr_map"
   "incr_select"
   "incremental_kernel"
-  "jbuilder"
+  "jbuilder"                {build}
   "ppx_driver"
   "ppx_jane"
   "virtual_dom"
   "js_of_ocaml"
+  "ocaml-migrate-parsetree"
 ]
 available: [ ocaml-version >= "4.03.0" ]
 descr: "
