@@ -3,7 +3,7 @@ open! Core_kernel
 open! Import
 module Time = My_time
 
-module Rn_spec = Table.Row_node_spec
+module Rn_spec = Row_node_spec
 
 module Model = struct
   type t =
@@ -25,16 +25,16 @@ module Model = struct
     let add ?(editable=false) ?focus_on_edit ?sort_by  m =
       append (fun field -> Column.of_field field m ~editable ?sort_by ?focus_on_edit)
     in
-    let num_f x = Table.Sort_key.Float x in
-    let num_i x ~f = Table.Sort_key.Float (Float.of_int (f x)) in
+    let num_f x = Sort_key.Float x in
+    let num_i x ~f = Sort_key.Float (Float.of_int (f x)) in
     let num_i = num_i ~f:Fn.id in
     let time t =
-      Table.Sort_key.Float (
+      Sort_key.Float (
         Option.value ~default:Time_ns.epoch t
         |> Time_ns.to_int63_ns_since_epoch
         |> Int63.to_int64 |> Float.of_int64)
     in
-    let lex_s x = Table.Sort_key.String x in
+    let lex_s x = Sort_key.String x in
     let module Time_opt = struct
       type t = Time.t option
       let to_string = function

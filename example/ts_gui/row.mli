@@ -29,6 +29,6 @@ val view
   -> sort_column:int option
   -> focus_me:Vdom.Event.t
   -> remember_edit:(column:string -> string -> Vdom.Event.t)
-  -> Table.Row_node_spec.t Incr.t
+  -> Row_node_spec.t Incr.t
 
 val random_rows : int -> Model.t list

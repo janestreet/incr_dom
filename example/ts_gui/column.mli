@@ -8,7 +8,7 @@ type 'row t
 
 val create
   :  name:string
-  -> ?sort_by:('b -> Table.Sort_key.t)
+  -> ?sort_by:('b -> Sort_key.t)
   -> ?focus_on_edit:unit
   -> (module Stringable with type t = 'b)
   -> editable:bool
@@ -18,7 +18,7 @@ val create
 
 val of_field
   :  ('row,'b) Field.t
-  -> ?sort_by:('b -> Table.Sort_key.t)
+  -> ?sort_by:('b -> Sort_key.t)
   -> ?focus_on_edit:unit
   -> (module Stringable with type t = 'b)
   -> editable:bool
@@ -30,6 +30,6 @@ val focus_on_edit : _ t -> bool
 
 val get : 'row t -> 'row -> string
 val set : 'row t -> 'row -> string -> 'row Or_error.t
-val sort_by : 'row t -> 'row -> Table.Sort_key.t
+val sort_by : 'row t -> 'row -> Sort_key.t
 
-val to_table_widget_column : 'row t -> 'row Table.Column.t
+val to_table_widget_column : 'row t -> 'row Ts_table.Column.t

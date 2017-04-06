@@ -9,6 +9,7 @@ module Firebug          = Firebug
 module Form             = Form
 module Geolocation      = Geolocation
 module Js               = Js
+module Js_of_ocaml      = Js_of_ocaml
 module Json             = Json
 module Jstable          = Jstable
 module Keycode          = Keycode

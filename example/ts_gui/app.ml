@@ -1,12 +1,6 @@
 open! Core_kernel
 open! Import
 
-module Row_id = struct
-  include (Unique_id.Int ())
-end
-
-module Ts_table = Table.Make (Row_id) (Int)
-
 module Model = struct
   type edit = { column: string; value: string }
   [@@deriving compare, sexp]
