@@ -207,8 +207,8 @@ let basic_data_and_header ~set_inner_focus ~focus (basic:Model.Basic.t) =
          ; Attr.on_click (fun _ -> set_inner_focus (Model.get_focus_point (ff,dir)))
          ]
        in
-       [ td (attrs Buy)  [Node.text (Float.to_string (num Buy))]
-       ; td (attrs Sell) [Node.text (Float.to_string (num Sell))]
+       [ td (attrs Buy)  [Node.text (Float.to_string_12 (num Buy))]
+       ; td (attrs Sell) [Node.text (Float.to_string_12 (num Sell))]
        ])
   in
   (* Map out the individual components of [t], so that we don't have to recompute the
@@ -231,8 +231,8 @@ let live_data visible live =
   Incr.if_ visible
     ~then_:(
       let%map live = live in
-      [ td [] [Node.text (Float.to_string live.buy)]
-      ; td [] [Node.text (Float.to_string live.sell)] ]
+      [ td [] [Node.text (Float.to_string_12 live.buy)]
+      ; td [] [Node.text (Float.to_string_12 live.sell)] ]
     )
     ~else_:(
       Incr.const [ td [] [Node.text "--"]
