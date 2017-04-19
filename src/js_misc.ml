@@ -34,9 +34,9 @@ let element_is_in_viewport (elt : Dom_html.element Js.t) =
 
 (** Scrolls to the item marked as "keep-in-view" *)
 let scroll ?(id="keep-in-view") () =
-  match Dom_html.getElementById id with
-  | exception Not_found -> ()
-  | elt ->
+  match Dom_html.getElementById_opt id with
+  | None -> ()
+  | Some elt ->
     if not (element_is_in_viewport elt)
     then (elt##scrollIntoView Js._true)
 ;;
@@ -85,7 +85,7 @@ let element_search ~length ~nth_element_id ~search_by mode layout x =
   let get =
     let nth_element n =
       let id = nth_element_id n in
-      match Js.Opt.to_option (Dom_html.document##getElementById (Js.string id)) with
+      match Dom_html.getElementById_opt id with
       | None     -> failwithf "Element %s not found" id ()
       | Some elt -> elt
     in

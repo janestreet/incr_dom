@@ -193,9 +193,7 @@ let update_visibility (model : Model.t) (derived : Derived_model.t) ~recompute_d
             let height =
               let open Option.Let_syntax in
               let id = Row.Id.to_string key in
-              let%map elt =
-                Js.Opt.to_option (Dom_html.document##getElementById (Js.string id))
-              in
+              let%map elt = Dom_html.getElementById_opt id in
               let rect = Js_misc.viewport_rect_of_element elt in
               rect.bottom - rect.top
             in
@@ -209,7 +207,7 @@ let update_visibility (model : Model.t) (derived : Derived_model.t) ~recompute_d
       (model, recompute_derived model)
   in
 
-  let container = Dom_html.getElementById "table-container" in
+  let container = Dom_html.getElementById_exn "table-container" in
   let top = container##.scrollTop in
   let height = container##.clientHeight in
   let bottom = top + height in

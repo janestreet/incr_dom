@@ -258,13 +258,9 @@ let set_edit_focus (m:Model.t) =
   match m.edit_state, focus with
   | Not_editing, _ | _, None -> ()
   | Editing _, Some _ ->
-    match Option.try_with (fun () -> Dom_html.getElementById "focus-on-edit") with
+    match Dom_html.getElementById_coerce "focus-on-edit" Dom_html.CoerceTo.input with
     | None -> ()
-    | Some el ->
-      match Dom_html.tagged el with
-      | Input i ->
-        i##select
-      | _ -> ()
+    | Some i -> i##select
 ;;
 
 let maybe_set_edit_focus ~old m =

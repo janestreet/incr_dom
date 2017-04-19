@@ -15,7 +15,7 @@ depends: [
   "incr_map"
   "incr_select"
   "incremental_kernel"
-  "jbuilder"                {build & >= "1.0+beta2"}
+  "jbuilder"                {build & >= "1.0+beta8"}
   "ppx_driver"
   "ppx_jane"
   "virtual_dom"

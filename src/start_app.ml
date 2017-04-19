@@ -157,7 +157,7 @@ let derived
      | None ->
        Dom_html.document##.body := html_dom;
      | Some id ->
-       let elem = Dom_html.getElementById id in
+       let elem = Dom_html.getElementById_exn id in
        let parent =
          Option.value_exn ~here:[%here] (Js.Opt.to_option elem##.parentNode)
        in
