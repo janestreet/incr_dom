@@ -24,6 +24,14 @@ val viewport_rect : unit -> int Rect.t
     element *)
 val viewport_rect_of_element : Dom_html.element Js.t -> int Rect.t
 
+(** [client_rect ()] gives you the rectangle that corresponds to the size of the entire
+    browser window without the scroll bars. *)
+val client_rect : unit -> int Rect.t
+
+(** [client_rect_of_element el] gives you the inner box rectangle for a single element,
+    not including its scroll bars if it has any. *)
+val client_rect_of_element : Dom_html.element Js.t -> int Rect.t
+
 (** Returns true iff the element in question is in view. *)
 val element_is_in_viewport : Dom_html.element Js.t -> bool
 

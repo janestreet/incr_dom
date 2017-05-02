@@ -8,6 +8,7 @@ type 'row t
 
 val create
   :  name:string
+  -> ?group:string
   -> ?sort_by:('b -> Sort_key.t)
   -> ?focus_on_edit:unit
   -> (module Stringable with type t = 'b)
@@ -18,6 +19,7 @@ val create
 
 val of_field
   :  ('row,'b) Field.t
+  -> ?group:string
   -> ?sort_by:('b -> Sort_key.t)
   -> ?focus_on_edit:unit
   -> (module Stringable with type t = 'b)

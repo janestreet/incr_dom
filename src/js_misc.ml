@@ -27,10 +27,10 @@ let innerWidth () =
 
 let element_is_in_viewport (elt : Dom_html.element Js.t) =
   let rect = elt##getBoundingClientRect in
-  int_of_float rect##.top >= 0
-  && int_of_float rect##.left >= 0
-  && int_of_float rect##.bottom <= innerHeight ()
-  && int_of_float rect##.right <= innerWidth ()
+  rect##.top >=. 0.
+  && rect##.left >=. 0.
+  && rect##.bottom <=. Float.of_int (innerHeight ())
+  && rect##.right <=. Float.of_int (innerWidth ())
 
 (** Scrolls to the item marked as "keep-in-view" *)
 let scroll ?(id="keep-in-view") () =
@@ -55,15 +55,31 @@ let scroll ?(id="keep-in-view") () =
    relative to the view port *)
 let viewport_rect_of_element (elt : Dom_html.element Js.t) : int Rect.t =
   let rect = elt##getBoundingClientRect in
-  { Rect.top = int_of_float rect##.top
-  ; left     = int_of_float rect##.left
-  ; bottom   = int_of_float rect##.bottom
-  ; right    = int_of_float rect##.right
+  { Rect.top = Float.iround_nearest_exn rect##.top
+  ; left     = Float.iround_nearest_exn rect##.left
+  ; bottom   = Float.iround_nearest_exn rect##.bottom
+  ; right    = Float.iround_nearest_exn rect##.right
   }
 ;;
 
 let viewport_rect () =
   { Rect.top = 0; left = 0; bottom = innerHeight (); right = innerWidth () }
+;;
+
+let client_rect_of_element (elt : Dom_html.element Js.t) : int Rect.t =
+  let bounding_rect = viewport_rect_of_element elt in
+  { bounding_rect with
+    bottom = bounding_rect.top  + elt##.clientHeight
+  ; right  = bounding_rect.left + elt##.clientWidth
+  }
+
+let client_rect () =
+  { Rect.
+    top    = 0
+  ; left   = 0
+  ; bottom = Dom_html.document##.documentElement##.clientHeight
+  ; right  = Dom_html.document##.documentElement##.clientWidth
+  }
 ;;
 
 (** Simple wrapper for the binary-search functor   *)

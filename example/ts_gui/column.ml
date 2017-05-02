@@ -5,6 +5,7 @@ module type T = sig
   type row
   module Contents : Stringable
   val name : string
+  val group : string option
   val get : row -> Contents.t
   val set : row -> Contents.t -> row
   val editable : bool
@@ -16,6 +17,7 @@ type 'a t = (module T with type row = 'a)
 
 let create (type row) (type contents)
       ~name
+      ?group
       ?sort_by
       ?focus_on_edit
       (module Contents : Stringable with type t = contents)
@@ -32,6 +34,7 @@ let create (type row) (type contents)
     type nonrec row = row
     module Contents = Contents
     let name = name
+    let group = group
     let get = get
     let set = set
     let editable = editable
@@ -44,6 +47,7 @@ let create (type row) (type contents)
 
 let of_field (type contents)
       field
+      ?group
       ?sort_by
       ?focus_on_edit
       (module Contents : Stringable with type t = contents)
@@ -51,15 +55,18 @@ let of_field (type contents)
   =
   create
     ~name:(Field.name field)
+    ?group
     ?sort_by
     ?focus_on_edit
     (module Contents)
     ~editable
     ~get:(Field.get field) ~set:(Field.fset field)
 
-
 let name (type row) (module T : T with type row = row) =
   T.name
+
+let group (type row) (module T : T with type row = row) =
+  T.group
 
 let editable (type row) (module T : T with type row = row) =
   T.editable
@@ -80,8 +87,10 @@ let sort_by (type row) (module T : T with type row = row) row =
 
 let to_table_widget_column t =
   let name = name t in
+  let group = group t in
   let sort_by = sort_by t in
   Ts_table.Column.create
     ~header:(Vdom.Node.text name)
     ~sort_by
+    ?group
     ()

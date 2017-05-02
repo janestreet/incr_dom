@@ -22,8 +22,9 @@ module Model = struct
 
   let columns =
     let append f list field = f field :: list in
-    let add ?(editable=false) ?focus_on_edit ?sort_by  m =
-      append (fun field -> Column.of_field field m ~editable ?sort_by ?focus_on_edit)
+    let add ?group ?(editable=false) ?focus_on_edit ?sort_by m =
+      append
+        (fun field -> Column.of_field field m ~editable ?group ?sort_by ?focus_on_edit)
     in
     let num_f x = Sort_key.Float x in
     let num_i x ~f = Sort_key.Float (Float.of_int (f x)) in
@@ -44,17 +45,21 @@ module Model = struct
         | "-" -> None
         | s -> Time.of_string s
     end in
+    let edge_group = "Edge data" in
+    let market_group = "Market data" in
+    let trade_group = "Trade data" in
     Fields.fold ~init:[]
       ~symbol:   (add (module String) ~sort_by:lex_s)
-      ~edge:     (add (module Float) ~editable:true ~focus_on_edit:() ~sort_by:num_f)
-      ~max_edge: (add (module Float) ~editable:true ~sort_by:num_f)
-      ~trader:   (add (module String) ~editable:true ~sort_by:lex_s)
-      ~bsize:    (add (module Int) ~sort_by:num_i)
-      ~bid:      (add (module Float) ~sort_by:num_f)
-      ~ask:      (add (module Float) ~sort_by:num_f)
-      ~asize:    (add (module Int) ~sort_by:num_i)
-      ~position: (add (module Int) ~sort_by:num_i)
-      ~last_fill:(add (module Time_opt) ~sort_by:time)
+      ~edge:     (add (module Float) ~group:edge_group ~editable:true ~focus_on_edit:()
+                    ~sort_by:num_f)
+      ~max_edge: (add (module Float) ~group:edge_group ~editable:true ~sort_by:num_f)
+      ~trader:   (add (module String) ~group:trade_group ~editable:true ~sort_by:lex_s)
+      ~bsize:    (add (module Int) ~group:market_group ~sort_by:num_i)
+      ~bid:      (add (module Float) ~group:market_group ~sort_by:num_f)
+      ~ask:      (add (module Float) ~group:market_group ~sort_by:num_f)
+      ~asize:    (add (module Int) ~group:market_group ~sort_by:num_i)
+      ~position: (add (module Int) ~group:trade_group ~sort_by:num_i)
+      ~last_fill:(add (module Time_opt) ~group:trade_group ~sort_by:time)
     |> List.rev
 
   let matches_pattern t pattern =
@@ -132,7 +137,9 @@ let view
       (m:Model.t Incr.t)
       ~(mode: Mode.t Incr.t)
       ~sort_column
+      ~focused_column
       ~focus_me
+      ~focus_nth_column
       ~remember_edit
   =
   let open Vdom in
@@ -149,7 +156,7 @@ let view
         ; end_fading, None
         ]
   in
-  let%map m = m and mode = mode and style = style in
+  let%map m = m and mode = mode and style = style and focused_column = focused_column in
   let focused_attr =
     match mode with
     | Focused | Editing -> [Attr.class_ "row-focused"]
@@ -167,18 +174,30 @@ let view
     List.mapi Model.columns
       ~f:(fun i col ->
         let attrs =
-          let highlighting =
-            if String.(=) (Column.name col) "position"
-            then (Option.map style ~f:(fun x -> Attr.class_ x) |> Option.to_list)
-            else []
-          in
-          if [%compare.equal:int option] (Some i) sort_column
-          then begin
+          let focus_classes =
             match mode with
-            | Focused | Editing -> highlighting
-            | Unfocused -> ((Attr.class_ "sort-column") :: highlighting)
-          end
-          else highlighting
+            | Focused | Editing ->
+              if [%compare.equal:int option] (Some i) focused_column
+              then ["cell-focused"]
+              else []
+            | Unfocused -> []
+          in
+          let highlighting_classes =
+            let highlighting =
+              if String.(=) (Column.name col) "position"
+              then (Option.to_list style)
+              else []
+            in
+            if [%compare.equal:int option] (Some i) sort_column
+            then begin
+              match mode with
+              | Focused | Editing -> highlighting
+              | Unfocused -> "sort-column" :: highlighting
+            end
+            else highlighting
+          in
+          let on_click = Attr.on_click (fun _ -> focus_nth_column i) in
+          [ on_click; Attr.classes (focus_classes @ highlighting_classes) ]
         in
         { Rn_spec.Cell.
           attrs = Rn_spec.Attrs.create ~attrs ()

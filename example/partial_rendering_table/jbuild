@@ -4,7 +4,7 @@
     incr_dom
     splay_tree
     ))
-  (preprocess (pps (async_js.ppx ppx_jane ppx_driver.runner)))
+  (preprocess (pps (js_of_ocaml-ppx ppx_jane ppx_driver.runner)))
   ))
 
 (jbuild_version 1)

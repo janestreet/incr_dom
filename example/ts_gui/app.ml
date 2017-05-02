@@ -88,7 +88,7 @@ let commit_edits (m:Model.t) =
     match m.edit_state with
     | Not_editing -> m
     | Editing edits ->
-      match Ts_table.Model.focus m.table with
+      match Ts_table.Model.focus_row m.table with
       | None -> m
       | Some row_id ->
         let rows = Map.change m.rows row_id ~f:(function
@@ -104,7 +104,7 @@ let commit_edits (m:Model.t) =
 let escape (m:Model.t) (d:Derived_model.t) =
   match m.edit_state with
   | Not_editing ->
-    let action = Ts_table.Action.set_focus None in
+    let action = Ts_table.Action.set_focus_row None in
     { m with table = (Ts_table.apply_action m.table d.table action) }
   | Editing _ -> { m with edit_state = Not_editing }
 
@@ -154,16 +154,23 @@ let key_handler ~inject =
       Option.value_map target_id ~f:(String.equal search_input_id) ~default:false
     in
     let ignore_if cond event = if cond then Event.Ignore else event in
-    let focus dir =
+    let focus_row dir =
       Event.Many [
-        inject (Action.Table_action (Ts_table.Action.move_focus dir));
+        inject (Action.Table_action (Ts_table.Action.move_focus_row dir));
+        Event.Prevent_default ]
+    in
+    let focus_col dir =
+      Event.Many [
+        inject (Action.Table_action (Ts_table.Action.move_focus_col dir));
         Event.Prevent_default ]
     in
     if Js.to_bool ev##.ctrlKey || Js.to_bool ev##.altKey then Event.Ignore
     else (
       match Dom_html.Keyboard_code.of_event ev with
-      | ArrowUp   | KeyK -> ignore_if is_input (focus Prev)
-      | ArrowDown | KeyJ -> ignore_if is_input (focus Next)
+      | ArrowUp    | KeyK -> ignore_if is_input (focus_row Prev)
+      | ArrowDown  | KeyJ -> ignore_if is_input (focus_row Next)
+      | ArrowLeft  | KeyH -> ignore_if is_input (focus_col Prev)
+      | ArrowRight | KeyL -> ignore_if is_input (focus_col Next)
       | Escape -> ignore_if is_search_input (inject Action.Escape)
       | Enter -> ignore_if is_search_input (inject Action.Commit_edits)
       | KeyE -> ignore_if (is_input || not (Js.to_bool ev##.shiftKey)) (inject Edit_start)
@@ -178,12 +185,13 @@ let row_renderer
   =
   let table_m = m >>| Model.table in
   let sort_column = table_m >>| Ts_table.Model.sort_column in
-  let focus = table_m >>| Ts_table.Model.focus in
+  let focused_column = table_m >>| Ts_table.Model.focus_col in
+  let focused_row = table_m >>| Ts_table.Model.focus_row in
   let edit_state = m >>| Model.edit_state in
   (fun ~row_id ~row ->
      let mode =
-       let%bind focus = focus in
-       let focused = [%compare.equal:Row_id.t option] (Some row_id) focus in
+       let%bind focused_row = focused_row in
+       let focused = [%compare.equal:Row_id.t option] (Some row_id) focused_row in
        if not focused then (Incr.const Row.Mode.Unfocused)
        else (
          match%map edit_state with
@@ -191,12 +199,20 @@ let row_renderer
          | Not_editing -> Row.Mode.Focused
        )
      in
+     let focus_me =
+       inject (Action.Table_action (Ts_table.Action.set_focus_row (Some row_id)))
+     in
+     let focus_nth_column col_num =
+       inject (Action.Table_action (Ts_table.Action.set_focus_col (Some col_num)))
+     in
      let%bind sort_column = sort_column in
      Row.view
        row
        ~mode
-       ~focus_me:(inject (Action.Table_action (Ts_table.Action.set_focus (Some row_id))))
        ~sort_column
+       ~focused_column
+       ~focus_me
+       ~focus_nth_column
        ~remember_edit:(fun ~column value -> inject (Remember_edit {column;value}))
   )
 
@@ -238,7 +254,7 @@ let view
 ;;
 
 let should_set_edit_focus ~old (m:Model.t) =
-  let focus = Ts_table.Model.focus m.table in
+  let focus = Ts_table.Model.focus_row m.table in
   let is_editing (m:Model.t) =
     match m.edit_state, focus with
     | Not_editing, _ | _, None -> false
@@ -254,7 +270,7 @@ let should_set_edit_focus ~old (m:Model.t) =
 ;;
 
 let set_edit_focus (m:Model.t) =
-  let focus = Ts_table.Model.focus m.table in
+  let focus = Ts_table.Model.focus_row m.table in
   match m.edit_state, focus with
   | Not_editing, _ | _, None -> ()
   | Editing _, Some _ ->
@@ -282,8 +298,7 @@ let on_display
   in
   (* When the user presses the shift+e when the focus is out of view, scroll to it. *)
   if (not (editing old) && editing m) then (
-    Option.iter (Ts_table.Model.focus m.table) ~f:(fun row_id ->
-      Ts_table.scroll_to m.table d.table row_id)
+    ignore (Ts_table.scroll_focus_into_scroll_region m.table d.table)
   ) else (
     (* Because we don't re-measure the viewport, if the app is slow and a focus change
        gets batched with an edit, without the [else] it will scroll relatively twice. *)
@@ -308,10 +323,10 @@ let init () : Model.t =
   in
   let table =
     Ts_table.Model.create
-      ~scroll_margin:50
-      ~scroll_region:`Window
-      ~float_header:`Edge
-      ~float_first_col:(`Px_from_edge (-1))
+      ~scroll_margin:(Table.Margin.uniform 5)
+      ~scroll_region:Window
+      ~float_header:Edge
+      ~float_first_col:(Px_from_edge (-1))
       ~height_guess
       ()
   in
