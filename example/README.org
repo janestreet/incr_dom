@@ -4,7 +4,7 @@ can be used.
 To run any of these examples, follow the steps below:
 
 - To compile to JavaScript, you first need to set the Omake build
-  environment variable =WITH_ARCH_32_BIT= to true.  In emacs, you can
+  environment variable =WITH_JAVASCRIPT= to true.  In emacs, you can
   do this using the command =M-x Omake.setenv= (just follow the
   prompts), and you can check its current value in the Omake status
   buffer using the command =C-c C-v=.
