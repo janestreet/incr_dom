@@ -95,8 +95,9 @@ module Derived_model = struct
     and      sort = model >>| Model.sort
     in
     let%map rows, heights =
-      Incr.Map.unordered_fold rows ~init:(Key.Map.empty, Heights.empty)
-        ~f:(fun ~key ~(data : Row.Model.t) (m, h) ->
+      Incr.Map.unordered_fold rows
+        ~init:(Key.Map.empty, Heights.empty)
+        ~add:(fun ~key ~(data : Row.Model.t) (m, h) ->
           if String.is_substring data.data ~substring:filter_string then
             let key = Key.create sort key in
             ( Map.add m ~key ~data
@@ -104,7 +105,7 @@ module Derived_model = struct
             )
           else (m, h)
         )
-        ~f_inverse:(fun ~key ~data:_ (m, h) ->
+        ~remove:(fun ~key ~data:_ (m, h) ->
           let key = Key.create sort key in
           ( Map.remove m key
           , Heights.remove h key
