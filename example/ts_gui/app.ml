@@ -185,6 +185,7 @@ let row_renderer
   =
   let table_m = m >>| Model.table in
   let sort_column = table_m >>| Ts_table.Model.sort_column in
+  Incr.set_cutoff sort_column (Incr.Cutoff.of_compare [%compare: int option]);
   let focused_column = table_m >>| Ts_table.Model.focus_col in
   let focused_row = table_m >>| Ts_table.Model.focus_row in
   let edit_state = m >>| Model.edit_state in
