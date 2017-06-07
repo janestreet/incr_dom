@@ -144,7 +144,7 @@ module Rgb : sig
 
   type t = {r:int; g:int; b:int}
 
-  val background_style : t -> Vdom.Attr.t
+  val background_style : t -> (string * string) list
 
   (** [interpolate t1 t2 x] is equal to [t1] if [x=0], [t2] if [x=1], and interpolates
       between otherwise. *)
@@ -156,8 +156,7 @@ end = struct
   let attr_string {r;g;b} =
     sprintf "rgb(%d,%d,%d)" r g b
 
-  let background_style t =
-    Vdom.Attr.style_css ("background-color: " ^ attr_string t)
+  let background_style t = [ "background-color", attr_string t ]
 
   let interpolate t_from t_to pct =
     let single field =
@@ -255,20 +254,19 @@ let view
               else []
             | Unfocused | Editing -> []
           in
-          let is_sort_column = [%compare.equal: int option] (Some i) sort_column in
-          let style =
-            if String.(=) (Column.name col) "last_fill"
-            then last_fill_style
-            else (Rgb.background_style (row_background_color mode ~is_sort_column))
-          in
           let on_click = Attr.on_click (fun _ -> focus_nth_column i) in
           [ on_click
-          ; Attr.classes (focus_classes)
-          ; style
+          ; Attr.classes focus_classes
           ]
         in
+        let style =
+          let is_sort_column = [%compare.equal: int option] (Some i) sort_column in
+          if String.(=) (Column.name col) "last_fill"
+          then last_fill_style
+          else (Rgb.background_style (row_background_color mode ~is_sort_column))
+        in
         { Rn_spec.Cell.
-          attrs = Rn_spec.Attrs.create ~attrs ()
+          attrs = Rn_spec.Attrs.create ~attrs ~style ()
         ; node = column_cell ~editing ~remember_edit m col
         }
       )
