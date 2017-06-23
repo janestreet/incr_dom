@@ -2,9 +2,8 @@ open! Core_kernel
 open! Import
 
 module T = struct
-  type t = int list [@@deriving bin_io, sexp, compare]
+  type t = int list [@@deriving bin_io, sexp, compare, hash]
   let create = Fn.id
-  let hash = Hashtbl.hash
   let module_name = "Focus_point"
 end
 
