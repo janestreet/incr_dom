@@ -154,23 +154,30 @@ let key_handler ~inject =
       Option.value_map target_id ~f:(String.equal search_input_id) ~default:false
     in
     let ignore_if cond event = if cond then Event.Ignore else event in
-    let focus_row dir =
+    let move_focus_row dir =
       Event.Many [
         inject (Action.Table_action (Ts_table.Action.move_focus_row dir));
         Event.Prevent_default ]
     in
-    let focus_col dir =
+    let move_focus_col dir =
       Event.Many [
         inject (Action.Table_action (Ts_table.Action.move_focus_col dir));
+        Event.Prevent_default ]
+    in
+    let page_focus_row dir =
+      Event.Many [
+        inject (Action.Table_action (Ts_table.Action.page_focus_row dir));
         Event.Prevent_default ]
     in
     if Js.to_bool ev##.ctrlKey || Js.to_bool ev##.altKey then Event.Ignore
     else (
       match Dom_html.Keyboard_code.of_event ev with
-      | ArrowUp    | KeyK -> ignore_if is_input (focus_row Prev)
-      | ArrowDown  | KeyJ -> ignore_if is_input (focus_row Next)
-      | ArrowLeft  | KeyH -> ignore_if is_input (focus_col Prev)
-      | ArrowRight | KeyL -> ignore_if is_input (focus_col Next)
+      | ArrowUp    | KeyK -> ignore_if is_input (move_focus_row Prev)
+      | ArrowDown  | KeyJ -> ignore_if is_input (move_focus_row Next)
+      | ArrowLeft  | KeyH -> ignore_if is_input (move_focus_col Prev)
+      | ArrowRight | KeyL -> ignore_if is_input (move_focus_col Next)
+      | PageUp -> ignore_if is_input (page_focus_row Prev)
+      | PageDown -> ignore_if is_input (page_focus_row Next)
       | Escape -> ignore_if is_search_input (inject Action.Escape)
       | Enter -> ignore_if is_search_input (inject Action.Commit_edits)
       | KeyE -> ignore_if (is_input || not (Js.to_bool ev##.shiftKey)) (inject Edit_start)
