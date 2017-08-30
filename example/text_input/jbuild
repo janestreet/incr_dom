@@ -1,0 +1,7 @@
+(executables
+ ((names (main))
+  (libraries (incr_dom))
+  (preprocess (pps (js_of_ocaml-ppx ppx_jane -ite-check ppx_driver.runner)))
+  ))
+
+(jbuild_version 1)

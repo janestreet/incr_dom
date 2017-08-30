@@ -15,10 +15,10 @@ depends: [
   "incr_map"
   "incr_select"
   "incremental_kernel"
-  "jbuilder"                {build & >= "1.0+beta8"}
   "ppx_driver"
   "ppx_jane"
   "virtual_dom"
+  "jbuilder"                {build & >= "1.0+beta12"}
   "js_of_ocaml"             {>= "3.0"}
   "js_of_ocaml-ppx"
   "ocaml-migrate-parsetree" {>= "0.4"}
