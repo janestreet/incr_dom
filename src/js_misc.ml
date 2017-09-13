@@ -9,9 +9,21 @@ module Rect = struct
     ; right  : 'a
     } [@@deriving sexp, bin_io, compare, fields]
 
-  let height t = t.bottom - t.top
-  let width t = t.right - t.left
+  let map t ~f =
+    { top    = f t.top
+    ; left   = f t.left
+    ; bottom = f t.bottom
+    ; right  = f t.right
+    }
+
+  let int_height t = t.bottom - t.top
+  let int_width t = t.right - t.left
+
+  let float_height t = t.bottom -. t.top
+  let float_width t = t.right -. t.left
 end
+
+let round_float_rect ?(round=Float.iround_nearest_exn) = Rect.map ~f:round
 
 type rows_or_columns = Rows | Columns [@@deriving sexp, bin_io, variants, compare]
 
@@ -27,10 +39,10 @@ let innerWidth () =
 
 let element_is_in_viewport (elt : Dom_html.element Js.t) =
   let rect = elt##getBoundingClientRect in
-  rect##.top >=. 0.
-  && rect##.left >=. 0.
-  && rect##.bottom <=. Float.of_int (innerHeight ())
-  && rect##.right <=. Float.of_int (innerWidth ())
+  Float.(>=) rect##.top 0.
+  && Float.(>=) rect##.left 0.
+  && Float.(<=) rect##.bottom (Float.of_int (innerHeight ()))
+  && Float.(<=) rect##.right (Float.of_int (innerWidth ()))
 
 (** Scrolls to the item marked as "keep-in-view" *)
 let scroll ?(id="keep-in-view") () =
@@ -53,12 +65,13 @@ let scroll ?(id="keep-in-view") () =
 
 (* [viewport_rect_of_element el] gets bounding rect of [elt]. The bounding rect is
    relative to the view port *)
-let viewport_rect_of_element (elt : Dom_html.element Js.t) : int Rect.t =
+let viewport_rect_of_element (elt : Dom_html.element Js.t) : float Rect.t =
   let rect = elt##getBoundingClientRect in
-  { Rect.top = Float.iround_nearest_exn rect##.top
-  ; left     = Float.iround_nearest_exn rect##.left
-  ; bottom   = Float.iround_nearest_exn rect##.bottom
-  ; right    = Float.iround_nearest_exn rect##.right
+  { Rect.
+    top    = rect##.top
+  ; left   = rect##.left
+  ; bottom = rect##.bottom
+  ; right  = rect##.right
   }
 ;;
 
@@ -66,11 +79,11 @@ let viewport_rect () =
   { Rect.top = 0; left = 0; bottom = innerHeight (); right = innerWidth () }
 ;;
 
-let client_rect_of_element (elt : Dom_html.element Js.t) : int Rect.t =
+let client_rect_of_element (elt : Dom_html.element Js.t) : float Rect.t =
   let bounding_rect = viewport_rect_of_element elt in
   { bounding_rect with
-    bottom = bounding_rect.top  + elt##.clientHeight
-  ; right  = bounding_rect.left + elt##.clientWidth
+    bottom = bounding_rect.top  +. Float.of_int elt##.clientHeight
+  ; right  = bounding_rect.left +. Float.of_int elt##.clientWidth
   }
 
 let client_rect () =
@@ -112,14 +125,14 @@ let element_search ~length ~nth_element_id ~search_by mode layout x =
     let nth_element_normalized n =
       let is_ascending =
         match layout with
-        | Rows    -> Int.(<=) first.top  last.top
-        | Columns -> Int.(<=) first.left last.left
+        | Rows    -> Float.(<=) first.top last.top
+        | Columns -> Float.(<=) first.left last.left
       in
       nth_element (if is_ascending then n else (length - n - 1))
     in
     fun n -> search_by (viewport_rect_of_element (nth_element_normalized n))
   in
-  binary_search ~length ~get ~compare:Int.compare mode x
+  binary_search ~length ~get ~compare:Float.compare mode x
 ;;
 
 let find_visible_range ~length ~nth_element_id layout =
@@ -133,7 +146,7 @@ let find_visible_range ~length ~nth_element_id layout =
         | Rows    -> Rect.bottom , viewport_rect.top
         | Columns -> Rect.right  , viewport_rect.left
       in
-      element_search ~search_by `First_strictly_greater_than layout target
+      element_search ~search_by `First_strictly_greater_than layout (Float.of_int target)
     in
     let last =
       let search_by, target =
@@ -141,7 +154,7 @@ let find_visible_range ~length ~nth_element_id layout =
         | Rows    -> Rect.top  , viewport_rect.bottom
         | Columns -> Rect.left , viewport_rect.right
       in
-      element_search ~search_by `Last_strictly_less_than layout target
+      element_search ~search_by `Last_strictly_less_than layout (Float.of_int target)
     in
     (* Both [first] and [last] need to be [Some]. Otherwise, for example if the whole
        table is below view port, then [first] will be [Some], [last] will be [None] *)

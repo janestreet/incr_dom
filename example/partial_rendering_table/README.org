@@ -1,0 +1,3 @@
+A simple example of using the Incr_dom_widgets library's
+Partial_render_list module to partially render a long vertical list in
+a web page.

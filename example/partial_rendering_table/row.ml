@@ -8,12 +8,11 @@ module Id : Identifiable = String
 module Model = struct
   type t =
     { data : string
-    ; height : int
     ; font_size : int
     } [@@deriving sexp_of, fields, compare]
 
-  let create ~data ~height =
-    { data; height; font_size = 16 }
+  let create ~data =
+    { data; font_size = 16 }
 end
 
 module Action = struct
@@ -21,7 +20,7 @@ module Action = struct
     | Change_data of string
     | Increase_font
     | Increase_font_by of int
-    [@@deriving sexp_of]
+  [@@deriving sexp_of]
 
   let apply action (model : Model.t) =
     match action with

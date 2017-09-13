@@ -2,9 +2,10 @@
  ((names (main))
   (libraries (
     incr_dom
-    splay_tree
+    incr_dom_widgets
     ))
   (preprocess (pps (js_of_ocaml-ppx ppx_jane ppx_driver.runner)))
   ))
+
 
 (jbuild_version 1)

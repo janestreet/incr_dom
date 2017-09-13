@@ -2,18 +2,11 @@ open! Core_kernel
 open! Incr_dom
 open! Js_of_ocaml
 open! Async_kernel
-open Splay_tree.Std
-
-(* This module is a simple implementation of partial rendering, which incrementally
-   computes the set of DOM nodes in view, along with a small window around the edge.  This
-   works by keeping track of the heights of all elements in a splay tree that allows us to
-   query for nodes by height. We assume a default height for any node that has never been
-   rendered.
-
-   Note that this idea has been more fully realized by some reusable modules in the
-   [Incr_dom_widgets] library *)
+open Incr_dom_widgets
 
 open Incr.Let_syntax
+
+module Measurements = Partial_render_list.Measurements
 
 module Key : sig
   type sort = Num | Native [@@deriving sexp, compare]
@@ -46,73 +39,65 @@ end = struct
   include Comparable.Make(T)
 end
 
+module Row_view = Partial_render_list.Make(Key)
+
 module Model = struct
   type t =
-    { visible_range : (Key.t * Key.t) option
-    ; rows : Row.Model.t Row.Id.Map.t
+    { rows : Row.Model.t Row.Id.Map.t
     ; filter_string : string
     ; sort : Key.sort
+    ; height_cache : Row_view.Height_cache.t
+    ; measurements : Measurements.t option
     } [@@deriving sexp_of, fields, compare]
 
   let create size =
-    { visible_range = None
-    ; filter_string = ""
+    { filter_string = ""
     ; sort = Key.Num
     ; rows =
         Row.Id.Map.of_alist_exn
           (List.init size ~f:(fun id ->
              ( Row.Id.of_string (Int.to_string id)
-             , Row.Model.create ~data:(Int.to_string id) ~height:18
+             , Row.Model.create ~data:(Int.to_string id)
              )
            ))
+    ; height_cache = Row_view.Height_cache.empty ~height_guess:18.
+    ; measurements = None
     }
 
   let cutoff t1 t2 = compare t1 t2 = 0
 end
 
-(* We keep a map from each row to its height in a splay tree to efficiently calculate the
-   total height of rows that are not shown on the screen. *)
-module Heights =
-  Splay_tree.Make_with_reduction (Key) (Int)
-    (struct
-      type key = Key.t
-      type data = int
-      type accum = int
-      let identity = 0
-      let singleton ~key:_ ~data = data
-      let combine = (+)
-    end)
-
 module Derived_model = struct
   type t =
     { rows : Row.Model.t Key.Map.t
-    ; heights : Heights.t
-    } [@@deriving sexp_of, fields]
+    ; row_view : Row.Model.t Row_view.t
+    } [@@deriving fields]
 
   let create (model : Model.t Incr.t) =
     let rows = model >>| Model.rows in
     let%bind filter_string = model >>| Model.filter_string
     and      sort = model >>| Model.sort
     in
-    let%map rows, heights =
+    let rows =
       Incr.Map.unordered_fold rows
-        ~init:(Key.Map.empty, Heights.empty)
-        ~add:(fun ~key ~(data : Row.Model.t) (m, h) ->
+        ~init:Key.Map.empty
+        ~add:(fun ~key ~(data : Row.Model.t) m ->
           if String.is_substring data.data ~substring:filter_string then
             let key = Key.create sort key in
-            ( Map.add m ~key ~data
-            , Heights.set h ~key ~data:(Row.Model.height data)
-            )
-          else (m, h)
+            Map.add m ~key ~data
+          else m
         )
-        ~remove:(fun ~key ~data:_ (m, h) ->
+        ~remove:(fun ~key ~data:_ m ->
           let key = Key.create sort key in
-          ( Map.remove m key
-          , Heights.remove h key
-          )
+          Map.remove m key
         )
     in
-    { rows; heights }
+    let height_cache = model >>| Model.height_cache in
+    let measurements = model >>| Model.measurements in
+    let%map row_view = Row_view.create ~rows ~height_cache ~measurements
+    and     rows     = rows
+    in
+    { rows; row_view }
 end
 
 module Model_summary = struct
@@ -127,7 +112,7 @@ module Action = struct
     | Bump_row_height
     | Update_filter of string
     | Update_sort of Key.sort
-    [@@deriving sexp_of]
+  [@@deriving sexp_of]
 
   let should_log = function
     | Bump_row_height -> false
@@ -143,28 +128,26 @@ let apply_action
   =
   match action with
   | Change_row (key, action) ->
-    ( match Map.find model.rows key with
-      | None -> model
-      | Some row ->
-        { model with
-          rows = Map.add model.rows ~key ~data:(Row.Action.apply action row)
-        }
-    )
+    (match Map.find model.rows key with
+     | None -> model
+     | Some row ->
+       { model with
+         rows = Map.add model.rows ~key ~data:(Row.Action.apply action row)
+       })
   | Bump_row_height ->
     (* Hack to find random key, for testing *)
     let key =
       Row.Id.of_string @@ Int.to_string @@ Random.int (Map.length model.rows)
     in
-    ( match Map.find model.rows key with
-      | None -> model
-      | Some row ->
-        { model with
-          rows =
-            Map.add model.rows
-              ~key
-              ~data:(Row.Action.apply (Row.Action.Increase_font_by 10) row)
-        }
-    )
+    (match Map.find model.rows key with
+     | None -> model
+     | Some row ->
+       { model with
+         rows =
+           Map.add model.rows
+             ~key
+             ~data:(Row.Action.apply (Row.Action.Increase_font_by 10) row)
+       })
   | Update_filter filter_string -> { model with filter_string }
   | Update_sort   sort          -> { model with sort }
 
@@ -175,62 +158,32 @@ let on_startup ~schedule _model _derived =
   );
   Deferred.return ()
 
-(* Finds the last node for which the total height is at most [value]. *)
-let search_height heights value =
-  Heights.search heights
-    ~f:(fun ~left ~right:_ ->
-      if value < left then `Left else `Right
-    )
-
-let update_visibility (model : Model.t) (derived : Derived_model.t) ~recompute_derived =
-  let (model, derived) =
-    match model.visible_range with
-    | None -> (model, derived)
-    | Some (min, max) ->
-      let rows =
-        Map.fold_range_inclusive derived.rows ~min ~max ~init:model.rows
-          ~f:(fun ~key ~data rows ->
-            let key = Key.id key in
-            let height =
-              let open Option.Let_syntax in
-              let id = Row.Id.to_string key in
-              let%map elt = Dom_html.getElementById_opt id in
-              let rect = Js_misc.viewport_rect_of_element elt in
-              rect.bottom - rect.top
-            in
-            let height = Option.value ~default:data.height height in
-            if height <> data.height
-            then Map.add rows ~key ~data:{ data with height }
-            else rows
-          )
-      in
-      let model = { model with rows } in
-      (model, recompute_derived model)
+let update_visibility (model : Model.t) (derived : Derived_model.t) ~recompute_derived:_ =
+  let height_cache =
+    Row_view.measure_heights_simple
+      derived.row_view
+      ~measure:(fun key ->
+        let open Option.Let_syntax in
+        let id = Row.Id.to_string (Key.id key) in
+        let%map elt = Dom_html.getElementById_opt id in
+        let rect = Js_misc.viewport_rect_of_element elt in
+        rect.bottom -. rect.top
+      )
   in
-
-  let container = Dom_html.getElementById_exn "table-container" in
-  let top = container##.scrollTop in
-  let height = container##.clientHeight in
-  let bottom = top + height in
-
-  let heights = derived.heights in
-
-  let visible_range =
-    let start_key =
-      match search_height heights top with
-      | None -> Heights.remove_min heights |> Option.map ~f:Tuple3.get1
-      | Some (key,_) -> Some key
+  let measurements =
+    let open Option.Let_syntax in
+    let%map table_container = Dom_html.getElementById_opt "table-container"
+    and     table_body      = Dom_html.getElementById_opt "table-body"
     in
-    let end_key =
-      match search_height heights bottom with
-      | None -> Heights.remove_max heights |> Option.map ~f:Tuple3.get1
-      | Some (key,_) -> Some key
-    in
-    match start_key,end_key with
-    | None,_ | _, None -> None
-    | Some x, Some y -> Some (x,y)
+    { Measurements.
+      view_rect = Js_misc.client_rect_of_element table_container
+    ; list_rect = Js_misc.client_rect_of_element table_body
+    }
   in
-  { model with visible_range }
+  if [%compare.equal: Row_view.Height_cache.t] height_cache model.height_cache
+  && [%compare.equal: Measurements.t option]   measurements model.measurements
+  then model
+  else { model with height_cache; measurements }
 
 let view model derived ~inject =
   let scroll_attr = Vdom.Attr.on "scroll" (fun _ -> Vdom.Event.Viewport_changed) in
@@ -249,15 +202,15 @@ let view model derived ~inject =
 
   let offset_div key height =
     Vdom.Node.div ~key
-      [ Vdom.Attr.style [ "height", sprintf "%dpx" height ]
+      [ Vdom.Attr.style [ "height", sprintf "%dpx" (Float.iround_nearest_exn height) ]
       ]
       []
   in
 
-  let rows = derived >>| Derived_model.rows in
-  let visible_range = model >>| Model.visible_range in
+  let row_view = derived >>| Derived_model.row_view in
 
-  let visible_rows = Incr.Map.subrange rows visible_range in
+  let visible_rows = row_view >>| Row_view.rows_to_render in
+
   let visible_rows_dom =
     Incr.Map.mapi' visible_rows
       ~f:(fun ~key ~data ->
@@ -267,48 +220,40 @@ let view model derived ~inject =
       )
   in
 
-  let%map visible_range = visible_range
-  and     heights = derived >>| Derived_model.heights
-  and     visible_rows_dom = visible_rows_dom
+  let%map visible_rows_dom = visible_rows_dom
   and     filter_string = model >>| Model.filter_string
-  in
-
-  let (start_height, end_height) =
-    match visible_range with
-    | None -> (0, Heights.accum heights)
-    | Some (min, max) ->
-      let { Heights.Partition. lt; gt; _ } =
-        Heights.partition ~min_key:min ~max_key:max heights
-      in
-      ( Heights.accum lt, Heights.accum gt)
+  and     start_height, end_height = Row_view.spacer_heights row_view
   in
 
   let start_offset = offset_div "start_offset" start_height in
   let end_offset = offset_div "end_offset" end_height in
-
-  Vdom.Node.body []
-    [ Vdom.Node.div [ Vdom.Attr.class_ "header" ]
-        [ Vdom.Node.div [Vdom.Attr.id "text-input"] [
-            Vdom.Node.input
-              [ Vdom.Attr.type_ "text"
-              ; Vdom.Attr.value filter_string
-              ; filter_string_change
-              ] []
-          ; Vdom.Node.select [ sort_change ]
-              [ Vdom.Node.option [ Vdom.Attr.value "Num" ]
-                  [ Vdom.Node.text "Numeric" ]
-              ; Vdom.Node.option [ Vdom.Attr.value "Native" ]
-                  [ Vdom.Node.text "Lexicographic" ]
-              ]
-          ; Vdom.Node.div []
-              [ Vdom.Node.text "Add ?number to the URL to change the number of rows" ]
-          ]
+  let open Vdom in
+  Node.body []
+    [ Node.div [ Attr.class_ "header" ]
+        [ Node.div [Attr.id "text-input"]
+            [ Node.input
+                [ Attr.type_ "text"
+                ; Attr.value filter_string
+                ; filter_string_change
+                ] []
+            ; Node.select [ sort_change ]
+                [ Node.option [ Attr.value "Num" ]
+                    [ Node.text "Numeric" ]
+                ; Node.option [ Attr.value "Native" ]
+                    [ Node.text "Lexicographic" ]
+                ]
+            ; Node.div []
+                [ Node.text "Add ?number to the URL to change the number of rows" ]
+            ]
         ]
-    ; Vdom.Node.div
+    ; Node.div
         [ scroll_attr
-        ; Vdom.Attr.id "table-container"
+        ; Attr.id "table-container"
         ]
-        (start_offset :: (Map.data visible_rows_dom) @ [end_offset])
+        [ Node.div
+            [ Attr.id "table-body" ]
+            (start_offset :: (Map.data visible_rows_dom) @ [end_offset])
+        ]
     ]
 ;;
 

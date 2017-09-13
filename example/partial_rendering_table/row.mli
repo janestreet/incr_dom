@@ -6,11 +6,10 @@ module Id : Identifiable
 module Model : sig
   type t =
     { data : string
-    ; height : int
     ; font_size : int
     } [@@deriving sexp_of, fields, compare]
 
-  val create : data:string -> height:int -> t
+  val create : data:string -> t
 end
 
 module Action : sig

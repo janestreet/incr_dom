@@ -321,7 +321,7 @@ let on_startup ~schedule (m:Model.t) (_:Derived_model.t) =
   every (Time_ns.Span.of_ms 50.) (fun () -> State.schedule state (Big_kick ids));
   return state
 
-let height_guess = 43
+let height_guess = 43.
 
 let init () : Model.t =
   let rows =
@@ -331,7 +331,7 @@ let init () : Model.t =
   in
   let table =
     Ts_table.Model.create
-      ~scroll_margin:(Table.Margin.uniform 5)
+      ~scroll_margin:(Table.Margin.uniform 5.)
       ~scroll_region:Window
       ~float_header:Edge
       ~float_first_col:(Px_from_edge (-1))
