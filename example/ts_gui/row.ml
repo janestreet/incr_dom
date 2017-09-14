@@ -204,7 +204,7 @@ let sort_column_color = { Rgb.r=250;g=250;b=200 }
 let view
       (m:Model.t Incr.t)
       ~(mode: Mode.t Incr.t)
-      ~sort_column
+      ~sort_columns
       ~focused_column
       ~focus_me
       ~focus_nth_column
@@ -228,13 +228,13 @@ let view
   let row_attrs = Rn_spec.Attrs.create () ~attrs:[on_click] in
   let%map last_fill_style =
     let sec x = Time_ns.Span.of_sec x in
-    let is_sort_column_opt =
-      let open Option.Let_syntax in
-      let%bind i = sort_column in
-      let%bind c = List.nth Model.columns i in
-      return (String.(=) (Column.name c) "last_fill")
+    let is_sort_column =
+      List.exists sort_columns ~f:(fun i ->
+        match List.nth Model.columns i with
+        | None   -> false
+        | Some c -> String.(=) (Column.name c) "last_fill"
+      )
     in
-    let is_sort_column = Option.value ~default:false is_sort_column_opt in
     fade_out_color
       ~start_time:last_fill_time
       ~solid_for:(sec 1.)
@@ -260,7 +260,7 @@ let view
           ]
         in
         let style =
-          let is_sort_column = [%compare.equal: int option] (Some i) sort_column in
+          let is_sort_column = List.exists sort_columns ~f:(Int.equal i) in
           if String.(=) (Column.name col) "last_fill"
           then last_fill_style
           else (Rgb.background_style (row_background_color mode ~is_sort_column))

@@ -56,6 +56,7 @@ module Action = struct
     | Edit_start
     | Remember_edit of Model.edit
     | Commit_edits
+    | Add_focused_sort_col
   [@@deriving sexp]
 
   let should_log _ = true
@@ -101,6 +102,16 @@ let commit_edits (m:Model.t) =
   in
   { m with edit_state = Not_editing }
 
+let add_focused_sort_col (m:Model.t) =
+  match Ts_table.Model.focus_col m.table with
+  | None        -> m
+  | Some col_id ->
+    let table =
+      Ts_table.Model.cycle_sorting m.table col_id ~next_dir:Ts_table.Sort_dir.next
+        ~keep_existing_cols:()
+    in
+    { m with table }
+
 let escape (m:Model.t) (d:Derived_model.t) =
   match m.edit_state with
   | Not_editing ->
@@ -132,6 +143,7 @@ let apply_action
   | Edit_start            -> { m with edit_state = Editing [] }
   | Remember_edit edit    -> remember_edit m edit
   | Commit_edits          -> commit_edits m
+  | Add_focused_sort_col  -> add_focused_sort_col m
 
 let search_input_id = "search-input"
 
@@ -181,6 +193,7 @@ let key_handler ~inject =
       | Escape -> ignore_if is_search_input (inject Action.Escape)
       | Enter -> ignore_if is_search_input (inject Action.Commit_edits)
       | KeyE -> ignore_if (is_input || not (Js.to_bool ev##.shiftKey)) (inject Edit_start)
+      | KeyS -> ignore_if is_input (inject Action.Add_focused_sort_col)
       | _ -> Event.Ignore
     )
   )
@@ -191,8 +204,8 @@ let row_renderer
       : Row.Model.t Ts_table.row_renderer
   =
   let table_m = m >>| Model.table in
-  let sort_column = table_m >>| Ts_table.Model.sort_column in
-  Incr.set_cutoff sort_column (Incr.Cutoff.of_compare [%compare: int option]);
+  let sort_columns = table_m >>| Ts_table.Model.sort_columns in
+  Incr.set_cutoff sort_columns (Incr.Cutoff.of_compare [%compare: int list]);
   let focused_column = table_m >>| Ts_table.Model.focus_col in
   let focused_row = table_m >>| Ts_table.Model.focus_row in
   let edit_state = m >>| Model.edit_state in
@@ -213,11 +226,11 @@ let row_renderer
      let focus_nth_column col_num =
        inject (Action.Table_action (Ts_table.Action.set_focus_col (Some col_num)))
      in
-     let%bind sort_column = sort_column in
+     let%bind sort_columns = sort_columns in
      Row.view
        row
        ~mode
-       ~sort_column
+       ~sort_columns
        ~focused_column
        ~focus_me
        ~focus_nth_column

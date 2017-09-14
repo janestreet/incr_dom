@@ -26,7 +26,7 @@ val apply_action : Action.t -> Model.t -> Model.t
 val view
   :  Model.t Incr.t
   -> mode:Mode.t Incr.t
-  -> sort_column:int option
+  -> sort_columns:int list
   -> focused_column:(int option Incr.t)
   -> focus_me:Vdom.Event.t
   -> focus_nth_column:(int -> Vdom.Event.t)
