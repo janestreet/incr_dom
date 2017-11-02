@@ -1,6 +1,6 @@
 (executables
  ((names (main))
-  (libraries (incr_dom ocaml_uri async_js_extended))
+  (libraries (incr_dom uri async_js_jane))
   (preprocess (pps (js_of_ocaml-ppx ppx_jane -ite-check ppx_driver.runner)))
  ))
 

@@ -22,7 +22,7 @@ let () =
   Monitor.detach_and_iter_errors monitor ~f:(fun exn ->
     let exn = Monitor.extract_exn exn in
     Ivar.fill_if_empty stop ();
-    let js_error = Async_js_extended.extract_js_error exn in
+    let js_error = Async_js_jane.extract_js_error exn in
     (* Raise the exception to the top-level outside of async so that Chrome can print out
        its source-mapped backtrace (and the async program can continue to run). *)
     ignore (Dom_html.setTimeout (fun () -> Option.iter js_error ~f:Js.raise_js_error) 0.);
