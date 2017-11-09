@@ -1,3 +1,6 @@
+#+TITLE: ~Incr_dom~: a library for writing dynamic web-apps
+#+PARENT: ../../doc/webdev/index.org
+
 A library for building dynamic webapps, using =Js_of_ocaml=.
 
 The library is designed roughly on a model/view/controller model.

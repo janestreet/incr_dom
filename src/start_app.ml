@@ -3,20 +3,7 @@ open Virtual_dom
 open Async_kernel
 open Js_of_ocaml
 
-let document_loaded : unit Deferred.t =
-  let ready_state = Js.to_string Dom_html.document##.readyState in
-  if String.(ready_state = "complete" || ready_state = "loaded")
-  then Deferred.unit
-  else (
-    let loaded = Ivar.create () in
-    ignore (
-      Dom_html.addEventListener
-        Dom_html.document
-        (Dom.Event.make "DOMContentLoaded")
-        (Dom.handler (fun _ -> Ivar.fill loaded (); Js._true))
-        Js._false);
-    Ivar.read loaded
-  )
+let document_loaded = Async_js.document_loaded ()
 
 let timer_start s ~debug =
   if debug
@@ -401,4 +388,3 @@ let imperative
     (module Make_derived(App))
 
 
-let document_loaded () = document_loaded

@@ -36,7 +36,3 @@ val derived
   -> initial_model : 'model
   -> (module App_intf.S_derived with type Model.t = 'model)
   -> unit
-
-(** Exposed to make it possible to perform initialization after the page has
-    rendered but BEFORE constructing an [initial_model]. *)
-val document_loaded: unit -> unit Deferred.t
