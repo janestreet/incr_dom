@@ -1,7 +1,8 @@
 (executables
  ((names (main))
+  (flags (:standard -safe-string))
   (libraries (incr_dom uri async_js_jane))
   (preprocess (pps (js_of_ocaml-ppx ppx_jane -ite-check ppx_driver.runner)))
- ))
+  ))
 
 (jbuild_version 1)

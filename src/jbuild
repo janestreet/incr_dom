@@ -2,6 +2,7 @@
  ((name incr_dom)
   (public_name incr_dom)
   (preprocess (pps (js_of_ocaml-ppx ppx_jane -ite-check ppx_driver.runner)))
+  (flags (:standard -safe-string))
   (libraries (
     js_of_ocaml
     virtual_dom
