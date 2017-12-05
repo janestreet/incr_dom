@@ -84,7 +84,7 @@ module Derived_model = struct
         ~add:(fun ~key ~(data : Row.Model.t) m ->
           if String.is_substring data.data ~substring:filter_string then
             let key = Key.create sort key in
-            Map.add m ~key ~data
+            Map.set m ~key ~data
           else m
         )
         ~remove:(fun ~key ~data:_ m ->
@@ -132,7 +132,7 @@ let apply_action
      | None -> model
      | Some row ->
        { model with
-         rows = Map.add model.rows ~key ~data:(Row.Action.apply action row)
+         rows = Map.set model.rows ~key ~data:(Row.Action.apply action row)
        })
   | Bump_row_height ->
     (* Hack to find random key, for testing *)
@@ -144,7 +144,7 @@ let apply_action
      | Some row ->
        { model with
          rows =
-           Map.add model.rows
+           Map.set model.rows
              ~key
              ~data:(Row.Action.apply (Row.Action.Increase_font_by 10) row)
        })

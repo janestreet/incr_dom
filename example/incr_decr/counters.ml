@@ -7,13 +7,13 @@ module Model = struct
   } [@@deriving sexp, fields, compare]
 
   let add_new t =
-    let counters = Int.Map.add t.counters ~key:(Map.length t.counters) ~data:0 in
+    let counters = Int.Map.set t.counters ~key:(Map.length t.counters) ~data:0 in
     { counters }
 
   (* no bounds checks *)
   let update t pos diff =
     let old_val = Map.find_exn t.counters pos in
-    let counters = Int.Map.add t.counters ~key:pos ~data:(old_val + diff) in
+    let counters = Int.Map.set t.counters ~key:pos ~data:(old_val + diff) in
     { counters }
 
   let cutoff t1 t2 = compare t1 t2 = 0
