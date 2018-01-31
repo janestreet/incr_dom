@@ -3,8 +3,6 @@ open Virtual_dom
 open Async_kernel
 open Js_of_ocaml
 
-let document_loaded = Async_js.document_loaded ()
-
 let timer_start s ~debug =
   if debug
   then (Firebug.console##time (Js.string s))
@@ -92,7 +90,7 @@ let derived
   (* This is idempotent and so fine to do. *)
   Async_js.init ();
   don't_wait_for (
-    let%bind () = document_loaded in
+    let%bind () = Async_js.document_loaded () in
     let model_v = Incr.Var.create initial_model in
     let model = Incr.Var.watch model_v in
     Incr.set_cutoff model
