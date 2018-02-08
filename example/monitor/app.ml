@@ -76,7 +76,7 @@ let update_visibility m =
 
 let key_handler (m:Model.t) ~(inject : Action.t -> Vdom.Event.t) =
   Attr.on_keydown (fun ev ->
-    Async_kernel_private.Scheduler.within_v ~monitor:m.monitor (fun () ->
+    Async_kernel_scheduler.within_v ~monitor:m.monitor (fun () ->
       maybe_fail m On_keydown;
       match Dom_html.Keyboard_code.of_event ev with
       | KeyS -> inject Switch

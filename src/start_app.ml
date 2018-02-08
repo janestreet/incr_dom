@@ -25,12 +25,12 @@ let request_animation_frame callback =
   (* We capture the current context to use it later when handling callbacks from
      requestAnimationFrame, since exceptions raised to that would otherwise not go through
      our ordinary Async monitor. *)
-  let current_context = Async_kernel_private.Scheduler.(current_execution_context (t ())) in
+  let current_context = Async_kernel_scheduler.(current_execution_context (t ())) in
   ignore (
     Dom_html.window##requestAnimationFrame
       (Js.wrap_callback (fun _timestamp ->
          ignore (
-           Async_kernel_private.Scheduler.within_context
+           Async_kernel_scheduler.within_context
              current_context
              callback : (unit, unit) Result.t)))
     : Dom_html.animation_frame_request_id)
