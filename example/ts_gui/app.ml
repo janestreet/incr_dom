@@ -1,5 +1,6 @@
 open! Core_kernel
 open! Import
+open Incr_dom_widgets
 
 module Model = struct
   type edit = { column: string; value: string }
@@ -11,10 +12,11 @@ module Model = struct
   [@@deriving compare, sexp]
 
   type t =
-    { rows: Row.Model.t Row_id.Map.t
-    ; pattern: string
-    ; edit_state: edit_state
-    ; table: Ts_table.Model.t
+    { rows       : Row.Model.t Row_id.Map.t
+    ; pattern    : string
+    ; edit_state : edit_state
+    ; table      : Ts_table.Model.t
+    ; help_text  : Help_text.t option
     }
   [@@deriving fields, compare]
 
@@ -57,6 +59,7 @@ module Action = struct
     | Remember_edit of Model.edit
     | Commit_edits
     | Add_focused_sort_col
+    | Show_help_menu of Help_text.t
   [@@deriving sexp]
 
   let should_log _ = true
@@ -112,12 +115,19 @@ let add_focused_sort_col (m:Model.t) =
     in
     { m with table }
 
+let show_help_menu (m:Model.t) help_text =
+  { m with help_text = Some help_text }
+
 let escape (m:Model.t) (d:Derived_model.t) =
-  match m.edit_state with
-  | Not_editing ->
-    let action = Ts_table.Action.set_focus_row None in
-    { m with table = (Ts_table.apply_action m.table d.table action) }
-  | Editing _ -> { m with edit_state = Not_editing }
+  if Option.is_some m.help_text
+  then { m with help_text = None }
+  else (
+    match m.edit_state with
+    | Not_editing ->
+      let action = Ts_table.Action.set_focus_row None in
+      { m with table = (Ts_table.apply_action m.table d.table action) }
+    | Editing _ -> { m with edit_state = Not_editing }
+  )
 
 let big_kick (m:Model.t) ids =
   let num = Array.length ids / 120 in
@@ -134,16 +144,17 @@ let apply_action
   =
   let d = lazy (recompute_derived m) in
   match action with
-  | Escape                -> escape m (force d)
-  | Set_pattern s         -> Model.set_pattern m s
-  | Table_action a        ->
+  | Escape                   -> escape m (force d)
+  | Set_pattern s            -> Model.set_pattern m s
+  | Table_action a           ->
     {m with table = (Ts_table.apply_action m.table (force d).table a)}
-  | Row_action (id,x)     -> apply_row_action m id x
-  | Big_kick ids          -> big_kick m ids
-  | Edit_start            -> { m with edit_state = Editing [] }
-  | Remember_edit edit    -> remember_edit m edit
-  | Commit_edits          -> commit_edits m
-  | Add_focused_sort_col  -> add_focused_sort_col m
+  | Row_action (id,x)        -> apply_row_action m id x
+  | Big_kick ids             -> big_kick m ids
+  | Edit_start               -> { m with edit_state = Editing [] }
+  | Remember_edit edit       -> remember_edit m edit
+  | Commit_edits             -> commit_edits m
+  | Add_focused_sort_col     -> add_focused_sort_col m
+  | Show_help_menu help_text -> show_help_menu m help_text
 
 let search_input_id = "search-input"
 
@@ -153,55 +164,96 @@ let update_visibility (m:Model.t) (d:Derived_model.t) ~recompute_derived:_ =
 
 let key_handler ~inject =
   let open Vdom in
-  Attr.on_keydown (fun ev ->
-    let target_elem = Js.Opt.to_option ev##.target in
-    let target_id =
-      Option.map target_elem ~f:(fun elem -> Js.to_string elem##.id)
+  let open Keyboard_event_handler.Condition in
+  let command ?cond ~keys ~description f =
+    let handler =
+      let open Keyboard_event_handler.Handler in
+      match cond with
+      | None      -> with_prevent_default f
+      | Some cond -> only_handle_if cond f ~prevent_default:()
     in
-    let is_input =
-      Option.value_map target_elem ~f:(fun elem ->
-        Option.is_some (Js.Opt.to_option (Dom_html.CoerceTo.input elem))) ~default:false
-    in
-    let is_search_input =
-      Option.value_map target_id ~f:(String.equal search_input_id) ~default:false
-    in
-    let ignore_if cond event = if cond then Event.Ignore else event in
-    let move_focus_row dir =
-      Event.Many [
-        inject (Action.Table_action (Ts_table.Action.move_focus_row dir));
-        Event.Prevent_default ]
-    in
-    let move_focus_col dir =
-      Event.Many [
-        inject (Action.Table_action (Ts_table.Action.move_focus_col dir));
-        Event.Prevent_default ]
-    in
-    let page_focus_row dir =
-      Event.Many [
-        inject (Action.Table_action (Ts_table.Action.page_focus_row dir));
-        Event.Prevent_default ]
-    in
-    if Js.to_bool ev##.ctrlKey || Js.to_bool ev##.altKey then Event.Ignore
-    else (
-      match Dom_html.Keyboard_code.of_event ev with
-      | ArrowUp    | KeyK -> ignore_if is_input (move_focus_row Prev)
-      | ArrowDown  | KeyJ -> ignore_if is_input (move_focus_row Next)
-      | ArrowLeft  | KeyH -> ignore_if is_input (move_focus_col Prev)
-      | ArrowRight | KeyL -> ignore_if is_input (move_focus_col Next)
-      | PageUp -> ignore_if is_input (page_focus_row Prev)
-      | PageDown -> ignore_if is_input (page_focus_row Next)
-      | Escape -> ignore_if is_search_input (inject Action.Escape)
-      | Enter -> ignore_if is_search_input (inject Action.Commit_edits)
-      | KeyE -> ignore_if (is_input || not (Js.to_bool ev##.shiftKey)) (inject Edit_start)
-      | KeyS -> ignore_if is_input (inject Action.Add_focused_sort_col)
-      | _ -> Event.Ignore
+    { Keyboard_event_handler.Command. keys; description; group = None; handler }
+  in
+  let key = Keystroke.create' in
+  let is_not_text_input = not_ has_text_input_target in
+  let is_not_search_input = not_ (has_target_id ~id:search_input_id) in
+  let inject' table_action = inject (Action.Table_action table_action) in
+  let handler =
+    Keyboard_event_handler.of_command_list_exn
+      [ command
+          ~keys:[ key ArrowUp; key KeyK ]
+          ~description:"Move focus one row up"
+          ~cond:is_not_text_input
+          (fun _ev -> inject' (Ts_table.Action.move_focus_row Prev))
+      ; command
+          ~keys:[ key ArrowDown; key KeyJ ]
+          ~description:"Move focus one row down"
+          ~cond:is_not_text_input
+          (fun _ev -> inject' (Ts_table.Action.move_focus_row Next))
+      ; command
+          ~keys:[ key ArrowLeft; key KeyH ]
+          ~description:"Move focus one column left"
+          ~cond:is_not_text_input
+          (fun _ev -> inject' (Ts_table.Action.move_focus_col Prev))
+      ; command
+          ~keys:[ key ArrowRight; key KeyL ]
+          ~description:"Move focus one column right"
+          ~cond:is_not_text_input
+          (fun _ev -> inject' (Ts_table.Action.move_focus_col Next))
+      ; command
+          ~keys:[ key PageUp ]
+          ~description:"Move focus one page up"
+          ~cond:is_not_text_input
+          (fun _ev -> inject' (Ts_table.Action.page_focus_row Prev))
+      ; command
+          ~keys:[ key PageDown ]
+          ~description:"Move focus one page down"
+          ~cond:is_not_text_input
+          (fun _ev -> inject' (Ts_table.Action.page_focus_row Next))
+      ; command
+          ~keys:[ key Escape ]
+          ~description:"Close help menu, cancel editing, or remove focus"
+          ~cond:is_not_search_input
+          (fun _ev -> inject Action.Escape)
+      ; command
+          ~keys:[ key Enter ]
+          ~description:"Commit edits"
+          ~cond:is_not_search_input
+          (fun _ev -> inject Action.Commit_edits)
+      ; command
+          ~keys:[ key ~shift:() KeyE ]
+          ~description:"Start editing focused row"
+          ~cond:is_not_text_input
+          (fun _ev -> inject Action.Edit_start)
+      ; command
+          ~keys:[ key KeyS ]
+          ~description:"Sort on focused column (in addition to existing sort columns)"
+          ~cond:is_not_text_input
+          (fun _ev -> inject Action.Add_focused_sort_col)
+      ]
+  in
+  let help_menu_command =
+    command
+      ~keys:[ key F1; key ~ctrl:() ~shift:() Slash ]
+      ~description:"See the help menu"
+      (fun _ev ->
+         let help_text = Keyboard_event_handler.get_help_text handler in
+         inject (Action.Show_help_menu help_text)
+      )
+  in
+  let handler = Keyboard_event_handler.add_command_exn handler help_menu_command in
+  let keydown_handler =
+    Attr.on_keydown (fun ev ->
+      Option.value (Keyboard_event_handler.handle_event handler ev)
+        ~default:Event.Ignore
     )
-  )
+  in
+  keydown_handler, help_menu_command
 
 let row_renderer
       (m : Model.t Incr.t)
       ~(inject : Action.t -> Vdom.Event.t)
-      : Row.Model.t Ts_table.row_renderer
+  : Row.Model.t Ts_table.row_renderer
   =
   let table_m = m >>| Model.table in
   let sort_columns = table_m >>| Ts_table.Model.sort_columns in
@@ -244,7 +296,17 @@ let view
   =
   let open Vdom in
   let scroll_attr = Vdom.Attr.on "scroll" (fun _ -> Vdom.Event.Viewport_changed) in
-  let key_handler = key_handler ~inject in
+  let key_handler, help_menu_command = key_handler ~inject in
+  let help_text_view_spec =
+    Help_text.View_spec.with_classes
+      ~key_class:"help-text-key"
+      ~plain_text_class:"help-text-plain-text"
+  in
+  let help_menu_hint =
+    let help_text = Keyboard_event_handler.Command.get_help_text help_menu_command in
+    Node.div [ Attr.style [ "text-align", "center"; "padding", "5px" ] ]
+      [ Help_text.Command.(view help_text help_text_view_spec Format.default) ]
+  in
   let input =
     Node.div [ Attr.id "search-container"]
       [
@@ -263,15 +325,32 @@ let view
     Ts_table.view table_m table_d
       ~render_row
       ~inject:(fun a -> inject (Action.Table_action a))
-      ~attrs:[ Attr.class_ "table table-bordered"]
+      ~attrs:[ Attr.class_ "table table-bordered" ]
+  and help_menu =
+    match%map m >>| Model.help_text with
+    | None -> []
+    | Some help_text ->
+      [ Node.div
+          [ Attr.id "overlay"
+          ; Attr.on_double_click (fun _ev -> inject Action.Escape)
+          ]
+          [ Node.div [ Attr.id "help-menu" ]
+              [ Node.h4 [] [ Node.text "Help Menu" ]
+              ; Help_text.view help_text help_text_view_spec
+              ]
+          ]
+      ]
   in
   Node.body [ scroll_attr; key_handler]
-    [ Node.div [ Attr.id "table-container" ]
-        [ input
-        ; Node.div [] [ table ]
-        ]
-    ; Node.div [ Attr.class_ "big-gap" ] []
-    ]
+    (help_menu @
+     [ Node.div [ Attr.id "table-container" ]
+         [ input
+         ; help_menu_hint
+         ; Node.div [] [ table ]
+         ]
+     ; Node.div [ Attr.class_ "big-gap" ] []
+     ]
+    )
 ;;
 
 let should_set_edit_focus ~old (m:Model.t) =
@@ -355,4 +434,5 @@ let init () : Model.t =
   ; pattern = ""
   ; edit_state = Not_editing
   ; table
+  ; help_text = None
   }

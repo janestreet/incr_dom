@@ -2,7 +2,7 @@
  ((names (main))
   (flags (:standard -safe-string))
   (libraries (incr_dom async_js))
-  (preprocess (pps (js_of_ocaml-ppx ppx_jane -ite-check ppx_driver.runner)))
+  (preprocess (pps (js_of_ocaml-ppx ppx_jane -ite-check ppxlib.runner)))
   ))
 
 

@@ -15,13 +15,13 @@ depends: [
   "incr_map"
   "incr_select"
   "incremental_kernel"
-  "ppx_driver"
   "ppx_jane"
   "virtual_dom"
-  "jbuilder"                {build & >= "1.0+beta12"}
+  "jbuilder"                {build & >= "1.0+beta18.1"}
   "js_of_ocaml"             {>= "3.0"}
   "js_of_ocaml-ppx"
   "ocaml-migrate-parsetree" {>= "1.0"}
+  "ppxlib"                  {>= "0.1.1"}
 ]
 available: [ ocaml-version >= "4.04.1" ]
 descr: "
