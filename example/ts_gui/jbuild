@@ -1,6 +1,5 @@
 (executables
  ((names (main))
-  (flags (:standard -safe-string))
   (libraries (incr_dom_widgets async_js))
   (preprocess (pps (js_of_ocaml-ppx ppx_jane -ite-check ppxlib.runner)))
   ))
