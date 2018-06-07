@@ -42,7 +42,7 @@ module State = struct
   type t = unit
 end
 
-let apply_action action model _state =
+let apply_action action model _state ~schedule_action:_ =
   match (action:Action.t) with
   | Reset_counter     -> Model.reset_counter model
   | Incr_counter      -> Model.incr_counter  model
@@ -51,10 +51,10 @@ let apply_action action model _state =
 
 let update_visibility m = m
 
-let on_startup ~schedule:_ _ =
+let on_startup ~schedule_action:_ _ =
   Async_kernel.return ()
 
-let on_display ~old:_ _ _ = ()
+let on_display ~old:_ _ _ ~schedule_action:_ = ()
 
 let view (m : Model.t Incr.t) ~inject =
   let open Incr.Let_syntax in

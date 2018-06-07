@@ -29,7 +29,7 @@ module Action = struct
   let should_log _ = false
 end
 
-let apply_action action (model : Model.t) _state =
+let apply_action action (model : Model.t) _state ~schedule_action:_ =
   match (action : Action.t) with
   | Outer_click -> { model with outer_click_count = model.outer_click_count + 1 }
   | Outer_keydown -> { model with outer_keydown_count = model.outer_keydown_count + 1 }
@@ -37,7 +37,7 @@ let apply_action action (model : Model.t) _state =
   | Set_propagation_stopped propagation_stopped -> { model with propagation_stopped }
 
 let update_visibility m = m
-let on_startup ~schedule:_ _ = Async_kernel.return ()
+let on_startup ~schedule_action:_ _ = Async_kernel.return ()
 
 let view (m : Model.t Incr.t) ~inject =
   let open Vdom in
@@ -115,7 +115,7 @@ let view (m : Model.t Incr.t) ~inject =
         ]
     ]
 
-let on_display ~old:_ _ _ = ()
+let on_display ~old:_ _ _ ~schedule_action:_ = ()
 
 let create () =
   { Model.

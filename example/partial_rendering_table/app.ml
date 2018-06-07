@@ -124,7 +124,7 @@ module State = struct type t = unit end
 
 let apply_action
       (action:Action.t) (model : Model.t) (_:State.t)
-      ~recompute_derived:_
+      ~schedule_action:_ ~recompute_derived:_
   =
   match action with
   | Change_row (key, action) ->
@@ -152,9 +152,9 @@ let apply_action
   | Update_sort   sort          -> { model with sort }
 
 
-let on_startup ~schedule _model _derived =
+let on_startup ~schedule_action _model _derived =
   Clock_ns.every (Time_ns.Span.of_ms 50.) (fun () ->
-    schedule Action.Bump_row_height
+    schedule_action Action.Bump_row_height
   );
   Deferred.return ()
 
@@ -257,4 +257,4 @@ let view model derived ~inject =
     ]
 ;;
 
-let on_display ~old:_ _new_model _new_derived _state = ()
+let on_display ~old:_ _new_model _new_derived _state ~schedule_action:_ = ()

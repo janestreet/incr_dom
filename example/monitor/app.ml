@@ -56,7 +56,7 @@ let fail_if_equal loc1 loc2 =
 let maybe_fail (m:Model.t) loc =
   fail_if_equal m.exn_location loc
 
-let apply_action (action:Action.t) (m:Model.t) _state =
+let apply_action (action:Action.t) (m:Model.t) _state ~schedule_action:_ =
   maybe_fail m Action;
   match action with
   | Set_exn_location exn_location ->
@@ -121,11 +121,11 @@ let view (m:Model.t Incr.t) ~(inject : Action.t -> Vdom.Event.t) =
              [ Node.text s ]))
     ]
 
-let on_startup ~schedule:_ model =
+let on_startup ~schedule_action:_ model =
   maybe_fail model Startup;
   Deferred.return ()
 
-let on_display ~old:_ (m:Model.t) _state =
+let on_display ~old:_ (m:Model.t) _state ~schedule_action:_ =
   maybe_fail m On_display;
   ()
 

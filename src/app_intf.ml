@@ -32,7 +32,12 @@ module type S_simple = sig
   end
 
   (** [apply_action] performs modifications to the model as dictated by the action. *)
-  val apply_action : Action.t -> Model.t -> State.t -> Model.t
+  val apply_action
+    :  Action.t
+    -> Model.t
+    -> State.t
+    -> schedule_action:(Action.t -> unit)
+    -> Model.t
 
   (** If you selectively render certain parts of the model based on what is visible on the
       screen, use [update_visibility] to query the state of the DOM and make the required
@@ -57,7 +62,7 @@ module type S_simple = sig
       view that corresponds to the initial state.  This is useful for doing
       things like starting up async processes. *)
   val on_startup
-    :  schedule:(Action.t -> unit)
+    :  schedule_action:(Action.t -> unit)
     -> Model.t
     -> State.t Deferred.t
 
@@ -67,6 +72,7 @@ module type S_simple = sig
     :  old:Model.t
     -> Model.t
     -> State.t
+    -> schedule_action:(Action.t -> unit)
     -> unit
 end
 
@@ -100,7 +106,12 @@ module type S_imperative = sig
     val should_log : t -> bool
   end
 
-  val apply_action : Action.t -> Model.t -> State.t -> Model.t
+  val apply_action
+    :  Action.t
+    -> Model.t
+    -> State.t
+    -> schedule_action:(Action.t -> unit)
+    -> Model.t
 
   val update_visibility : Model.t -> Model.t
 
@@ -110,7 +121,7 @@ module type S_imperative = sig
     -> Vdom.Node.t Incr.t
 
   val on_startup
-    :  schedule:(Action.t -> unit)
+    :  schedule_action:(Action.t -> unit)
     -> Model.t
     -> State.t Deferred.t
 
@@ -118,6 +129,7 @@ module type S_imperative = sig
     :  old:Model_summary.t
     -> Model.t
     -> State.t
+    -> schedule_action:(Action.t -> unit)
     -> unit
 end
 
@@ -169,6 +181,7 @@ module type S_derived = sig
     :  Action.t
     -> Model.t
     -> State.t
+    -> schedule_action:(Action.t -> unit)
     -> recompute_derived:(Model.t -> Derived_model.t)
     -> Model.t
 
@@ -191,7 +204,7 @@ module type S_derived = sig
     -> Vdom.Node.t Incr.t
 
   val on_startup
-    :  schedule:(Action.t -> unit)
+    :  schedule_action:(Action.t -> unit)
     -> Model.t
     -> Derived_model.t
     -> State.t Deferred.t
@@ -201,5 +214,6 @@ module type S_derived = sig
     -> Model.t
     -> Derived_model.t
     -> State.t
+    -> schedule_action:(Action.t -> unit)
     -> unit
 end

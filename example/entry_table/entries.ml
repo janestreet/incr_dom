@@ -118,7 +118,7 @@ let set_inner_focus fp (m:Model.t) =
   in
   { m with focus }
 
-let apply_action action (m:Model.t) (_:State.t) =
+let apply_action action (m:Model.t) (_:State.t) ~schedule_action:_ =
   match (action : Action.t) with
   | Move_outer_focus dir ->
     move_outer_focus dir m
@@ -149,9 +149,9 @@ let apply_action action (m:Model.t) (_:State.t) =
   | Set_search_string search_string -> { m with search_string }
 ;;
 
-let on_startup ~schedule (_ : Model.t) : State.t Deferred.t =
+let on_startup ~schedule_action (_ : Model.t) : State.t Deferred.t =
   Js_misc.scroll ();
-  every (Time_ns.Span.of_sec 1.)  (fun () -> schedule (Action.kick_n 150));
+  every (Time_ns.Span.of_sec 1.)  (fun () -> schedule_action (Action.kick_n 150));
   return ()
 
 let in_range cmp (lo, hi) value =
@@ -259,6 +259,6 @@ let example ~entries : Model.t =
   in
   { focus; entries; search_string = ""; visible_range = None }
 
-let on_display ~(old : Model.t) (model : Model.t) _ =
+let on_display ~(old : Model.t) (model : Model.t) _ ~schedule_action:_ =
   let get_focus (m : Model.t) = Option.map m.focus ~f:fst in
   if get_focus old <> get_focus model then (Js_misc.scroll ())

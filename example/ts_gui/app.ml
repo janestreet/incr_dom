@@ -66,8 +66,7 @@ module Action = struct
 end
 
 module State = struct
-  type t = { schedule : Action.t -> unit }
-  [@@deriving fields]
+  type t = unit
 end
 
 let apply_row_action (m:Model.t) row_id (action:Row.Action.t) =
@@ -139,7 +138,7 @@ let big_kick (m:Model.t) ids =
   )
 
 let apply_action
-      (action:Action.t) (m:Model.t) _
+      (action:Action.t) (m:Model.t) _ ~schedule_action:_
       ~(recompute_derived : Model.t -> Derived_model.t)
   =
   let d = lazy (recompute_derived m) in
@@ -387,6 +386,7 @@ let on_display
       (m : Model.t)
       (d : Derived_model.t)
       (_state : State.t)
+      ~schedule_action:_
   =
   (* If the focus has moved, and is now outside the visible range, scroll until the
      focused point is back in view.  *)
@@ -406,12 +406,11 @@ let on_display
   )
 ;;
 
-let on_startup ~schedule (m:Model.t) (_:Derived_model.t) =
-  let state = { State.schedule } in
+let on_startup ~(schedule_action:Action.t -> unit) (m:Model.t) (_:Derived_model.t) =
   let open Async_kernel in
   let ids = Map.keys m.rows |> Array.of_list in
-  every (Time_ns.Span.of_ms 50.) (fun () -> State.schedule state (Big_kick ids));
-  return state
+  every (Time_ns.Span.of_ms 50.) (fun () -> schedule_action (Big_kick ids));
+  Deferred.unit
 
 let height_guess = 43.
 

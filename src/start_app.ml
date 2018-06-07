@@ -99,7 +99,7 @@ let derived
     let derived_model_incr = App.Derived_model.create model in
 
     let (r, w) = Pipe.create () in
-    let schedule action = Pipe.write_without_pushback w action in
+    let schedule_action action = Pipe.write_without_pushback w action in
 
     let module Event =
       Vdom.Event.Define
@@ -166,7 +166,7 @@ let derived
 
     let%bind state =
       App.on_startup
-        ~schedule
+        ~schedule_action
         (Incr.Var.value model_v)
         (Incr.Observer.value_exn derived_model)
     in
@@ -203,6 +203,7 @@ let derived
           action
           old_model
           state
+          ~schedule_action
           ~recompute_derived
       in
       Incr.Var.set model_v new_model
@@ -262,7 +263,8 @@ let derived
         ~old:!prev_immutable_summary
         (Incr.Var.value model_v)
         (Incr.Observer.value_exn derived_model)
-        state;
+        state
+        ~schedule_action;
       timer_stop "on_display" ~debug;
 
       prev_immutable_summary := immutable_summary;
@@ -319,11 +321,11 @@ module Make_simple_derived (App : App_intf.S_simple) :
     include App.Action
   end
   let apply_action
-        t model state ~recompute_derived:(_ : Model.t -> Derived_model.t)
+        t model state ~schedule_action ~recompute_derived:(_ : Model.t -> Derived_model.t)
     =
-    App.apply_action t model state
+    App.apply_action t model state ~schedule_action
   let update_visibility model () ~recompute_derived:_ = App.update_visibility model
-  let on_startup ~schedule model () = App.on_startup ~schedule model
+  let on_startup ~schedule_action model () = App.on_startup ~schedule_action model
   let view model (_ : unit Incr.t) ~inject = App.view model ~inject
   let on_display ~old model () state = App.on_display ~old model state
 end
@@ -347,10 +349,11 @@ module Make_derived (App : App_intf.S_imperative) :
   end
   module Action = App.Action
   let apply_action
-        t model state ~recompute_derived:(_ : Model.t -> Derived_model.t) =
-    App.apply_action t model state
+        t model state ~schedule_action ~recompute_derived:(_ : Model.t -> Derived_model.t)
+    =
+    App.apply_action t model state ~schedule_action
   let update_visibility model () ~recompute_derived:_ = App.update_visibility model
-  let on_startup ~schedule model () = App.on_startup ~schedule model
+  let on_startup ~schedule_action model () = App.on_startup ~schedule_action model
   let view model (_ : unit Incr.t) ~inject = App.view model ~inject
   let on_display ~old model () state = App.on_display ~old model state
 end
