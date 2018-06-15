@@ -330,34 +330,6 @@ module Make_simple_derived (App : App_intf.S_simple) :
   let on_display ~old model () state = App.on_display ~old model state
 end
 
-(** Trivially lift the imperative App_intf into a derived one. *)
-module Make_derived (App : App_intf.S_imperative) :
-  (App_intf.S_derived
-   with type Model.t = App.Model.t
-    and type Action.t = App.Action.t
-    and type Derived_model.t = unit)
-= struct
-  module Model = App.Model
-  module State = App.State
-  module Derived_model = struct
-    type t = unit
-    let create (_ : Model.t Incr.t) = Incr.const ()
-  end
-  module Model_summary = struct
-    include App.Model_summary
-    let create model () = create model
-  end
-  module Action = App.Action
-  let apply_action
-        t model state ~schedule_action ~recompute_derived:(_ : Model.t -> Derived_model.t)
-    =
-    App.apply_action t model state ~schedule_action
-  let update_visibility model () ~recompute_derived:_ = App.update_visibility model
-  let on_startup ~schedule_action model () = App.on_startup ~schedule_action model
-  let view model (_ : unit Incr.t) ~inject = App.view model ~inject
-  let on_display ~old model () state = App.on_display ~old model state
-end
-
 let simple
       (type model)
       ?bind_to_element_with_id
@@ -373,19 +345,5 @@ let simple
     ~initial_model
     (module Make_simple_derived(App))
 
-let imperative
-      (type model)
-      ?bind_to_element_with_id
-      ?debug
-      ?stop
-      ~initial_model
-      (module App : App_intf.S_imperative with type Model.t = model)
-  =
-  derived
-    ?bind_to_element_with_id
-    ?debug
-    ?stop
-    ~initial_model
-    (module Make_derived(App))
 
 

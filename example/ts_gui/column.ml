@@ -88,7 +88,7 @@ let sort_by (type row) (module T : T with type row = row) row =
 let to_table_widget_column t =
   let name = name t in
   let group = group t in
-  let sort_by = sort_by t in
+  let sort_by _row_id row = sort_by t row in
   Ts_table.Column.create
     ~header:(Vdom.Node.text name)
     ~sort_by
