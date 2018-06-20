@@ -125,18 +125,14 @@ let derived
            ~inject:Event.inject)
     in
     let derived_model = Incr.observe derived_model_incr in
-    let extract_immutable_summary () =
-      App.Model_summary.create
-        (Incr.Var.value model_v)
-        (Incr.Observer.value_exn derived_model)
+    let get_current_models () =
+      (Incr.Var.value model_v, Incr.Observer.value_exn derived_model)
     in
-
     Incr.stabilize ();
-
     let html = Incr.Observer.value_exn view in
     let html_dom = Vdom.Node.to_dom html in
     let elt = (html_dom :> Dom.element Js.t) in
-    let immutable_summary = extract_immutable_summary () in
+    let models = get_current_models () in
 
     (match bind_to_element_with_id with
      | None ->
@@ -171,7 +167,7 @@ let derived
         (Incr.Observer.value_exn derived_model)
     in
 
-    let prev_immutable_summary = ref immutable_summary in
+    let prev_models = ref models in
     let prev_html = ref html in
     let prev_elt = ref elt in
 
@@ -239,10 +235,10 @@ let derived
       Incr.stabilize ();
       timer_stop "stabilize" ~debug;
 
-      (* Compute the immutable summary of the model immediately after
-         stabilization for use on the next (not the current) iteration, because
-         now we are sure to have the model and the derived model in sync.*)
-      let immutable_summary = extract_immutable_summary () in
+      (* Compute the current models immediately after stabilization, for use on the next
+         (not the current) iteration, because now we are sure to have the model and the
+         derived model in sync.*)
+      let models = get_current_models () in
       let html = Incr.Observer.value_exn view in
 
       timer_start "diff" ~debug;
@@ -260,14 +256,14 @@ let derived
       timer_start "on_display" ~debug;
       App.on_display
         (* Retrieve the immutable_summary from the previous iteration *)
-        ~old:!prev_immutable_summary
+        ~old:!prev_models
         (Incr.Var.value model_v)
         (Incr.Observer.value_exn derived_model)
         state
         ~schedule_action;
       timer_stop "on_display" ~debug;
 
-      prev_immutable_summary := immutable_summary;
+      prev_models := models;
       prev_html := html;
       prev_elt := elt;
 
@@ -313,10 +309,6 @@ module Make_simple_derived (App : App_intf.S_simple) :
     type t = unit
     let create (_ : Model.t Incr.t) = Incr.const ()
   end
-  module Model_summary = struct
-    type t = App.Model.t
-    let create model () = model
-  end
   module Action = struct
     include App.Action
   end
@@ -327,7 +319,7 @@ module Make_simple_derived (App : App_intf.S_simple) :
   let update_visibility model () ~recompute_derived:_ = App.update_visibility model
   let on_startup ~schedule_action model () = App.on_startup ~schedule_action model
   let view model (_ : unit Incr.t) ~inject = App.view model ~inject
-  let on_display ~old model () state = App.on_display ~old model state
+  let on_display ~old:(old,()) model () state = App.on_display ~old model state
 end
 
 let simple

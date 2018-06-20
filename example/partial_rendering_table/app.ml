@@ -100,12 +100,6 @@ module Derived_model = struct
     { rows; row_view }
 end
 
-module Model_summary = struct
-  type t = Model.t
-
-  let create m _ = m
-end
-
 module Action = struct
   type t =
     | Change_row of (Row.Id.t * Row.Action.t)

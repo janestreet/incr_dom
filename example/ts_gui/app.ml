@@ -25,11 +25,6 @@ module Model = struct
   let set_pattern t pattern = { t with pattern = String.lowercase pattern }
 end
 
-module Model_summary = struct
-  type t = Model.t
-  let create (m:Model.t) _ = m
-end
-
 module Derived_model = struct
   type t =
     { table: Row.Model.t Ts_table.Derived_model.t }
@@ -382,7 +377,7 @@ let maybe_set_edit_focus ~old m =
   if should_set_edit_focus ~old m then (set_edit_focus m)
 
 let on_display
-      ~(old : Model.t)
+      ~old
       (m : Model.t)
       (d : Derived_model.t)
       (_state : State.t)
@@ -390,6 +385,7 @@ let on_display
   =
   (* If the focus has moved, and is now outside the visible range, scroll until the
      focused point is back in view.  *)
+  let old = fst old in
   maybe_set_edit_focus ~old m;
   let editing (model:Model.t) =
     match model.edit_state with

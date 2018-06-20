@@ -87,8 +87,8 @@ module type S_derived = sig
 
   (** [Derived_model] is the data container that allows you to share computations between
       the actions and the view. Any things that the actions need to use should be stored
-      in Derived_model.t. Then, in [Action.apply], you can call
-      [stabilize_and_get_derived] to retrieve that data and make use of it. *)
+      in Derived_model.t. Then, in [apply_action], you can call
+      [recompute_derived] to retrieve that data and make use of it. *)
   module Derived_model : sig
     type t
 
@@ -104,12 +104,6 @@ module type S_derived = sig
         ]}
     *)
     val create : Model.t Incr.t -> t Incr.t
-  end
-
-  module Model_summary : sig
-    type t
-
-    val create : Model.t -> Derived_model.t -> t
   end
 
   module State : sig type t end
@@ -153,7 +147,7 @@ module type S_derived = sig
     -> State.t Deferred.t
 
   val on_display
-    :  old:Model_summary.t
+    :  old:(Model.t * Derived_model.t)
     -> Model.t
     -> Derived_model.t
     -> State.t
