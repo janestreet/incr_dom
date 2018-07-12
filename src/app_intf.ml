@@ -4,7 +4,6 @@ open Async_kernel
 
 (** The interface for a basic, incrementally rendered application. *)
 module type S_simple = sig
-
   module Model : sig
     type t
 
@@ -22,6 +21,7 @@ module type S_simple = sig
 
   module Action : sig
     type t [@@deriving sexp_of]
+
     val should_log : t -> bool
   end
 
@@ -53,23 +53,17 @@ module type S_simple = sig
       [inject] gives you the ability to create event handlers in the virtual DOM. In your
       event handler, call this function on the action you would like to schedule. Virtual
       DOM will automatically delegate that action back to the [Start_app] main loop. *)
-  val view
-    :  Model.t Incr.t
-    -> inject:(Action.t -> Vdom.Event.t)
-    -> Vdom.Node.t Incr.t
+  val view : Model.t Incr.t -> inject:(Action.t -> Vdom.Event.t) -> Vdom.Node.t Incr.t
 
   (** [on_startup] is called once, right after the initial DOM is set to the
       view that corresponds to the initial state.  This is useful for doing
       things like starting up async processes. *)
-  val on_startup
-    :  schedule_action:(Action.t -> unit)
-    -> Model.t
-    -> State.t Deferred.t
+  val on_startup : schedule_action:(Action.t -> unit) -> Model.t -> State.t Deferred.t
 
   (** [on_display] is called every time the DOM is updated, with the model just before the
       update and the model just after the update. Use [on_display] to initiate actions. *)
   val on_display
-    :  old:Model.t
+    :  old_model:Model.t
     -> Model.t
     -> State.t
     -> schedule_action:(Action.t -> unit)
@@ -82,6 +76,7 @@ end
 module type S_derived = sig
   module Model : sig
     type t
+
     val cutoff : t -> t -> bool
   end
 
@@ -106,7 +101,9 @@ module type S_derived = sig
     val create : Model.t Incr.t -> t Incr.t
   end
 
-  module State : sig type t end
+  module State : sig
+    type t
+  end
 
   module Action : sig
     type t [@@deriving sexp_of]
@@ -147,7 +144,8 @@ module type S_derived = sig
     -> State.t Deferred.t
 
   val on_display
-    :  old:(Model.t * Derived_model.t)
+    :  old_model:Model.t
+    -> old_derived_model:Derived_model.t
     -> Model.t
     -> Derived_model.t
     -> State.t

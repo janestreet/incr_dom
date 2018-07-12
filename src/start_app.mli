@@ -14,17 +14,17 @@ open! Async_kernel
 *)
 
 val simple
-  :  ?bind_to_element_with_id : string
-  -> ?debug : bool (* print info to JS console - default false *)
-  -> ?stop : unit Deferred.t
-  -> initial_model : 'model
+  :  ?bind_to_element_with_id:string
+  -> ?debug:bool (* print info to JS console - default false *)
+  -> ?stop:unit Deferred.t
+  -> initial_model:'model
   -> (module App_intf.S_simple with type Model.t = 'model)
   -> unit
 
 val derived
-  :  ?bind_to_element_with_id : string
-  -> ?debug : bool (* print info to JS console - default false *)
-  -> ?stop : unit Deferred.t
-  -> initial_model : 'model
+  :  ?bind_to_element_with_id:string
+  -> ?debug:bool (* print info to JS console - default false *)
+  -> ?stop:unit Deferred.t
+  -> initial_model:'model
   -> (module App_intf.S_derived with type Model.t = 'model)
   -> unit

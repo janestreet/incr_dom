@@ -7,7 +7,8 @@ module Model : sig
   type t =
     { data : string
     ; font_size : int
-    } [@@deriving sexp_of, fields, compare]
+    }
+  [@@deriving sexp_of, fields, compare]
 
   val create : data:string -> t
 end
@@ -20,6 +21,7 @@ module Action : sig
   [@@deriving sexp_of]
 
   val apply : t -> Model.t -> Model.t
+
   val should_log : t -> bool
 end
 

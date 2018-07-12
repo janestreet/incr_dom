@@ -6,7 +6,7 @@ include Splay_tree.Std
 include Incr_dom_widgets
 
 module Row_id = struct
-  include (Core_kernel.Unique_id.Int ())
+  include Core_kernel.Unique_id.Int ()
 end
 
 module Ts_table = Table.Make (Row_id) (Core_kernel.Int) (Table.Default_sort_spec)

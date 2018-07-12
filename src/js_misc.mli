@@ -6,25 +6,25 @@ open Js_of_ocaml
 
 module Rect : sig
   type 'a t =
-    { top    : 'a
-    ; left   : 'a
+    { top : 'a
+    ; left : 'a
     ; bottom : 'a
-    ; right  : 'a
-    } [@@deriving sexp, bin_io, compare, fields]
+    ; right : 'a
+    }
+  [@@deriving sexp, bin_io, compare, fields]
 
   val map : 'a t -> f:('a -> 'b) -> 'b t
 
   val int_height : int t -> int
+
   val int_width : int t -> int
 
   val float_height : float t -> float
+
   val float_width : float t -> float
 end
 
-val round_float_rect
-  :  ?round:(float -> int)
-  -> float Rect.t
-  -> int   Rect.t
+val round_float_rect : ?round:(float -> int) -> float Rect.t -> int Rect.t
 
 (** [viewport_rect ()] gives you the rectangle that corresponds to the size of the entire
     browser window *)
@@ -49,7 +49,10 @@ val element_is_in_viewport : Dom_html.element Js.t -> bool
     UI so that that element is in view. *)
 val scroll : ?id:string -> unit -> unit
 
-type rows_or_columns = Rows | Columns [@@deriving sexp, bin_io, variants, compare]
+type rows_or_columns =
+  | Rows
+  | Columns
+[@@deriving sexp, bin_io, variants, compare]
 
 (** [find_visible_range ~length ~nth_element_id layout] is useful to find visible rows or
     columns of a table. The time cost is O(log(length)). It assumes the rows/columns are

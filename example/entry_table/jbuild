@@ -1,7 +1,7 @@
 (executables
  ((names (main))
   (libraries (incr_dom async_js))
-  (preprocess (pps (js_of_ocaml-ppx ppx_jane -ite-check ppxlib.runner)))
+  (preprocess (pps (js_of_ocaml-ppx ppx_jane ppxlib.runner)))
   ))
 
 

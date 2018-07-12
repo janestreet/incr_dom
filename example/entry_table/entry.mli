@@ -5,8 +5,11 @@ module Model : sig
   type t [@@deriving sexp, compare]
 
   val example : unit -> t
+
   val kick : t -> t
+
   val move_focus : t -> Focus_point.t option -> focus_dir -> Focus_point.t option
+
   val name : t -> string
 end
 
@@ -21,7 +24,9 @@ module Action : sig
   val apply : t -> Focus_point.t option -> Model.t -> Model.t
 end
 
-type focus_state = Unfocused | Focused of Focus_point.t option
+type focus_state =
+  | Unfocused
+  | Focused of Focus_point.t option
 
 val view
   :  Model.t Incr.t
@@ -31,4 +36,3 @@ val view
   -> focus_me:Vdom.Event.t
   -> set_inner_focus:(Focus_point.t -> Vdom.Event.t)
   -> Vdom.Node.t Incr.t
-

@@ -3,7 +3,9 @@ open! Incr_dom
 
 module Model : sig
   type t
+
   val cutoff : t -> t -> bool
+
   val create : int -> t
 end
 

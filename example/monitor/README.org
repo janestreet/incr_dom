@@ -1,6 +1,3 @@
-#+TITLE: Error handling in Incr_dom -- an example app
-#+PARENT: ../README.org
-
 A simple example intended to test error handling in Incr\_dom, in
 particular to make sure that uncaught errors are captured by Async's
 monitors.

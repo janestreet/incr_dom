@@ -25,14 +25,16 @@ let () =
     let js_error = Async_js_jane.extract_js_error exn in
     (* Raise the exception to the top-level outside of async so that Chrome can print out
        its source-mapped backtrace (and the async program can continue to run). *)
-    ignore (Dom_html.setTimeout (fun () -> Option.iter js_error ~f:Js.raise_js_error) 0.);
+    ignore
+      (Dom_html.setTimeout (fun () -> Option.iter js_error ~f:Js.raise_js_error) 0.);
     let backtrace =
-      Option.value_map js_error
+      Option.value_map
+        js_error
         ~f:(fun js_error ->
-          Option.value_map (Js.Optdef.to_option js_error##.stack)
+          Option.value_map
+            (Js.Optdef.to_option js_error##.stack)
             ~f:Js.to_string
-            ~default:"no backtrace found"
-        )
+            ~default:"no backtrace found")
         ~default:"no js error found"
     in
     let message = sprintf !"%{Exn} (%s)" exn backtrace in
@@ -40,18 +42,19 @@ let () =
     (* Once the incr_dom app has stopped running, we modify the dom directly *)
     let dom =
       let open Vdom in
-      Node.body []
+      Node.body
+        []
         [ Node.h2 [] [ Node.text "Error!" ]
-        ; Node.ul []
+        ; Node.ul
+            []
             (List.rev_map !all_messages ~f:(fun text -> Node.li [] [ Node.text text ]))
         ]
       |> Node.to_dom
     in
-    Dom_html.document##.body := dom
-  );
+    Dom_html.document##.body := dom);
   Async_kernel_scheduler.within ~monitor (fun () ->
     Start_app.simple
       ~stop:(Ivar.read stop)
       ~initial_model:(App.init ?init_loc monitor ~stop)
-      (module App)
-  )
+      (module App))
+;;
