@@ -307,7 +307,7 @@ let view
   let help_menu_hint =
     let help_text = Keyboard_event_handler.Command.get_help_text help_menu_command in
     Node.div
-      [ Attr.style [ "text-align", "center"; "padding", "5px" ] ]
+      [ Attr.style Css.(combine (text_align `Center) (uniform_padding (`Px 5))) ]
       [ Help_text.Command.(view help_text help_text_view_spec Format.default) ]
   in
   let input =

@@ -203,7 +203,7 @@ let view model derived ~inject =
   let offset_div key height =
     Vdom.Node.div
       ~key
-      [ Vdom.Attr.style [ "height", sprintf "%dpx" (Float.iround_nearest_exn height) ] ]
+      [ Vdom.Attr.style (Css.height (`Px (Float.iround_nearest_exn height))) ]
       []
   in
   let row_view = derived >>| Derived_model.row_view in

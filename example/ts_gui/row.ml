@@ -135,7 +135,7 @@ end
 let editable_cell m col ~remember_edit =
   let open Vdom in
   let attrs =
-    [ Attr.style [ "width", "100%" ]
+    [ Attr.style Css.(width Length.percent100)
     ; Attr.create "size" "1"
     ; Attr.value (Column.get col m)
     ; Attr.on_input (fun _ value -> remember_edit ~column:(Column.name col) value)
@@ -161,7 +161,7 @@ module Rgb : sig
     ; b : int
     }
 
-  val background_style : t -> (string * string) list
+  val background_style : t -> Css.t
 
   (** [interpolate t1 t2 x] is equal to [t1] if [x=0], [t2] if [x=1], and interpolates
       between otherwise. *)
@@ -174,9 +174,9 @@ end = struct
     }
   [@@deriving fields]
 
-  let attr_string { r; g; b } = sprintf "rgb(%d,%d,%d)" r g b
+  let to_css_color { r; g; b } = `RGBA (Css.Color.RGBA.create ~r ~g ~b ())
 
-  let background_style t = [ "background-color", attr_string t ]
+  let background_style t = Css.background_color (to_css_color t)
 
   let interpolate t_from t_to pct =
     let single field =
