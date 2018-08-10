@@ -28,3 +28,11 @@ val derived
   -> initial_model:'model
   -> (module App_intf.S_derived with type Model.t = 'model)
   -> unit
+
+val component
+  :  ?bind_to_element_with_id:string
+  -> ?debug:bool (* print info to JS console - default false *)
+  -> ?stop:unit Deferred.t
+  -> initial_model:'model
+  -> (module App_intf.S_component with type Model.t = 'model)
+  -> unit

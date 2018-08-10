@@ -76,39 +76,6 @@ module Model = struct
   let cutoff t1 t2 = compare t1 t2 = 0
 end
 
-module Derived_model = struct
-  type t =
-    { rows : Row.Model.t Key.Map.t
-    ; row_view : Row.Model.t Row_view.t
-    }
-  [@@deriving fields]
-
-  let create (model : Model.t Incr.t) =
-    let rows = model >>| Model.rows in
-    let%bind filter_string = model >>| Model.filter_string
-    and sort = model >>| Model.sort in
-    let rows =
-      Incr.Map.unordered_fold
-        rows
-        ~init:Key.Map.empty
-        ~add:(fun ~key ~(data : Row.Model.t) m ->
-          if String.is_substring data.data ~substring:filter_string
-          then (
-            let key = Key.create sort key in
-            Map.set m ~key ~data)
-          else m)
-        ~remove:(fun ~key ~data:_ m ->
-          let key = Key.create sort key in
-          Map.remove m key)
-    in
-    let height_cache = model >>| Model.height_cache in
-    let measurements = model >>| Model.measurements in
-    let%map row_view = Row_view.create ~rows ~height_cache ~measurements
-    and rows = rows in
-    { rows; row_view }
-  ;;
-end
-
 module Action = struct
   type t =
     | Change_row of (Row.Id.t * Row.Action.t)
@@ -116,25 +83,13 @@ module Action = struct
     | Update_filter of string
     | Update_sort of Key.sort
   [@@deriving sexp_of]
-
-  let should_log = function
-    | Bump_row_height -> false
-    | Change_row (_, action) -> Row.Action.should_log action
-    | Update_filter _ | Update_sort _ -> true
-  ;;
 end
 
 module State = struct
   type t = unit
 end
 
-let apply_action
-      (action : Action.t)
-      (model : Model.t)
-      (_ : State.t)
-      ~schedule_action:_
-      ~recompute_derived:_
-  =
+let apply_action (model : Model.t) (action : Action.t) _ ~schedule_action:_ =
   match action with
   | Change_row (key, action) ->
     (match Map.find model.rows key with
@@ -158,15 +113,15 @@ let apply_action
   | Update_sort sort -> { model with sort }
 ;;
 
-let on_startup ~schedule_action _model _derived =
+let on_startup ~schedule_action _model =
   Clock_ns.every (Time_ns.Span.of_ms 50.) (fun () ->
     schedule_action Action.Bump_row_height);
   Deferred.return ()
 ;;
 
-let update_visibility (model : Model.t) (derived : Derived_model.t) ~recompute_derived:_ =
+let update_visibility (model : Model.t) row_view () =
   let height_cache =
-    Row_view.measure_heights_simple derived.row_view ~measure:(fun key ->
+    Row_view.measure_heights_simple row_view ~measure:(fun key ->
       let open Option.Let_syntax in
       let id = Row.Id.to_string (Key.id key) in
       let%map elt = Dom_html.getElementById_opt id in
@@ -187,7 +142,7 @@ let update_visibility (model : Model.t) (derived : Derived_model.t) ~recompute_d
   else { model with height_cache; measurements }
 ;;
 
-let view model derived ~inject =
+let view model row_view ~inject =
   let scroll_attr = Vdom.Attr.on "scroll" (fun _ -> Vdom.Event.Viewport_changed) in
   let filter_string_change =
     Vdom.Attr.on_input (fun (_ : Dom_html.event Js.t) value ->
@@ -206,7 +161,6 @@ let view model derived ~inject =
       [ Vdom.Attr.style (Css.height (`Px (Float.iround_nearest_exn height))) ]
       []
   in
-  let row_view = derived >>| Derived_model.row_view in
   let visible_rows = row_view >>| Row_view.rows_to_render in
   let visible_rows_dom =
     Incr.Map.mapi' visible_rows ~f:(fun ~key ~data ->
@@ -248,13 +202,38 @@ let view model derived ~inject =
     ]
 ;;
 
-let on_display
-      ~old_model:_
-      ~old_derived_model:_
-      _new_model
-      _new_derived
-      _state
-      ~schedule_action:_
-  =
-  ()
+let create_row_view (model : Model.t Incr.t) =
+  let rows = model >>| Model.rows in
+  let%bind filter_string = model >>| Model.filter_string
+  and sort = model >>| Model.sort in
+  let rows =
+    Incr.Map.unordered_fold
+      rows
+      ~init:Key.Map.empty
+      ~add:(fun ~key ~(data : Row.Model.t) m ->
+        if String.is_substring data.data ~substring:filter_string
+        then (
+          let key = Key.create sort key in
+          Map.set m ~key ~data)
+        else m)
+      ~remove:(fun ~key ~data:_ m ->
+        let key = Key.create sort key in
+        Map.remove m key)
+  in
+  let height_cache = model >>| Model.height_cache in
+  let measurements = model >>| Model.measurements in
+  Row_view.create ~rows ~height_cache ~measurements
+;;
+
+let create model ~old_model:_ ~inject =
+  let row_view = create_row_view model in
+  let%map apply_action =
+    let%map model = model in
+    apply_action model
+  and update_visibility =
+    let%map model = model and row_view = row_view in
+    update_visibility model row_view
+  and view = view model row_view ~inject
+  and model = model in
+  Component.create ~apply_action ~update_visibility model view
 ;;

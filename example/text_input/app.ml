@@ -41,7 +41,7 @@ module State = struct
   type t = unit
 end
 
-let apply_action action model _state ~schedule_action:_ =
+let apply_action model action _ ~schedule_action:_ =
   match (action : Action.t) with
   | Reset_counter -> Model.reset_counter model
   | Incr_counter -> Model.incr_counter model
@@ -49,11 +49,7 @@ let apply_action action model _state ~schedule_action:_ =
   | Submit_input -> Model.submit_input model
 ;;
 
-let update_visibility m = m
-
 let on_startup ~schedule_action:_ _ = Async_kernel.return ()
-
-let on_display ~old_model:_ _ _ ~schedule_action:_ = ()
 
 let view (m : Model.t Incr.t) ~inject =
   let open Incr.Let_syntax in
@@ -86,4 +82,14 @@ let view (m : Model.t Incr.t) ~inject =
     Node.div [] [ Node.text text ]
   in
   Node.body [] [ submission; input; submit_button; reset_button; incr_button ]
+;;
+
+let create model ~old_model:_ ~inject =
+  let open Incr.Let_syntax in
+  let%map apply_action =
+    let%map model = model in
+    apply_action model
+  and view = view model ~inject
+  and model = model in
+  Component.create ~apply_action model view
 ;;

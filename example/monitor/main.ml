@@ -53,7 +53,7 @@ let () =
     in
     Dom_html.document##.body := dom);
   Async_kernel_scheduler.within ~monitor (fun () ->
-    Start_app.simple
+    Start_app.component
       ~stop:(Ivar.read stop)
       ~initial_model:(App.init ?init_loc monitor ~stop)
       (module App))

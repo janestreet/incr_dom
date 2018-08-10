@@ -13,6 +13,14 @@ module Model = struct
   [@@deriving sexp, fields, compare]
 
   let cutoff t1 t2 = compare t1 t2 = 0
+
+  let create () =
+    { default_prevented = false
+    ; propagation_stopped = false
+    ; outer_click_count = 0
+    ; outer_keydown_count = 0
+    }
+  ;;
 end
 
 module State = struct
@@ -30,15 +38,13 @@ module Action = struct
   let should_log _ = false
 end
 
-let apply_action action (model : Model.t) _state ~schedule_action:_ =
+let apply_action (model : Model.t) action _ ~schedule_action:_ =
   match (action : Action.t) with
   | Outer_click -> { model with outer_click_count = model.outer_click_count + 1 }
   | Outer_keydown -> { model with outer_keydown_count = model.outer_keydown_count + 1 }
   | Set_default_prevented default_prevented -> { model with default_prevented }
   | Set_propagation_stopped propagation_stopped -> { model with propagation_stopped }
 ;;
-
-let update_visibility m = m
 
 let on_startup ~schedule_action:_ _ = Async_kernel.return ()
 
@@ -114,12 +120,11 @@ let view (m : Model.t Incr.t) ~inject =
     ]
 ;;
 
-let on_display ~old_model:_ _ _ ~schedule_action:_ = ()
-
-let create () =
-  { Model.default_prevented = false
-  ; propagation_stopped = false
-  ; outer_click_count = 0
-  ; outer_keydown_count = 0
-  }
+let create model ~old_model:_ ~inject =
+  let%map apply_action =
+    let%map model = model in
+    apply_action model
+  and view = view model ~inject
+  and model = model in
+  Component.create ~apply_action model view
 ;;

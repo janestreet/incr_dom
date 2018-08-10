@@ -49,8 +49,6 @@ module Action = struct
     | Set_exn_location of Exn_location.t
     | Stop
   [@@deriving sexp]
-
-  let should_log _ = true
 end
 
 module State = struct
@@ -64,7 +62,7 @@ let fail_if_equal loc1 loc2 =
 
 let maybe_fail (m : Model.t) loc = fail_if_equal m.exn_location loc
 
-let apply_action (action : Action.t) (m : Model.t) _state ~schedule_action:_ =
+let apply_action (m : Model.t) (action : Action.t) _ ~schedule_action:_ =
   maybe_fail m Action;
   match action with
   | Set_exn_location exn_location -> { m with exn_location }
@@ -77,7 +75,7 @@ let apply_action (action : Action.t) (m : Model.t) _state ~schedule_action:_ =
     m
 ;;
 
-let update_visibility m =
+let update_visibility m () =
   maybe_fail m Visibility;
   m
 ;;
@@ -134,7 +132,7 @@ let on_startup ~schedule_action:_ model =
   Deferred.return ()
 ;;
 
-let on_display ~old_model:_ (m : Model.t) _state ~schedule_action:_ =
+let on_display (m : Model.t) _ ~schedule_action:_ =
   maybe_fail m On_display;
   ()
 ;;
@@ -149,4 +147,20 @@ let init ?init_loc monitor ~stop : Model.t =
        | None -> Exn_location.Startup)
   in
   { mode = M1; exn_location; monitor; stop }
+;;
+
+let create model ~old_model:_ ~inject =
+  let open Incr.Let_syntax in
+  let%map apply_action =
+    let%map model = model in
+    apply_action model
+  and update_visibility =
+    let%map model = model in
+    update_visibility model
+  and on_display =
+    let%map model = model in
+    on_display model
+  and view = view model ~inject
+  and model = model in
+  Component.create ~apply_action ~update_visibility ~on_display model view
 ;;

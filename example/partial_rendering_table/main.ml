@@ -10,7 +10,7 @@ let () =
     let hash = String.strip ~drop:(fun c -> c = '/' || c = '?') hash in
     try Some (Int.of_string hash) with _ -> None
   in
-  Start_app.derived
+  Start_app.component
     (module App)
     ~initial_model:(App.Model.create (Option.value ~default:50000 count))
 ;;

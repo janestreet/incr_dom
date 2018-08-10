@@ -8,7 +8,7 @@
     core_kernel
     async_js
     async_kernel
-    incremental_kernel
+    incremental
     incr_map
     incr_select
   ))

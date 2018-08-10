@@ -28,23 +28,6 @@ module Model = struct
   let set_pattern t pattern = { t with pattern = String.lowercase pattern }
 end
 
-module Derived_model = struct
-  type t = { table : Row.Model.t Ts_table.Derived_model.t } [@@deriving fields]
-
-  let create (m : Model.t Incr.t) =
-    let columns = List.map ~f:Column.to_table_widget_column Row.Model.columns in
-    let columns = Incr.const (List.mapi columns ~f:(fun i col -> i, col)) in
-    let rows =
-      let%bind pattern = m >>| Model.pattern in
-      Incr.Map.filter_mapi (m >>| Model.rows) ~f:(fun ~key:_ ~data ->
-        Option.some_if (Row.Model.matches_pattern data pattern) data)
-    in
-    let table_model = m >>| Model.table in
-    let%map table = Ts_table.Derived_model.create table_model ~rows ~columns in
-    { table }
-  ;;
-end
-
 module Action = struct
   type t =
     | Escape
@@ -58,8 +41,6 @@ module Action = struct
     | Add_focused_sort_col
     | Show_help_menu of Help_text.t
   [@@deriving sexp]
-
-  let should_log _ = true
 end
 
 module State = struct
@@ -120,14 +101,14 @@ let add_focused_sort_col (m : Model.t) =
 
 let show_help_menu (m : Model.t) help_text = { m with help_text = Some help_text }
 
-let escape (m : Model.t) (d : Derived_model.t) =
+let escape table_apply_action (m : Model.t) =
   if Option.is_some m.help_text
   then { m with help_text = None }
   else (
     match m.edit_state with
     | Not_editing ->
       let action = Ts_table.Action.set_focus_row None in
-      { m with table = Ts_table.apply_action m.table d.table action }
+      { m with table = table_apply_action action }
     | Editing _ -> { m with edit_state = Not_editing })
 ;;
 
@@ -139,32 +120,33 @@ let big_kick (m : Model.t) ids =
     if i mod 3 <> 0 then m else apply_row_action m id Row.Action.kick_position)
 ;;
 
-let apply_action
-      (action : Action.t)
-      (m : Model.t)
-      _
-      ~schedule_action:_
-      ~(recompute_derived : Model.t -> Derived_model.t)
-  =
-  let d = lazy (recompute_derived m) in
-  match action with
-  | Escape -> escape m (force d)
-  | Set_pattern s -> Model.set_pattern m s
-  | Table_action a -> { m with table = Ts_table.apply_action m.table (force d).table a }
-  | Row_action (id, x) -> apply_row_action m id x
-  | Big_kick ids -> big_kick m ids
-  | Edit_start -> { m with edit_state = Editing [] }
-  | Remember_edit edit -> remember_edit m edit
-  | Commit_edits -> commit_edits m
-  | Add_focused_sort_col -> add_focused_sort_col m
-  | Show_help_menu help_text -> show_help_menu m help_text
+let apply_action table (m : Model.t Incr.t) =
+  let%map m = m and table_apply_action = table >>| Component.apply_action in
+  fun (action : Action.t) state ~schedule_action ->
+    let schedule_table_action action = schedule_action (Action.Table_action action) in
+    let apply_table_action action =
+      table_apply_action action state ~schedule_action:schedule_table_action
+    in
+    match action with
+    | Escape -> escape apply_table_action m
+    | Set_pattern s -> Model.set_pattern m s
+    | Table_action a -> { m with table = apply_table_action a }
+    | Row_action (id, x) -> apply_row_action m id x
+    | Big_kick ids -> big_kick m ids
+    | Edit_start -> { m with edit_state = Editing [] }
+    | Remember_edit edit -> remember_edit m edit
+    | Commit_edits -> commit_edits m
+    | Add_focused_sort_col -> add_focused_sort_col m
+    | Show_help_menu help_text -> show_help_menu m help_text
 ;;
 
 let search_input_id = "search-input"
 
-let update_visibility (m : Model.t) (d : Derived_model.t) ~recompute_derived:_ =
-  let table = Ts_table.update_visibility m.table d.table in
-  { m with table }
+let update_visibility table (m : Model.t Incr.t) =
+  let%map m = m and table_update_visibility = table >>| Component.update_visibility in
+  fun () ->
+    let table = table_update_visibility () in
+    { m with table }
 ;;
 
 let key_handler ~inject =
@@ -291,11 +273,7 @@ let row_renderer (m : Model.t Incr.t) ~(inject : Action.t -> Vdom.Event.t)
       ~remember_edit:(fun ~column value -> inject (Remember_edit { column; value }))
 ;;
 
-let view
-      (m : Model.t Incr.t)
-      (d : Derived_model.t Incr.t)
-      ~(inject : Action.t -> Vdom.Event.t)
-  =
+let view table (m : Model.t Incr.t) ~(inject : Action.t -> Vdom.Event.t) =
   let open Vdom in
   let scroll_attr = Vdom.Attr.on "scroll" (fun _ -> Vdom.Event.Viewport_changed) in
   let key_handler, help_menu_command = key_handler ~inject in
@@ -322,16 +300,7 @@ let view
           []
       ]
   in
-  let table_m = m >>| Model.table in
-  let table_d = d >>| Derived_model.table in
-  let render_row = row_renderer m ~inject in
-  let%map table =
-    Ts_table.view
-      table_m
-      table_d
-      ~render_row
-      ~inject:(fun a -> inject (Action.Table_action a))
-      ~attrs:[ Attr.class_ "table table-bordered" ]
+  let%map table = table >>| Component.view
   and help_menu =
     match%map m >>| Model.help_text with
     | None -> []
@@ -382,39 +351,90 @@ let maybe_set_edit_focus ~old_model m =
   if should_set_edit_focus ~old_model m then set_edit_focus m
 ;;
 
-let on_display
-      ~old_model
-      ~old_derived_model:_
-      (m : Model.t)
-      (d : Derived_model.t)
-      (_state : State.t)
-      ~schedule_action:_
-  =
-  (* If the focus has moved, and is now outside the visible range, scroll until the
-     focused point is back in view.  *)
-  maybe_set_edit_focus ~old_model m;
-  let editing (model : Model.t) =
-    match model.edit_state with
-    | Not_editing -> false
-    | Editing _ -> true
-  in
-  (* When the user presses the shift+e when the focus is out of view, scroll to it. *)
-  if not (editing old_model) && editing m
-  then ignore (Ts_table.scroll_focus_into_scroll_region m.table d.table)
-  else
-    (* Because we don't re-measure the viewport, if the app is slow and a focus change
-       gets batched with an edit, without the [else] it will scroll relatively twice. *)
-    Ts_table.on_display ~old_model:old_model.table m.table d.table
+let on_display table ~old_model (m : Model.t Incr.t) =
+  let%map table_on_display = table >>| Component.on_display
+  and old_model = old_model
+  and table_extra = table >>| Component.extra
+  and m = m in
+  fun state ~schedule_action ->
+    (* If the focus has moved, and is now outside the visible range, scroll until the
+       focused point is back in view.  *)
+    maybe_set_edit_focus ~old_model m;
+    let editing (model : Model.t) =
+      match model.edit_state with
+      | Not_editing -> false
+      | Editing _ -> true
+    in
+    (* When the user presses the shift+e when the focus is out of view, scroll to it. *)
+    if not (editing old_model) && editing m
+    then ignore (Ts_table.scroll_focus_into_scroll_region m.table table_extra)
+    else (
+      (* Because we don't re-measure the viewport, if the app is slow and a focus change
+         gets batched with an edit, without the [else] it will scroll relatively twice. *)
+      let schedule_table_action action = schedule_action (Action.Table_action action) in
+      table_on_display state ~schedule_action:schedule_table_action)
 ;;
 
-let on_startup ~(schedule_action : Action.t -> unit) (m : Model.t) (_ : Derived_model.t) =
+let on_startup ~schedule_action (m : Model.t) =
   let open Async_kernel in
   let ids = Map.keys m.rows |> Array.of_list in
-  every (Time_ns.Span.of_ms 50.) (fun () -> schedule_action (Big_kick ids));
+  every (Time_ns.Span.of_ms 50.) (fun () -> schedule_action (Action.Big_kick ids));
   Deferred.unit
 ;;
 
 let height_guess = 43.
+
+(* Because in this version of the code, the table code hasn't moved to using Component, we
+   create a corresponding Component locally. This code will be removed once we do the
+   migration of Incr_dom_widgets.Table.  *)
+let create_table_component (model : Model.t Incr.t) ~old_model ~inject =
+  let columns = List.map ~f:Column.to_table_widget_column Row.Model.columns in
+  let columns = Incr.const (List.mapi columns ~f:(fun i col -> i, col)) in
+  let rows =
+    let%bind pattern = model >>| Model.pattern in
+    Incr.Map.filter_mapi (model >>| Model.rows) ~f:(fun ~key:_ ~data ->
+      Option.some_if (Row.Model.matches_pattern data pattern) data)
+  in
+  let render_row = row_renderer model ~inject in
+  let table_model = model >>| Model.table in
+  let old_table_model = old_model >>| Model.table in
+  let extra = Ts_table.Derived_model.create table_model ~rows ~columns in
+  let%map apply_action =
+    let%map model = table_model and extra = extra in
+    fun action _ ~schedule_action:_ -> Ts_table.apply_action model extra action
+  and on_display =
+    let%map model = table_model and extra = extra and old_model = old_table_model in
+    fun _ ~schedule_action:_ -> Ts_table.on_display ~old_model model extra
+  and update_visibility =
+    let%map model = table_model and extra = extra in
+    fun () -> Ts_table.update_visibility model extra
+  and view =
+    Ts_table.view
+      table_model
+      extra
+      ~render_row
+      ~inject:(fun a -> inject (Action.Table_action a))
+      ~attrs:[ Vdom.Attr.classes [ "table"; "table-bordered" ] ]
+  and model = table_model
+  and extra = extra in
+  Component.create_with_extra
+    ~apply_action
+    ~on_display
+    ~update_visibility
+    ~extra
+    model
+    view
+;;
+
+let create model ~old_model ~inject =
+  let table = create_table_component model ~old_model ~inject in
+  let%map on_display = on_display table ~old_model model
+  and apply_action = apply_action table model
+  and update_visibility = update_visibility table model
+  and view = view table model ~inject
+  and model = model in
+  Component.create ~apply_action ~update_visibility ~on_display model view
+;;
 
 let init () : Model.t =
   let rows =

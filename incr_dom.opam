@@ -14,7 +14,7 @@ depends: [
   "core_kernel"
   "incr_map"
   "incr_select"
-  "incremental_kernel"
+  "incremental"
   "ppx_jane"
   "virtual_dom"
   "jbuilder"                {build & >= "1.0+beta18.1"}

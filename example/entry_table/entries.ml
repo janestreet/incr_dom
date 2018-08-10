@@ -43,8 +43,6 @@ module Action = struct
     | Kick_n of int
   [@@deriving sexp]
 
-  let should_log _ = true
-
   let kick_n n = Kick_n n
 end
 
@@ -129,7 +127,7 @@ let set_inner_focus fp (m : Model.t) =
   { m with focus }
 ;;
 
-let apply_action action (m : Model.t) (_ : State.t) ~schedule_action:_ =
+let apply_action (m : Model.t) action _ ~schedule_action:_ =
   match (action : Action.t) with
   | Move_outer_focus dir -> move_outer_focus dir m
   | Move_inner_focus dir -> move_inner_focus dir m
@@ -225,7 +223,7 @@ let view (m : Model.t Incr.t) ~inject =
   Node.body [ on_keydown ] (input :: Map.data entries)
 ;;
 
-let update_visibility m =
+let update_visibility m () =
   let filtered_entries = Model.filtered_entries m in
   let visible_range =
     Js_misc.find_visible_range
@@ -256,4 +254,20 @@ let example ~entries : Model.t =
 let on_display ~(old_model : Model.t) (model : Model.t) _ ~schedule_action:_ =
   let get_focus (m : Model.t) = Option.map m.focus ~f:fst in
   if get_focus old_model <> get_focus model then Js_misc.scroll ()
+;;
+
+let create model ~old_model ~inject =
+  let open Incr.Let_syntax in
+  let%map apply_action =
+    let%map model = model in
+    apply_action model
+  and update_visibility =
+    let%map model = model in
+    update_visibility model
+  and on_display =
+    let%map old_model = old_model and model = model in
+    on_display ~old_model model
+  and view = view model ~inject
+  and model = model in
+  Component.create ~apply_action ~update_visibility ~on_display model view
 ;;
