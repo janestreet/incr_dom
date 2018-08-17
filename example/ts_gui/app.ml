@@ -384,9 +384,6 @@ let on_startup ~schedule_action (m : Model.t) =
 
 let height_guess = 43.
 
-(* Because in this version of the code, the table code hasn't moved to using Component, we
-   create a corresponding Component locally. This code will be removed once we do the
-   migration of Incr_dom_widgets.Table.  *)
 let create_table_component (model : Model.t Incr.t) ~old_model ~inject =
   let columns = List.map ~f:Column.to_table_widget_column Row.Model.columns in
   let columns = Incr.const (List.mapi columns ~f:(fun i col -> i, col)) in
@@ -397,33 +394,15 @@ let create_table_component (model : Model.t Incr.t) ~old_model ~inject =
   in
   let render_row = row_renderer model ~inject in
   let table_model = model >>| Model.table in
-  let old_table_model = old_model >>| Model.table in
-  let extra = Ts_table.Derived_model.create table_model ~rows ~columns in
-  let%map apply_action =
-    let%map model = table_model and extra = extra in
-    fun action _ ~schedule_action:_ -> Ts_table.apply_action model extra action
-  and on_display =
-    let%map model = table_model and extra = extra and old_model = old_table_model in
-    fun _ ~schedule_action:_ -> Ts_table.on_display ~old_model model extra
-  and update_visibility =
-    let%map model = table_model and extra = extra in
-    fun () -> Ts_table.update_visibility model extra
-  and view =
-    Ts_table.view
-      table_model
-      extra
-      ~render_row
-      ~inject:(fun a -> inject (Action.Table_action a))
-      ~attrs:[ Vdom.Attr.classes [ "table"; "table-bordered" ] ]
-  and model = table_model
-  and extra = extra in
-  Component.create_with_extra
-    ~apply_action
-    ~on_display
-    ~update_visibility
-    ~extra
-    model
-    view
+  let old_table_model = old_model >>| Model.table >>| Option.some in
+  Ts_table.create
+    table_model
+    ~old_model:old_table_model
+    ~rows
+    ~columns
+    ~render_row
+    ~inject:(fun a -> inject (Action.Table_action a))
+    ~attrs:[ Vdom.Attr.classes [ "table"; "table-bordered" ] ]
 ;;
 
 let create model ~old_model ~inject =
