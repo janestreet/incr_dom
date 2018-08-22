@@ -288,7 +288,7 @@ let view
   { Rn_spec.row_attrs; cells }
 ;;
 
-let random_stock () : Model.t =
+let random_row () : Model.t =
   let symbol =
     let rchar () = Char.to_int 'A' + Random.int 26 |> Char.of_int_exn in
     String.init 4 ~f:(fun (_ : int) -> rchar ())
@@ -309,4 +309,4 @@ let random_stock () : Model.t =
   { symbol; edge; max_edge; trader; bsize; asize; bid; ask; position; last_fill }
 ;;
 
-let random_rows n = List.init n ~f:(fun _ -> random_stock ())
+let random_rows n = List.init n ~f:(fun _ -> random_row ())

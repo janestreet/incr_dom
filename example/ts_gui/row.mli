@@ -42,4 +42,6 @@ val view
   -> Row_node_spec.t Incr.t
 
 
+val random_row : unit -> Model.t
+
 val random_rows : int -> Model.t list

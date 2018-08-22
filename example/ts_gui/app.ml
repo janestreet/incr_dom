@@ -40,6 +40,8 @@ module Action = struct
     | Commit_edits
     | Add_focused_sort_col
     | Show_help_menu of Help_text.t
+    | Add_row
+    | Remove_row
   [@@deriving sexp]
 end
 
@@ -101,6 +103,23 @@ let add_focused_sort_col (m : Model.t) =
 
 let show_help_menu (m : Model.t) help_text = { m with help_text = Some help_text }
 
+let add_row (m : Model.t) =
+  { m with rows = Map.set m.rows ~key:(Row_id.create ()) ~data:(Row.random_row ()) }
+;;
+
+let remove_row (m : Model.t) =
+  match List.random_element (Map.keys m.rows) with
+  | None -> m
+  | Some row_id ->
+    let rows = Map.remove m.rows row_id in
+    let table =
+      if Option.equal Row_id.equal (Some row_id) (Ts_table.Model.focus_row m.table)
+      then Ts_table.set_focus_col (Ts_table.set_focus_row m.table None) None
+      else m.table
+    in
+    { m with rows; table }
+;;
+
 let escape table_apply_action (m : Model.t) =
   if Option.is_some m.help_text
   then { m with help_text = None }
@@ -138,6 +157,8 @@ let apply_action table (m : Model.t Incr.t) =
     | Commit_edits -> commit_edits m
     | Add_focused_sort_col -> add_focused_sort_col m
     | Show_help_menu help_text -> show_help_menu m help_text
+    | Add_row -> add_row m
+    | Remove_row -> remove_row m
 ;;
 
 let search_input_id = "search-input"
@@ -217,6 +238,16 @@ let key_handler ~inject =
           ~description:"Sort on focused column (in addition to existing sort columns)"
           ~cond:is_not_text_input
           (fun _ev -> inject Action.Add_focused_sort_col)
+      ; command
+          ~keys:[ key ~alt:() KeyA ]
+          ~description:"Add a randomly-generated row"
+          ~cond:is_not_text_input
+          (fun _ev -> inject Action.Add_row)
+      ; command
+          ~keys:[ key ~alt:() KeyR ]
+          ~description:"Remove a randomly chosen row"
+          ~cond:is_not_text_input
+          (fun _ev -> inject Action.Remove_row)
       ]
   in
   let help_menu_command =

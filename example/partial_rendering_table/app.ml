@@ -48,7 +48,7 @@ end = struct
   include Comparable.Make (T)
 end
 
-module Row_view = Partial_render_list.Make (Key)
+module Row_view = Partial_render_list.Make_simple (Key)
 
 module Model = struct
   type t =
