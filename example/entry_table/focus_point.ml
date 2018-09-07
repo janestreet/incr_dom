@@ -5,7 +5,6 @@ module T = struct
   type t = int list [@@deriving bin_io, sexp, compare, hash]
 
   let create = Fn.id
-
   let module_name = "Focus_point"
 end
 

@@ -15,7 +15,6 @@ module Key : sig
   type t [@@deriving sexp]
 
   val create : sort -> Row.Id.t -> t
-
   val id : t -> Row.Id.t
 
   include Comparable with type t := t
@@ -41,7 +40,6 @@ end = struct
   end
 
   let create sort id = sort, id
-
   let id (_, id) = id
 
   include T
@@ -231,7 +229,8 @@ let create model ~old_model:_ ~inject =
     let%map model = model in
     apply_action model
   and update_visibility =
-    let%map model = model and row_view = row_view in
+    let%map model = model
+    and row_view = row_view in
     update_visibility model row_view
   and view = view model row_view ~inject
   and model = model in

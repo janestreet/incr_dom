@@ -1,7 +1,6 @@
 open! Core_kernel
 open! Incr_dom
 open Incr.Let_syntax
-
 module Id : Identifiable = String
 
 module Model = struct

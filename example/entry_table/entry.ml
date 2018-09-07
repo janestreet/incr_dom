@@ -170,9 +170,7 @@ let field_is_focused ~collapsed (focus : focus_state) pos =
 ;;
 
 let align_left f attrs nodes = f (Attr.create "align" "left" :: attrs) nodes
-
 let th = align_left Node.th
-
 let td = align_left Node.td
 
 let maybe_fields ~collapsed ff x =

@@ -1,6 +1,5 @@
 open! Core_kernel
 open! Incr_dom
-
 module Id : Identifiable
 
 module Model : sig
@@ -21,7 +20,6 @@ module Action : sig
   [@@deriving sexp_of]
 
   val apply : t -> Model.t -> Model.t
-
   val should_log : t -> bool
 end
 

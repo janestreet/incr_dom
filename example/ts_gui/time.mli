@@ -7,7 +7,6 @@ type t = Time_ns.t
 include Comparable.S with type t := t
 
 val now : unit -> t
-
 val to_string : t -> string
 
 (** This function asserts false when called, but it won't be, since we don't presently

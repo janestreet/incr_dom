@@ -24,7 +24,6 @@ module Model = struct
   [@@deriving fields, compare]
 
   let cutoff t1 t2 = compare t1 t2 = 0
-
   let set_pattern t pattern = { t with pattern = String.lowercase pattern }
 end
 
@@ -140,7 +139,8 @@ let big_kick (m : Model.t) ids =
 ;;
 
 let apply_action table (m : Model.t Incr.t) =
-  let%map m = m and table_apply_action = table >>| Component.apply_action in
+  let%map m = m
+  and table_apply_action = table >>| Component.apply_action in
   fun (action : Action.t) state ~schedule_action ->
     let schedule_table_action action = schedule_action (Action.Table_action action) in
     let apply_table_action action =
@@ -164,7 +164,8 @@ let apply_action table (m : Model.t Incr.t) =
 let search_input_id = "search-input"
 
 let update_visibility table (m : Model.t Incr.t) =
-  let%map m = m and table_update_visibility = table >>| Component.update_visibility in
+  let%map m = m
+  and table_update_visibility = table >>| Component.update_visibility in
   fun () ->
     let table = table_update_visibility () in
     { m with table }
@@ -360,7 +361,8 @@ let should_set_edit_focus ~old_model (m : Model.t) =
   let focus = Ts_table.Model.focus_row m.table in
   let is_editing (m : Model.t) =
     match m.edit_state, focus with
-    | Not_editing, _ | _, None -> false
+    | Not_editing, _
+    | _, None -> false
     | Editing _, Some _ -> true
   in
   let edit_state m = is_editing m, focus in
@@ -371,7 +373,8 @@ let should_set_edit_focus ~old_model (m : Model.t) =
 let set_edit_focus (m : Model.t) =
   let focus = Ts_table.Model.focus_row m.table in
   match m.edit_state, focus with
-  | Not_editing, _ | _, None -> ()
+  | Not_editing, _
+  | _, None -> ()
   | Editing _, Some _ ->
     (match Dom_html.getElementById_coerce "focus-on-edit" Dom_html.CoerceTo.input with
      | None -> ()

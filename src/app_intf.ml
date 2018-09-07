@@ -52,9 +52,7 @@ end
 (** The interface for a basic, incrementally rendered application. *)
 module type S_simple = sig
   module Model : Model
-
   module State : State
-
   module Action : Action
 
   (** [apply_action] performs modifications to the model as dictated by the action. *)
@@ -101,9 +99,7 @@ end
     view and the application of an action. *)
 module type S_derived = sig
   module Model : Model
-
   module State : State
-
   module Action : Action
 
   (** [Derived_model] is the data container that allows you to share computations between

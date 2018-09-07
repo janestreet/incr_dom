@@ -202,7 +202,8 @@ let view (m : Model.t Incr.t) ~inject =
         | None -> false
         | Some range -> in_range Entry_id.compare range entry_id
       in
-      let%bind name = name and search_string = search_string in
+      let%bind name = name
+      and search_string = search_string in
       if not (Model.name_found_by_search ~search_string name)
       then Incr.const None
       else (
@@ -265,7 +266,8 @@ let create model ~old_model ~inject =
     let%map model = model in
     update_visibility model
   and on_display =
-    let%map old_model = old_model and model = model in
+    let%map old_model = old_model
+    and model = model in
     on_display ~old_model model
   and view = view model ~inject
   and model = model in

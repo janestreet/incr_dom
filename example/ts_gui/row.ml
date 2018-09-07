@@ -21,7 +21,7 @@ module Model = struct
 
   let columns =
     let append f list field = f field :: list in
-    let add ?group ?(editable=false) ?focus_on_edit ?sort_by m =
+    let add ?group ?(editable = false) ?focus_on_edit ?sort_by m =
       append (fun field ->
         Column.of_field field m ~editable ?group ?sort_by ?focus_on_edit)
     in
@@ -96,14 +96,12 @@ module Action = struct
   [@@deriving sexp]
 
   let kick_price = Kick_price
-
   let kick_position = Kick_position
 end
 
 (** Make sure that the number in question has at most two digits after the decimal point,
     so they render more cleanly.  *)
 let fix_digits x = Float.round (x *. 100.) /. 100.
-;;
 
 let kick_price (m : Model.t) =
   let move = Float.of_int (Random.int 15 - 7) /. 100. in
@@ -175,7 +173,6 @@ end = struct
   [@@deriving fields]
 
   let to_css_color { r; g; b } = `RGBA (Css.Color.RGBA.create ~r ~g ~b ())
-
   let background_style t = Css.background_color (to_css_color t)
 
   let interpolate t_from t_to pct =
@@ -215,11 +212,8 @@ let fade_out_color
 ;;
 
 let highlight_color = { Rgb.r = 169; g = 101; b = 201 }
-
 let normal_color = { Rgb.r = 245; g = 245; b = 245 }
-
 let focused_color = { Rgb.r = 135; g = 206; b = 250 }
-
 let sort_column_color = { Rgb.r = 250; g = 250; b = 200 }
 
 let view
@@ -239,7 +233,9 @@ let view
     | Unfocused -> if is_sort_column then sort_column_color else normal_color
   in
   let last_fill_time = m >>| Model.last_fill in
-  let%bind m = m and mode = mode and focused_column = focused_column in
+  let%bind m = m
+  and mode = mode
+  and focused_column = focused_column in
   let editing =
     match mode with
     | Editing -> true

@@ -14,13 +14,9 @@ module Rect : sig
   [@@deriving sexp, bin_io, compare, fields]
 
   val map : 'a t -> f:('a -> 'b) -> 'b t
-
   val int_height : int t -> int
-
   val int_width : int t -> int
-
   val float_height : float t -> float
-
   val float_width : float t -> float
 end
 

@@ -7,17 +7,11 @@ module type T = sig
   module Contents : Stringable
 
   val name : string
-
   val group : string option
-
   val get : row -> Contents.t
-
   val set : row -> Contents.t -> row
-
   val editable : bool
-
   val focus_on_edit : bool
-
   val sort_by : Contents.t -> Sort_key.t
 end
 
@@ -45,15 +39,10 @@ let create
     module Contents = Contents
 
     let name = name
-
     let group = group
-
     let get = get
-
     let set = set
-
     let editable = editable
-
     let sort_by = sort_by
 
     let focus_on_edit =
@@ -87,11 +76,8 @@ let of_field
 ;;
 
 let name (type row) (module T : T with type row = row) = T.name
-
 let group (type row) (module T : T with type row = row) = T.group
-
 let editable (type row) (module T : T with type row = row) = T.editable
-
 let focus_on_edit (type row) (module T : T with type row = row) = T.focus_on_edit
 
 let get (type row) (module T : T with type row = row) row =

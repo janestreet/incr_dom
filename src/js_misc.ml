@@ -15,15 +15,12 @@ module Rect = struct
   ;;
 
   let int_height t = t.bottom - t.top
-
   let int_width t = t.right - t.left
-
   let float_height t = t.bottom -. t.top
-
   let float_width t = t.right -. t.left
 end
 
-let round_float_rect ?(round=Float.iround_nearest_exn) = Rect.map ~f:round
+let round_float_rect ?(round = Float.iround_nearest_exn) = Rect.map ~f:round
 
 type rows_or_columns =
   | Rows
@@ -53,7 +50,7 @@ let element_is_in_viewport (elt : Dom_html.element Js.t) =
 ;;
 
 (** Scrolls to the item marked as "keep-in-view" *)
-let scroll ?(id="keep-in-view") () =
+let scroll ?(id = "keep-in-view") () =
   match Dom_html.getElementById_opt id with
   | None -> ()
   | Some elt -> if not (element_is_in_viewport elt) then elt##scrollIntoView Js._true
@@ -104,11 +101,9 @@ let client_rect () =
 let binary_search (type elt) ~length ~get ~compare mode x =
   let module Bs = Binary_searchable.Make (struct
                     type nonrec elt = elt
-
                     type nonrec t = unit
 
                     let get () n = get n
-
                     let length () = length
                   end)
   in
@@ -198,5 +193,5 @@ let get_scroll_container_js_expr =
 ;;
 
 let get_scroll_container (el : #Dom.node Js.t) : Dom.node Js.t =
-  Js.Unsafe.fun_call get_scroll_container_js_expr [|Js.Unsafe.inject el|]
+  Js.Unsafe.fun_call get_scroll_container_js_expr [| Js.Unsafe.inject el |]
 ;;

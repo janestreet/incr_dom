@@ -5,11 +5,8 @@ module Model : sig
   type t [@@deriving sexp, compare]
 
   val example : unit -> t
-
   val kick : t -> t
-
   val move_focus : t -> Focus_point.t option -> focus_dir -> Focus_point.t option
-
   val name : t -> string
 end
 

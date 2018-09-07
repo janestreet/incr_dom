@@ -27,15 +27,9 @@ val of_field
   -> 'row t
 
 val name : _ t -> string
-
 val editable : _ t -> bool
-
 val focus_on_edit : _ t -> bool
-
 val get : 'row t -> 'row -> string
-
 val set : 'row t -> 'row -> string -> 'row Or_error.t
-
 val sort_by : 'row t -> 'row -> Sort_key.t
-
 val to_table_widget_column : 'row t -> 'row Ts_table.Column.t

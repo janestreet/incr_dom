@@ -4,7 +4,6 @@ open Async_kernel
 open Js_of_ocaml
 
 let timer_start s ~debug = if debug then Firebug.console##time (Js.string s)
-
 let timer_stop s ~debug = if debug then Firebug.console##timeEnd (Js.string s)
 
 (** [request_animation_frame] notifies the browser that you would like to do some
@@ -45,11 +44,8 @@ module Visibility : sig
   type t
 
   val create_as_dirty : unit -> t
-
   val mark_clean : t -> unit
-
   val mark_dirty : t -> unit
-
   val is_dirty : t -> bool
 
   (** returns a deferred that becomes determined next time we're dirty, so immediately if
@@ -59,26 +55,24 @@ end = struct
   type t = { mutable when_dirty : unit Ivar.t }
 
   let create_as_dirty () = { when_dirty = Ivar.create_full () }
-
   let mark_dirty t = Ivar.fill_if_empty t.when_dirty ()
-
   let is_dirty t = Ivar.is_full t.when_dirty
-
   let when_dirty t = Ivar.read t.when_dirty
-
   let mark_clean t = if is_dirty t then t.when_dirty <- Ivar.create ()
 end
 
 module Action_log : sig
   val init : unit -> unit
-
   val should_log : unit -> bool
 end = struct
   class type global =
     object
       method logFlag : bool Js.t Js.writeonly_prop
+
       method logFlag_untyped : 'a Js.t Js.optdef Js.readonly_prop
+
       method startLogging : (unit -> unit) Js.callback Js.writeonly_prop
+
       method stopLogging : (unit -> unit) Js.callback Js.writeonly_prop
     end
 
@@ -90,9 +84,9 @@ end = struct
     global##.startLogging := Js.wrap_callback (fun () -> set_flag true);
     global##.stopLogging := Js.wrap_callback (fun () -> set_flag false);
     let init_message =
-      " Incr_dom action logging is disabled by default.\n \
-       To start logging actions, type startLogging()\n \
-       To stop logging actions, type stopLogging()\n"
+      " Incr_dom action logging is disabled by default.\n\
+      \ To start logging actions, type startLogging()\n\
+      \ To stop logging actions, type stopLogging()\n"
     in
     Firebug.console##log (Js.string init_message)
   ;;
@@ -108,7 +102,7 @@ end
 let derived
       (type model)
       ?bind_to_element_with_id
-      ?(debug=false)
+      ?(debug = false)
       ?(stop = Deferred.never ())
       ~initial_model
       (module App : App_intf.S_derived with type Model.t = model)
@@ -295,7 +289,7 @@ let derived
 let component
       (type model)
       ?bind_to_element_with_id
-      ?(debug=false)
+      ?(debug = false)
       ?(stop = Deferred.never ())
       ~initial_model
       (module App : App_intf.S_component with type Model.t = model)
@@ -481,9 +475,7 @@ struct
   ;;
 
   let update_visibility model () ~recompute_derived:_ = App.update_visibility model
-
   let on_startup ~schedule_action model () = App.on_startup ~schedule_action model
-
   let view model (_ : unit Incr.t) ~inject = App.view model ~inject
 
   let on_display ~old_model ~old_derived_model:_ model () state =

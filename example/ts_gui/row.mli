@@ -6,7 +6,6 @@ module Model : sig
   type t [@@deriving compare]
 
   val columns : t Column.t list
-
   val matches_pattern : t -> string -> bool
 
 
@@ -17,7 +16,6 @@ module Action : sig
   type t [@@deriving sexp]
 
   val kick_price : t
-
   val kick_position : t
 end
 
@@ -43,5 +41,4 @@ val view
 
 
 val random_row : unit -> Model.t
-
 val random_rows : int -> Model.t list

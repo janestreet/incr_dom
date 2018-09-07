@@ -14,15 +14,10 @@ module Model = struct
   ;;
 
   let init () = set_default_input 0 None
-
   let reset_counter t = set_default_input 0 t.submitted_text
-
   let incr_counter t = set_default_input (t.counter + 1) t.submitted_text
-
   let update_input t input_text = { t with input_text }
-
   let submit_input t = { t with submitted_text = Some t.input_text }
-
   let cutoff t1 t2 = compare t1 t2 = 0
 end
 
