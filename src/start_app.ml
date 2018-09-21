@@ -359,7 +359,9 @@ let component
      let prev_elt = ref elt in
      let update_visibility () =
        Visibility.mark_clean visibility;
-       let new_model = Component.update_visibility (Incr.Observer.value_exn app) () in
+       let new_model =
+         Component.update_visibility (Incr.Observer.value_exn app) ~schedule_action
+       in
        Incr.Var.set model_v new_model;
        timer_start "stabilize" ~debug;
        Incr.stabilize ();

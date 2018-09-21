@@ -117,7 +117,7 @@ let on_startup ~schedule_action _model =
   Deferred.return ()
 ;;
 
-let update_visibility (model : Model.t) row_view () =
+let update_visibility (model : Model.t) row_view ~schedule_action:_ =
   let height_cache =
     Row_view.measure_heights_simple row_view ~measure:(fun key ->
       let open Option.Let_syntax in

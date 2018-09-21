@@ -41,7 +41,10 @@ val apply_action
     infinite loop.  Such behavior is a bug in the component, but the framework doesn't
     attempt to stop cascading sequences of [update_visibility], so that these bugs are not
     hidden. *)
-val update_visibility : (_, 'model, _, _) with_extra -> unit -> 'model
+val update_visibility
+  :  ('action, 'model, _, _) with_extra
+  -> schedule_action:('action -> unit)
+  -> 'model
 
 (** [view] is called to obtain the virtual DOM which is then applied to the actual DOM. *)
 val view : _ with_extra -> Vdom.Node.t
@@ -69,7 +72,7 @@ val on_display
 *)
 val create
   :  ?apply_action:('action -> 'state -> schedule_action:('action -> unit) -> 'model)
-  -> ?update_visibility:(unit -> 'model)
+  -> ?update_visibility:(schedule_action:('action -> unit) -> 'model)
   -> ?on_display:('state -> schedule_action:('action -> unit) -> unit)
   -> 'model
   -> Vdom.Node.t
@@ -79,7 +82,7 @@ val create
     allows for component-specific state to be exposed. *)
 val create_with_extra
   :  ?apply_action:('action -> 'state -> schedule_action:('action -> unit) -> 'model)
-  -> ?update_visibility:(unit -> 'model)
+  -> ?update_visibility:(schedule_action:('action -> unit) -> 'model)
   -> ?on_display:('state -> schedule_action:('action -> unit) -> unit)
   -> extra:'extra
   -> 'model

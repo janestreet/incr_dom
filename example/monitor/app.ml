@@ -75,7 +75,7 @@ let apply_action (m : Model.t) (action : Action.t) _ ~schedule_action:_ =
     m
 ;;
 
-let update_visibility m () =
+let update_visibility m ~schedule_action:_ =
   maybe_fail m Visibility;
   m
 ;;

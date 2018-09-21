@@ -224,7 +224,7 @@ let view (m : Model.t Incr.t) ~inject =
   Node.body [ on_keydown ] (input :: Map.data entries)
 ;;
 
-let update_visibility m () =
+let update_visibility m ~schedule_action:_ =
   let filtered_entries = Model.filtered_entries m in
   let visible_range =
     Js_misc.find_visible_range

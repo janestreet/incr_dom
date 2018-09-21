@@ -41,7 +41,7 @@ module Action = struct
     | Show_help_menu of Help_text.t
     | Add_row
     | Remove_row
-  [@@deriving sexp]
+  [@@deriving sexp, variants]
 end
 
 module State = struct
@@ -165,9 +165,13 @@ let search_input_id = "search-input"
 
 let update_visibility table (m : Model.t Incr.t) =
   let%map m = m
-  and table_update_visibility = table >>| Component.update_visibility in
-  fun () ->
-    let table = table_update_visibility () in
+  and table = table in
+  fun ~schedule_action ->
+    let table =
+      Component.update_visibility
+        table
+        ~schedule_action:(Fn.compose schedule_action Action.table_action)
+    in
     { m with table }
 ;;
 
