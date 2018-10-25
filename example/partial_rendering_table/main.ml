@@ -11,7 +11,7 @@ let () =
     try Some (Int.of_string hash) with
     | _ -> None
   in
-  Start_app.component
+  Start_app.component_old_do_not_use
     (module App)
     ~initial_model:(App.Model.create (Option.value ~default:50000 count))
 ;;

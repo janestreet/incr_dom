@@ -1,19 +1,26 @@
 open! Core_kernel
 open! Async_kernel
 
-(** The calls in this module initialize new applications, including starting up Async and
-    waiting for the initial creation of the DOM.
+(** For starting up an [Incr_dom] app. *)
 
-    In each of these calls, if [bind_to_element_with_id] is specified, the app will be
-    bound to the element with the given id. In other words, the DOM returned by [App.view]
-    will replace that element. If not specified, the app will be bound to the body
-    element.
-
-    The differences between these calls can be understood in more detail by looking at the
-    module type definitions in [App_intf].
+(** [start] initializes a new application, including starting up Async and waiting for the
+    initial creation of the DOM.  [bind_to_element_with_id] determines which element the
+    UI will be bound in to. In other words, the DOM returned by [App.view] will replace
+    that element.
 *)
+val start
+  :  ?debug:bool (* print info to JS console - default false *)
+  -> ?stop:unit Deferred.t
+  -> bind_to_element_with_id:string
+  -> initial_model:'model
+  -> (module App_intf.S_component with type Model.t = 'model)
+  -> unit
 
-val component
+(** Like [start], but makes the specification of the element to be bound to optional,
+    which means that by default, it's bound to the body, which turns out to be a bad
+    choice.  This function will eventually be eliminated, once we remove the existing
+    use-cases. *)
+val component_old_do_not_use
   :  ?bind_to_element_with_id:string
   -> ?debug:bool (* print info to JS console - default false *)
   -> ?stop:unit Deferred.t

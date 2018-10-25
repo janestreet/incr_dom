@@ -99,7 +99,7 @@ end = struct
   ;;
 end
 
-let component
+let component_old_do_not_use
       (type model)
       ?bind_to_element_with_id
       ?(debug = false)
@@ -260,4 +260,20 @@ let component
      in
      request_animation_frame callback;
      Deferred.never ())
+;;
+
+let start
+      (type model)
+      ?(debug = false)
+      ?(stop = Deferred.never ())
+      ~bind_to_element_with_id
+      ~initial_model
+      (module App : App_intf.S_component with type Model.t = model)
+  =
+  component_old_do_not_use
+    ~debug
+    ~stop
+    ~bind_to_element_with_id
+    ~initial_model
+    (module App)
 ;;
