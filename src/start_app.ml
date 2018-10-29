@@ -105,7 +105,7 @@ let component_old_do_not_use
       ?(debug = false)
       ?(stop = Deferred.never ())
       ~initial_model
-      (module App : App_intf.S_component with type Model.t = model)
+      (module App : App_intf.S with type Model.t = model)
   =
   (* This is idempotent and so fine to do. *)
   Async_js.init ();
@@ -268,7 +268,7 @@ let start
       ?(stop = Deferred.never ())
       ~bind_to_element_with_id
       ~initial_model
-      (module App : App_intf.S_component with type Model.t = model)
+      (module App : App_intf.S with type Model.t = model)
   =
   component_old_do_not_use
     ~debug

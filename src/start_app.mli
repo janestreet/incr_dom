@@ -13,7 +13,7 @@ val start
   -> ?stop:unit Deferred.t
   -> bind_to_element_with_id:string
   -> initial_model:'model
-  -> (module App_intf.S_component with type Model.t = 'model)
+  -> (module App_intf.S with type Model.t = 'model)
   -> unit
 
 (** Like [start], but makes the specification of the element to be bound to optional,
@@ -25,5 +25,5 @@ val component_old_do_not_use
   -> ?debug:bool (* print info to JS console - default false *)
   -> ?stop:unit Deferred.t
   -> initial_model:'model
-  -> (module App_intf.S_component with type Model.t = 'model)
+  -> (module App_intf.S with type Model.t = 'model)
   -> unit

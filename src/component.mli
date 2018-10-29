@@ -3,7 +3,7 @@
     as well as for defining individual components within a larger app.
 
     The {!Component.t} is often constructed incrementally, and is always created
-    incrementally at the top-level, as is required by {!App_intf.S_component}.  *)
+    incrementally at the top-level, as is required by {!App_intf.S}.  *)
 
 open Virtual_dom
 
@@ -62,7 +62,7 @@ val on_display
   -> unit
 
 (** Though this create function is not incremental, it is usually called in the context of
-    an incremental computation function, like the one in {!App_intf.S_component}. If some
+    an incremental computation function, like the one in {!App_intf.S}. If some
     arguments are not supplied, defaults (which either return the model supplied or unit)
     are included in the component.
 

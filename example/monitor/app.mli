@@ -1,6 +1,6 @@
 open! Core_kernel
 open! Async_kernel
 open! Incr_dom
-include App_intf.S_component
+include App_intf.S
 
 val init : ?init_loc:string -> Monitor.t -> stop:unit Ivar.t -> Model.t

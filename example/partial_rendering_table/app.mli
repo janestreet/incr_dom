@@ -8,4 +8,4 @@ module Model : sig
   val create : int -> t
 end
 
-include App_intf.S_component with module Model := Model
+include App_intf.S with module Model := Model
