@@ -3,5 +3,8 @@ open! Incr_dom
 open! Js_of_ocaml
 
 let () =
-  Start_app.component_old_do_not_use (module App) ~initial_model:(App.Model.init ())
+  Start_app.start
+    (module App)
+    ~bind_to_element_with_id:"app"
+    ~initial_model:(App.Model.init ())
 ;;
