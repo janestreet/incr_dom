@@ -156,7 +156,7 @@ let view model row_view ~inject =
   let offset_div key height =
     Vdom.Node.div
       ~key
-      [ Vdom.Attr.style (Css.height (`Px (Float.iround_nearest_exn height))) ]
+      [ Vdom.Attr.style (Css_gen.height (`Px (Float.iround_nearest_exn height))) ]
       []
   in
   let visible_rows = row_view >>| Row_view.rows_to_render in

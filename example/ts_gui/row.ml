@@ -133,7 +133,7 @@ end
 let editable_cell m col ~remember_edit =
   let open Vdom in
   let attrs =
-    [ Attr.style Css.(width Length.percent100)
+    [ Attr.style Css_gen.(width Length.percent100)
     ; Attr.create "size" "1"
     ; Attr.value (Column.get col m)
     ; Attr.on_input (fun _ value -> remember_edit ~column:(Column.name col) value)
@@ -159,7 +159,7 @@ module Rgb : sig
     ; b : int
     }
 
-  val background_style : t -> Css.t
+  val background_style : t -> Css_gen.t
 
   (** [interpolate t1 t2 x] is equal to [t1] if [x=0], [t2] if [x=1], and interpolates
       between otherwise. *)
@@ -172,8 +172,8 @@ end = struct
     }
   [@@deriving fields]
 
-  let to_css_color { r; g; b } = `RGBA (Css.Color.RGBA.create ~r ~g ~b ())
-  let background_style t = Css.background_color (to_css_color t)
+  let to_css_color { r; g; b } = `RGBA (Css_gen.Color.RGBA.create ~r ~g ~b ())
+  let background_style t = Css_gen.background_color (to_css_color t)
 
   let interpolate t_from t_to pct =
     let single field =
@@ -241,7 +241,7 @@ let view
     | Editing -> true
     | Focused | Unfocused -> false
   in
-  let row_attrs = Rn_spec.Attrs.create () ~attrs:[ on_click ] in
+  let row_attrs = [ on_click ] in
   let%map last_fill_style =
     let sec x = Time_ns.Span.of_sec x in
     let is_sort_column =
@@ -277,7 +277,7 @@ let view
         then last_fill_style
         else Rgb.background_style (row_background_color mode ~is_sort_column)
       in
-      { Rn_spec.Cell.attrs = Rn_spec.Attrs.create ~attrs ~style ()
+      { Rn_spec.Cell.attrs = Attr.style style :: attrs
       ; node = column_cell ~editing ~remember_edit m col
       })
   in

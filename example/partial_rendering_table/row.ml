@@ -40,7 +40,7 @@ let view (model : Model.t Incr.t) ~row_id ~inject =
   let%map model = model in
   Vdom.Node.div
     ~key:(Id.to_string row_id)
-    [ Vdom.Attr.style Css.(font_size (`Px model.font_size))
+    [ Vdom.Attr.style Css_gen.(font_size (`Px model.font_size))
     ; Vdom.Attr.id (Id.to_string row_id)
     ; onclick
     ]

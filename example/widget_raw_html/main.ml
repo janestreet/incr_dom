@@ -4,8 +4,7 @@ open! Js_of_ocaml
 
 let () =
   Start_app.start
-    ~bind_to_element_with_id:"app"
-    ~debug:false
-    ~initial_model:(App.init ())
     (module App)
+    ~bind_to_element_with_id:"app"
+    ~initial_model:(App.Model.init ())
 ;;

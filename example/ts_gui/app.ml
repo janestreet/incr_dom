@@ -321,7 +321,7 @@ let view table (m : Model.t Incr.t) ~(inject : Action.t -> Vdom.Event.t) =
   let help_menu_hint =
     let help_text = Keyboard_event_handler.Command.get_help_text help_menu_command in
     Node.div
-      [ Attr.style Css.(combine (text_align `Center) (uniform_padding (`Px 5))) ]
+      [ Attr.style Css_gen.(combine (text_align `Center) (uniform_padding (`Px 5))) ]
       [ Help_text.Command.(view help_text help_text_view_spec Format.default) ]
   in
   let input =
@@ -342,6 +342,7 @@ let view table (m : Model.t Incr.t) ~(inject : Action.t -> Vdom.Event.t) =
     | None -> []
     | Some help_text ->
       [ Node.div
+          ~key:"help"
           [ Attr.id "overlay"; Attr.on_double_click (fun _ev -> inject Action.Escape) ]
           [ Node.div
               [ Attr.id "help-menu" ]
@@ -351,13 +352,11 @@ let view table (m : Model.t Incr.t) ~(inject : Action.t -> Vdom.Event.t) =
           ]
       ]
   in
-  Node.body
-    [ scroll_attr; key_handler ]
+  Node.div
+    [ Attr.id "app"; key_handler ]
     (help_menu
-     @ [ Node.div
-           [ Attr.id "table-container" ]
-           [ input; help_menu_hint; Node.div [] [ table ] ]
-       ; Node.div [ Attr.class_ "big-gap" ] []
+     @ [ Node.div ~key:"top" [ Attr.id "top-container" ] [ input; help_menu_hint ]
+       ; Node.div ~key:"table" [ Attr.id "table-container"; scroll_attr ] [ table ]
        ])
 ;;
 
@@ -462,7 +461,7 @@ let init () : Model.t =
   let table =
     Ts_table.Model.create
       ~scroll_margin:(Table.Margin.uniform 5.)
-      ~scroll_region:Window
+      ~scroll_region:(Element "table-container")
       ~float_header:Edge
       ~float_first_col:(Px_from_edge (-1))
       ~height_guess

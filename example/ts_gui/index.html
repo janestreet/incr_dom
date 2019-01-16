@@ -5,9 +5,6 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.4/css/bootstrap.min.css" crossorigin="anonymous">
     <script src="main.bc.js"></script>
     <style type="text/css">
-      html {
-        overflow-y: scroll
-      }
       
       body, #app {
         background-color: rgb(245,245,245);
@@ -26,14 +23,30 @@
       .header {
         height: 20;
       }
+      
+      #app {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        overflow:hidden;
+      }
+
+      #top-container {
+        align-self: stretch;
+      }
 
       #table-container {
-        overflow: visible;
+        overflow: auto;
         min-height:400px;
         height: 100%;
-        max-width: 900px;
-        margin: auto;
+        width:100%;
         font-size: 75%;
+      }
+
+      #table-container > table {
+        margin: auto;
+        max-width: 900px;
       }
 
       #search-container {
@@ -147,9 +160,7 @@
         background-color: rgb(169,101,201);
       }
 
-      .big-gap {
-          height: 3000px;
-      }
+
     </style>
   </head>
   <body>

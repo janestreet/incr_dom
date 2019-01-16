@@ -99,6 +99,30 @@ end = struct
   ;;
 end
 
+(* Adds the necessary attribute to the root node so that it can intercept
+   keyboard events.
+   https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/tabindex *)
+let override_root_element root =
+  let open Vdom in
+  match (root : Node.t) with
+  | Element e ->
+    let new_element =
+      let new_attrs =
+        [ Attr.style (Css_gen.outline ~style:`None ()); Attr.tabindex 0 ]
+      in
+      Node.Element.map_attrs e ~f:(fun attrs ->
+        Attrs.merge_classes_and_styles (new_attrs @ attrs))
+    in
+    Node.Element new_element
+  | Text _ | Widget _ -> root
+;;
+
+let get_tag_name (node : Vdom.Node.t) =
+  match node with
+  | Element e -> Some (Vdom.Node.Element.tag e)
+  | Text _ | Widget _ -> None
+;;
+
 let component_old_do_not_use
       (type model)
       ?bind_to_element_with_id
@@ -143,7 +167,6 @@ let component_old_do_not_use
      Action_log.init ();
      let html = Incr.Observer.value_exn app |> Component.view in
      let html_dom = Vdom.Node.to_dom html in
-     let elt = (html_dom :> Dom.element Js.t) in
      (match bind_to_element_with_id with
       | None -> Dom_html.document##.body := html_dom
       | Some id ->
@@ -151,7 +174,7 @@ let component_old_do_not_use
         let parent =
           Option.value_exn ~here:[%here] (Js.Opt.to_option elem##.parentNode)
         in
-        Dom.replaceChild parent elt elem);
+        Dom.replaceChild parent html_dom elem);
      (* we make sure to call [viewport_changed] whenever the window resizes or the scroll
         container in which our HTML is located is scrolled. *)
      let call_viewport_changed_on_event event_name where =
@@ -169,7 +192,37 @@ let component_old_do_not_use
      call_viewport_changed_on_event "resize" Dom_html.window;
      let%bind state = App.on_startup ~schedule_action (Incr.Var.value model_v) in
      let prev_html = ref html in
-     let prev_elt = ref elt in
+     let prev_elt = ref html_dom in
+     let refocus_root_element () =
+       let element = !prev_elt in
+       element##focus;
+       ()
+     in
+     (*
+        Take action on any blur event, refocusing to the root node if the relatedTarget is
+        null or undefined, signifying that focus was lost and would otherwise be reset to
+        the body node.
+
+        The Js._true parameter provided to Dom.addEventListener is the useCapture
+        parameter described here:
+        https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
+     *)
+     ignore
+     @@ Dom.addEventListener
+          Dom_html.window
+          Dom_html.Event.blur
+          (Dom_html.handler (fun e ->
+             (* [Js.Unsafe.*] is like [Obj.magic]. We should be explicit about what we
+                expect. *)
+             let e
+               : < relatedTarget : Dom_html.element Js.t Js.opt Js.readonly_prop >
+                   Js.t =
+               Js.Unsafe.coerce e
+             in
+             let related_target = e##.relatedTarget in
+             if not (Js.Opt.test related_target) then refocus_root_element ();
+             Js._true))
+          Js._true;
      let update_visibility () =
        Visibility.mark_clean visibility;
        let new_model =
@@ -221,6 +274,7 @@ let component_old_do_not_use
        apply_actions pipe;
        timer_stop "apply actions" ~debug;
        let html = Incr.Observer.value_exn app |> Component.view in
+       let html = override_root_element html in
        timer_start "diff" ~debug;
        let patch = Vdom.Node.Patch.create ~previous:!prev_html ~current:html in
        timer_stop "diff" ~debug;
@@ -232,10 +286,15 @@ let component_old_do_not_use
        Component.on_display (Incr.Observer.value_exn app) state ~schedule_action;
        timer_stop "on_display" ~debug;
        Incr.Var.set model_from_last_display_v (Incr.Var.value model_v);
+       let old_tag_name = get_tag_name !prev_html in
+       let new_tag_name = get_tag_name html in
+       let tags_the_same = Option.equal String.equal old_tag_name new_tag_name in
        prev_html := html;
        prev_elt := elt;
        timer_stop "total" ~debug;
-       if debug then Firebug.console##debug (Js.string "-------")
+       if debug then Firebug.console##debug (Js.string "-------");
+       (* Changing the tag name causes focus to be lost.  Refocus in that case. *)
+       if not tags_the_same then refocus_root_element ()
      in
      (* We use [request_animation_frame] so that browser tells us where it's time to
         refresh the UI. All the actions will be processed and the changes propagated
@@ -258,6 +317,14 @@ let component_old_do_not_use
          perform_update r;
          request_animation_frame callback)
      in
+     (* We want the root element to start out focused, so perform an initial
+        update/render, then immediately focus the root (unless a non-body element already
+        has focus).  This focusing can't happen inside of the `callback` because then it
+        would refocus root every frame.  *)
+     perform_update r;
+     (match Js.Opt.to_option Dom_html.document##.activeElement with
+      | Some el -> if Js.Opt.test (Dom_html.CoerceTo.body el) then refocus_root_element ()
+      | None -> refocus_root_element ());
      request_animation_frame callback;
      Deferred.never ())
 ;;
