@@ -1,2 +1,2 @@
-(executables (names main) (libraries incr_dom_widgets async_js)
+(executables (names main) (libraries incr_dom_widgets async_kernel)
  (preprocess (pps js_of_ocaml-ppx ppx_jane)))

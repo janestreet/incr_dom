@@ -195,7 +195,16 @@ let component_old_do_not_use
      let prev_elt = ref html_dom in
      let refocus_root_element () =
        let element = !prev_elt in
-       element##focus;
+       let element
+         :
+           < focus : < preventScroll : bool Js.t Js.readonly_prop > Js.t -> unit Js.meth >
+             Js.t =
+         Js.Unsafe.coerce element
+       in
+       element##focus
+         (object%js
+           val preventScroll = Js._true
+         end);
        ()
      in
      (*
