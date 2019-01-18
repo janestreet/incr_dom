@@ -272,7 +272,7 @@ let component_old_do_not_use
          let date = new%js Js.date_now in
          Time_ns.Span.of_ms date##getTime |> Time_ns.of_span_since_epoch
        in
-       Incr.advance_clock ~to_:now;
+       Incr.Clock.advance_clock Incr.clock ~to_:now;
        Incr.stabilize ();
        timer_stop "stabilize" ~debug;
        timer_start "total" ~debug;

@@ -150,7 +150,7 @@ let column_cell m col ~editing ~remember_edit =
   else Node.span [] [ Node.text (Column.get col m) ]
 ;;
 
-let now = Incr.watch_now ()
+let now = Incr.Clock.watch_now Incr.clock
 
 module Rgb : sig
   type t =
@@ -199,7 +199,10 @@ let fade_out_color
     let end_solid = Time_ns.add start_time solid_for in
     let end_fade = Time_ns.add end_solid fade_for in
     let phase =
-      Incr.step_function ~init:`Solid [ end_solid, `Fading; end_fade, `Default ]
+      Incr.Clock.step_function
+        Incr.clock
+        ~init:`Solid
+        [ end_solid, `Fading; end_fade, `Default ]
     in
     (match%bind phase with
      | `Solid -> return (Rgb.background_style fade_from)
