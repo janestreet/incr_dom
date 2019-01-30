@@ -1,5 +1,28 @@
-This directory contains a few examples of how the =incr_dom= library
+This directory contains a few examples of how the Incr\_dom library
 can be used.
+
+** The examples, explained
+   
+(Examples with asterisks in front of their name link to in-depth
+guides. The rest are stubs.)
+
+- *[[./text_input/README.md][~Text_input~]]: Start here. This example unpacks a basic ~Incr_dom~
+  application, explaining how all the various parts hang
+  together. (The app implements a model-driven text input.) 
+- ~Incr_decr~: The simplest example, which you should be able to
+  understand after reading through the ~Text_input~ guide. Makes use of
+  [[https://ocaml.janestreet.com/ocaml-core/latest/doc/incr_dom/Incr_dom/Incr/Map/#val-mapi'][Incr.Map.mapi']].
+- [[./entry_table/README.md][~Entry_table~]]: A curses-like application that lets you move with the
+  keyboard through rows of fake data that are constantly ticking with
+  new information.
+- ~Event_propagation~: An app that demonstrates DOM event propagation.
+- [[./monitor/README.org][~Monitor~]]: Showcases error handling in ~incr_dom~.
+- [[./partial_rendering_table/README.org][~Partial_rendering_table~]]: Uses the ~Partial_render_list~ module
+  that's a part of ~Incr_dom_widgets~ to partially render a long
+  vertical list.
+- *[[./ts_gui/README.md][~Ts_gui~]]: A mockup of a very simple trading-system GUI.
+
+** Build instructions: Running the examples
 
 To run any of these examples, follow the steps below:
 
@@ -7,4 +30,4 @@ To run any of these examples, follow the steps below:
 
 - =jbuilder build example/incr_decr/{main.bc.js,index.html}=
 
-- Open =_build/default/example/incr_decr/index.html=
+- Open =_build/default/example/incr_decr/index.html= in a web browser!
