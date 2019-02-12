@@ -1,6 +1,5 @@
 open! Core_kernel
 open! Import
-open Incr_dom_widgets
 open Incr_dom_keyboard
 
 module Model = struct

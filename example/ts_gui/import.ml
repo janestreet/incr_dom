@@ -3,7 +3,7 @@ include Incr.Let_syntax
 module Js = Js_of_ocaml.Js
 module Dom_html = Js_of_ocaml.Dom_html
 include Splay_tree.Std
-include Incr_dom_widgets
+include Incr_dom_partial_render
 
 module Row_id = struct
   include Core_kernel.Unique_id.Int ()

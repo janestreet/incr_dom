@@ -1,2 +1,2 @@
-(executables (names main) (libraries incr_dom incr_dom_widgets)
+(executables (names main) (libraries incr_dom incr_dom_partial_render)
  (preprocess (pps js_of_ocaml-ppx ppx_jane)))

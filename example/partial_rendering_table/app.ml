@@ -2,7 +2,7 @@ open! Core_kernel
 open! Incr_dom
 open! Js_of_ocaml
 open! Async_kernel
-open Incr_dom_widgets
+open Incr_dom_partial_render
 open Incr.Let_syntax
 module Measurements = Partial_render_list.Measurements
 
