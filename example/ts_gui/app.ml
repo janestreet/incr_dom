@@ -337,27 +337,26 @@ let view table (m : Model.t Incr.t) ~(inject : Action.t -> Vdom.Event.t) =
       ]
   in
   let%map table = table >>| Component.view
-  and help_menu =
+  and maybe_help_menu =
     match%map m >>| Model.help_text with
-    | None -> []
+    | None -> Node.none
     | Some help_text ->
-      [ Node.div
-          ~key:"help"
-          [ Attr.id "overlay"; Attr.on_double_click (fun _ev -> inject Action.Escape) ]
-          [ Node.div
-              [ Attr.id "help-menu" ]
-              [ Node.h4 [] [ Node.text "Help Menu" ]
-              ; Help_text.view help_text help_text_view_spec
-              ]
-          ]
-      ]
+      Node.div
+        ~key:"help"
+        [ Attr.id "overlay"; Attr.on_double_click (fun _ev -> inject Action.Escape) ]
+        [ Node.div
+            [ Attr.id "help-menu" ]
+            [ Node.h4 [] [ Node.text "Help Menu" ]
+            ; Help_text.view help_text help_text_view_spec
+            ]
+        ]
   in
   Node.div
     [ Attr.id "app"; key_handler ]
-    (help_menu
-     @ [ Node.div ~key:"top" [ Attr.id "top-container" ] [ input; help_menu_hint ]
-       ; Node.div ~key:"table" [ Attr.id "table-container"; scroll_attr ] [ table ]
-       ])
+    [ maybe_help_menu
+    ; Node.div ~key:"top" [ Attr.id "top-container" ] [ input; help_menu_hint ]
+    ; Node.div ~key:"table" [ Attr.id "table-container"; scroll_attr ] [ table ]
+    ]
 ;;
 
 let should_set_edit_focus ~old_model (m : Model.t) =

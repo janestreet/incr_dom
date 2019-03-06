@@ -32,9 +32,9 @@ val apply_action
 
     {!Start_app} calls [update_visibility] when a top-level resize or scroll is detected.
     Also, individual components that create scrollable widgets should create DOM event
-    handlers that return the [Viewport_changed] event from {!Virtual_dom.Event} when those
-    widgets are scrolled or resized. Otherwise, visibility changes may not be correctly
-    captured.
+    handlers that return the [Viewport_changed] event from {!Virtual_dom.Vdom.Event} when
+    those widgets are scrolled or resized. Otherwise, visibility changes may not be
+    correctly captured.
 
     Note that changes in visibility could trigger changes to the DOM that in turn cause
     the page to reflow. This can cause more changes in visibility, which can lead to an

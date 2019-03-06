@@ -114,13 +114,13 @@ let override_root_element root =
         Attrs.merge_classes_and_styles (new_attrs @ attrs))
     in
     Node.Element new_element
-  | Text _ | Widget _ -> root
+  | None | Text _ | Widget _ -> root
 ;;
 
 let get_tag_name (node : Vdom.Node.t) =
   match node with
   | Element e -> Some (Vdom.Node.Element.tag e)
-  | Text _ | Widget _ -> None
+  | None | Text _ | Widget _ -> None
 ;;
 
 let component_old_do_not_use
