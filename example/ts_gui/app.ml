@@ -403,7 +403,7 @@ let on_display table ~old_model (m : Model.t Incr.t) =
     in
     (* When the user presses the shift+e when the focus is out of view, scroll to it. *)
     if not (editing old_model) && editing m
-    then ignore (Ts_table.scroll_focus_into_scroll_region m.table table_extra)
+    then ignore (Ts_table.Extra.scroll_focus_into_scroll_region m.table table_extra)
     else (
       (* Because we don't re-measure the viewport, if the app is slow and a focus change
          gets batched with an edit, without the [else] it will scroll relatively twice. *)
