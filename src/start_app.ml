@@ -15,17 +15,18 @@ let timer_stop s ~debug = if debug then Firebug.console##timeEnd (Js.string s)
     changes will not be included in the repaint and will be saved until the following one.
 *)
 let request_animation_frame callback =
+  let module Scheduler = Async_kernel_scheduler in
   (* We capture the current context to use it later when handling callbacks from
      requestAnimationFrame, since exceptions raised to that would otherwise not go through
      our ordinary Async monitor. *)
-  let current_context = Async_kernel_scheduler.(current_execution_context (t ())) in
-  ignore
-    ( Dom_html.window##requestAnimationFrame
-        (Js.wrap_callback (fun _timestamp ->
-           ignore
-             ( Async_kernel_scheduler.within_context current_context callback
-               : (unit, unit) Result.t )))
-      : Dom_html.animation_frame_request_id )
+  let current_context = Scheduler.current_execution_context (Scheduler.t ()) in
+  let callback _timestamp =
+    let callback_result = Scheduler.within_context current_context callback in
+    ignore (callback_result : (unit, unit) Result.t)
+  in
+  let wrapped_callback = Js.wrap_callback callback in
+  let request_result = Dom_html.window##requestAnimationFrame wrapped_callback in
+  ignore (request_result : Dom_html.animation_frame_request_id)
 ;;
 
 (** [Visibility] encapsulates the dirtying and cleaning of the visibility flag
