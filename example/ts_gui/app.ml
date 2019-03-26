@@ -33,7 +33,7 @@ module Action = struct
     | Set_pattern of string
     | Table_action of Ts_table.Action.t
     | Row_action of Row_id.t * Row.Action.t
-    | Big_kick of Row_id.t array sexp_opaque
+    | Big_kick of (Row_id.t array[@sexp.opaque])
     | Edit_start
     | Remember_edit of Model.edit
     | Commit_edits
