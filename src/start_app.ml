@@ -19,7 +19,7 @@ let request_animation_frame callback =
   (* We capture the current context to use it later when handling callbacks from
      requestAnimationFrame, since exceptions raised to that would otherwise not go through
      our ordinary Async monitor. *)
-  let current_context = Scheduler.current_execution_context (Scheduler.t ()) in
+  let current_context = Scheduler.current_execution_context () in
   let callback _timestamp =
     let callback_result = Scheduler.within_context current_context callback in
     ignore (callback_result : (unit, unit) Result.t)
@@ -28,6 +28,13 @@ let request_animation_frame callback =
   let request_result = Dom_html.window##requestAnimationFrame wrapped_callback in
   ignore (request_result : Dom_html.animation_frame_request_id)
 ;;
+
+(** The Js_of_ocaml type Dom_html.element doesn't have the correct options for
+    their `focus` method. Cast to this in order to work around this bug.  *)
+type focusable =
+  < focus : < preventScroll : bool Js.t Js.readonly_prop > Js.t -> unit Js.meth >
+
+let as_focusable : Dom_html.element Js.t -> focusable Js.t = Js.Unsafe.coerce
 
 (** [Visibility] encapsulates the dirtying and cleaning of the visibility flag
 
@@ -196,17 +203,17 @@ let component_old_do_not_use
      let prev_elt = ref html_dom in
      let refocus_root_element () =
        let element = !prev_elt in
-       let element
-         :
-           < focus : < preventScroll : bool Js.t Js.readonly_prop > Js.t -> unit Js.meth >
-             Js.t =
-         Js.Unsafe.coerce element
-       in
-       element##focus
-         (object%js
-           val preventScroll = Js._true
-         end);
-       ()
+       (* If the element to focus is an element, cast it into the
+          more permissive "focusable" type defined at the top of
+          this file, and then focus that. *)
+       Dom_html.CoerceTo.element element
+       |> Js.Opt.to_option
+       |> Option.map ~f:as_focusable
+       |> Option.iter ~f:(fun element ->
+         element##focus
+           (object%js
+             val preventScroll = Js._true
+           end))
      in
      (*
         Take action on any blur event, refocusing to the root node if the relatedTarget is

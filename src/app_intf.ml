@@ -20,8 +20,6 @@ end
 
 module type Action = sig
   type t [@@deriving sexp_of]
-
-  val should_log : t -> bool
 end
 
 module type State = sig
@@ -30,58 +28,10 @@ module type State = sig
   type t
 end
 
-module type Derived_model = sig
-  module Model : Model
-
-  type t
-
-  (** [create] sets up the incremental that performs the shared computations. Sharing
-      computations will typically look something like this:
-
-      {[
-        let%map shared1 = computation1
-        and     shared2 = computation2
-        and     shared3 = computation3
-        in
-        { shared1; shared2; shared3 }
-      ]}
-  *)
-  val create : Model.t Incr.t -> t Incr.t
-end
-
-(** This is intended to become the only API for building Incr_dom apps, and S_simple and
-    S_derived should be removed soon. This should provide essentially the full
-    optimization power of {S_derived}, but should be simpler to use than {!S_simple} *)
 module type S = sig
-  (** The Model represents essentially the complete state of the GUI, including the
-      ordinary data that the application is displaying, as well as what you might call the
-      "interaction state", things describing where you are in the lifecycle of the GUI,
-      what view is currently up, where focus is, etc.  *)
-  module Model : sig
-    type t
-
-    (** A function for testing whether the model has changed enough to require refiring
-        the incremental graph.
-
-        It's best if the values in the model support a semantically reasonable cutoff
-        function which lets you avoid infinite recomputation loops that can otherwise be
-        triggered by the visibility checks. For this reason, it's typically a good idea to
-        avoid having simple closures stored in the model.
-
-        That said, it does work if you put phys_equal in for the cutoff. *)
-    val cutoff : t -> t -> bool
-  end
-
-  module Action : sig
-    type t [@@deriving sexp_of]
-  end
-
-  module State : sig
-    (** Represents the imperative state associated with an application, typically used for
-        housing state associated with communicating with the outside world, like an
-        Async-RPC connection. *)
-    type t
-  end
+  module Model : Model
+  module Action : Action
+  module State : State
 
   (** [on_startup] is called once, right after the initial DOM is set to the view that
       corresponds to the initial state. This is useful for doing things like starting up
