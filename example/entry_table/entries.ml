@@ -1,5 +1,6 @@
 open! Async_kernel
 open! Core_kernel
+open Poly
 open! Import
 open Js_of_ocaml
 

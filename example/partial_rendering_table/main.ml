@@ -1,4 +1,5 @@
 open! Core_kernel
+open Poly
 open! Js_of_ocaml
 open! Incr_dom
 

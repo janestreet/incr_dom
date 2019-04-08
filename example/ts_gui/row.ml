@@ -1,5 +1,6 @@
 module My_time = Time
 open! Core_kernel
+open Poly
 open! Import
 module Time = My_time
 module Rn_spec = Row_node_spec
