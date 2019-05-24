@@ -1,0 +1,2 @@
+(executables (names main) (libraries incr_dom jane_web_style virtual_dom_svg)
+ (preprocess (pps js_of_ocaml-ppx ppx_jane)))
