@@ -6,6 +6,7 @@ open Async_kernel
 module type Model = sig
   type t
 
+
   (** A function for testing whether the model has changed enough to require refiring
       the incremental graph.
 

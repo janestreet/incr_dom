@@ -14,8 +14,7 @@ module Exn_location = struct
     | Stabilization2
     | Startup
     | On_display
-    | On_keydown
-    (* Exception in event handler does NOT cause the incr_dom app to stop *)
+    | On_keydown (* Exception in event handler does NOT cause the incr_dom app to stop *)
   [@@deriving sexp, compare, enumerate]
 
   let to_string t = sexp_of_t t |> Sexp.to_string_hum

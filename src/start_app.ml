@@ -153,19 +153,21 @@ let component_old_do_not_use
           App.Model.cutoff old_value new_value));
      let r, w = Pipe.create () in
      let schedule_action action = Pipe.write_without_pushback w action in
-     let module Event = Vdom.Event.Define (struct
-                          module Action = App.Action
+     let module Event =
+       Vdom.Event.Define (struct
+         module Action = App.Action
 
-                          let handle action = Pipe.write_without_pushback w action
-                        end)
+         let handle action = Pipe.write_without_pushback w action
+       end)
      in
      let visibility = Visibility.create_as_dirty () in
      let viewport_changed () = Visibility.mark_dirty visibility in
      (* This registers the [viewport_changed] handler with Virtual_dom. If event handlers
         use the [Vdom.Event.Viewport_changed] event, we are notified. *)
-     let module Viewport_handler = Vdom.Event.Define_visibility (struct
-                                     let handle = viewport_changed
-                                   end)
+     let module Viewport_handler =
+       Vdom.Event.Define_visibility (struct
+         let handle = viewport_changed
+       end)
      in
      let app =
        Incr.observe
@@ -187,14 +189,14 @@ let component_old_do_not_use
         container in which our HTML is located is scrolled. *)
      let call_viewport_changed_on_event event_name where =
        ignore
-         ( Dom.addEventListener
-             where
-             (Dom.Event.make event_name)
-             (Dom.handler (fun _ ->
-                viewport_changed ();
-                Js._true))
-             Js._false
-           : Dom.event_listener_id )
+         (Dom.addEventListener
+            where
+            (Dom.Event.make event_name)
+            (Dom.handler (fun _ ->
+               viewport_changed ();
+               Js._true))
+            Js._false
+          : Dom.event_listener_id)
      in
      call_viewport_changed_on_event "scroll" (Js_misc.get_scroll_container html_dom);
      call_viewport_changed_on_event "resize" Dom_html.window;
@@ -233,7 +235,8 @@ let component_old_do_not_use
                 expect. *)
              let e
                : < relatedTarget : Dom_html.element Js.t Js.opt Js.readonly_prop >
-                   Js.t =
+                   Js.t
+               =
                Js.Unsafe.coerce e
              in
              let related_target = e##.relatedTarget in
@@ -319,13 +322,13 @@ let component_old_do_not_use
      let rec callback () =
        if Deferred.is_determined stop
        then ()
-       else if not (Visibility.is_dirty visibility) && Pipe.is_empty r
+       else if (not (Visibility.is_dirty visibility)) && Pipe.is_empty r
        then
          don't_wait_for
            (* Wait until actions have been enqueued before scheduling an animation frame *)
            (let%map () =
               Deferred.any_unit
-                [ Deferred.ignore (Pipe.values_available r : [`Eof | `Ok] Deferred.t)
+                [ Deferred.ignore (Pipe.values_available r : [ `Eof | `Ok ] Deferred.t)
                 ; Visibility.when_dirty visibility
                 ]
             in

@@ -275,7 +275,8 @@ let key_handler ~inject =
 ;;
 
 let row_renderer (m : Model.t Incr.t) ~(inject : Action.t -> Vdom.Event.t)
-  : Row.Model.t Ts_table.row_renderer =
+  : Row.Model.t Ts_table.row_renderer
+  =
   let table_m = m >>| Model.table in
   let sort_columns = table_m >>| Ts_table.Model.sort_columns in
   Incr.set_cutoff sort_columns (Incr.Cutoff.of_compare [%compare: int list]);
@@ -364,8 +365,7 @@ let should_set_edit_focus ~old_model (m : Model.t) =
   let focus = Ts_table.Model.focus_row m.table in
   let is_editing (m : Model.t) =
     match m.edit_state, focus with
-    | Not_editing, _
-    | _, None -> false
+    | Not_editing, _ | _, None -> false
     | Editing _, Some _ -> true
   in
   let edit_state m = is_editing m, focus in
@@ -376,8 +376,7 @@ let should_set_edit_focus ~old_model (m : Model.t) =
 let set_edit_focus (m : Model.t) =
   let focus = Ts_table.Model.focus_row m.table in
   match m.edit_state, focus with
-  | Not_editing, _
-  | _, None -> ()
+  | Not_editing, _ | _, None -> ()
   | Editing _, Some _ ->
     (match Dom_html.getElementById_coerce "focus-on-edit" Dom_html.CoerceTo.input with
      | None -> ()
@@ -403,7 +402,7 @@ let on_display table ~old_model (m : Model.t Incr.t) =
       | Editing _ -> true
     in
     (* When the user presses the shift+e when the focus is out of view, scroll to it. *)
-    if not (editing old_model) && editing m
+    if (not (editing old_model)) && editing m
     then ignore (Ts_table.Extra.scroll_focus_into_scroll_region m.table table_extra)
     else (
       (* Because we don't re-measure the viewport, if the app is slow and a focus change

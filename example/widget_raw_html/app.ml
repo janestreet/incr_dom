@@ -40,9 +40,10 @@ let view _ ~inject:_ =
        ~init:(fun () ->
          (* in here we can do raw javascript operations! *)
          let button = Dom_html.document##createElement ("button" |> Js.string) in
-         button##.innerHTML :=
-           "<b> I hearby agree to not use the widget API unless absolutely necessary </b>"
-           |> Js.string;
+         button##.innerHTML
+         := "<b> I hearby agree to not use the widget API unless absolutely necessary \
+             </b>"
+            |> Js.string;
          (* Our "colorify" widget is stored on the window object *)
          let colorify = Js.Unsafe.get Dom_html.window ("colorify" |> Js.string) in
          Js.Unsafe.fun_call colorify [| Js.Unsafe.inject button |] |> ignore;

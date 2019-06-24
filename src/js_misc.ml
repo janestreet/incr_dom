@@ -99,13 +99,14 @@ let client_rect () =
 
 (** Simple wrapper for the binary-search functor   *)
 let binary_search (type elt) ~length ~get ~compare mode x =
-  let module Bs = Binary_searchable.Make (struct
-                    type nonrec elt = elt
-                    type nonrec t = unit
+  let module Bs =
+    Binary_searchable.Make (struct
+      type nonrec elt = elt
+      type nonrec t = unit
 
-                    let get () n = get n
-                    let length () = length
-                  end)
+      let get () n = get n
+      let length () = length
+    end)
   in
   Bs.binary_search () ~compare mode x
 ;;

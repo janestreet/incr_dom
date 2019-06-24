@@ -33,7 +33,7 @@ let create
     | Some f -> f
     | None -> fun x -> Sort_key.String (Contents.to_string x)
   in
-  ( module struct
+  (module struct
     type nonrec row = row
 
     module Contents = Contents
@@ -50,9 +50,8 @@ let create
       | None -> false
       | Some () -> true
     ;;
-  end
-  : T
-    with type row = row )
+  end : T
+    with type row = row)
 ;;
 
 let of_field
