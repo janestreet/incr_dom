@@ -328,7 +328,7 @@ let component_old_do_not_use
            (* Wait until actions have been enqueued before scheduling an animation frame *)
            (let%map () =
               Deferred.any_unit
-                [ Deferred.ignore (Pipe.values_available r : [ `Eof | `Ok ] Deferred.t)
+                [ Deferred.ignore_m (Pipe.values_available r : [ `Eof | `Ok ] Deferred.t)
                 ; Visibility.when_dirty visibility
                 ]
             in
