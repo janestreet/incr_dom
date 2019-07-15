@@ -43,7 +43,10 @@ end
 module Action = struct
   type t =
     | New_counter
-    | Update of { pos : int; diff : int }
+    | Update of
+        { pos : int
+        ; diff : int
+        }
   [@@deriving sexp]
 
   let should_log _ = true
