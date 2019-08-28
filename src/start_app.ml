@@ -131,11 +131,11 @@ let get_tag_name (node : Vdom.Node.t) =
   | None | Text _ | Widget _ -> None
 ;;
 
-let component_old_do_not_use
+let start
       (type model)
-      ?bind_to_element_with_id
       ?(debug = false)
       ?(stop = Deferred.never ())
+      ~bind_to_element_with_id
       ~initial_model
       (module App : App_intf.S with type Model.t = model)
   =
@@ -177,14 +177,9 @@ let component_old_do_not_use
      Action_log.init ();
      let html = Incr.Observer.value_exn app |> Component.view in
      let html_dom = Vdom.Node.to_dom html in
-     (match bind_to_element_with_id with
-      | None -> Dom_html.document##.body := html_dom
-      | Some id ->
-        let elem = Dom_html.getElementById_exn id in
-        let parent =
-          Option.value_exn ~here:[%here] (Js.Opt.to_option elem##.parentNode)
-        in
-        Dom.replaceChild parent html_dom elem);
+     let elem = Dom_html.getElementById_exn bind_to_element_with_id in
+     let parent = Option.value_exn ~here:[%here] (Js.Opt.to_option elem##.parentNode) in
+     Dom.replaceChild parent html_dom elem;
      (* we make sure to call [viewport_changed] whenever the window resizes or the scroll
         container in which our HTML is located is scrolled. *)
      let call_viewport_changed_on_event event_name where =
@@ -347,20 +342,4 @@ let component_old_do_not_use
       | None -> refocus_root_element ());
      request_animation_frame callback;
      Deferred.never ())
-;;
-
-let start
-      (type model)
-      ?(debug = false)
-      ?(stop = Deferred.never ())
-      ~bind_to_element_with_id
-      ~initial_model
-      (module App : App_intf.S with type Model.t = model)
-  =
-  component_old_do_not_use
-    ~debug
-    ~stop
-    ~bind_to_element_with_id
-    ~initial_model
-    (module App)
 ;;
