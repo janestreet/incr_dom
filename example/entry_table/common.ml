@@ -22,7 +22,7 @@ module Dirpair = struct
     { buy : 'a
     ; sell : 'a
     }
-  [@@deriving sexp, compare]
+  [@@deriving sexp, compare, equal]
 
   module Export = struct
     type 'a _dirpair = 'a t =

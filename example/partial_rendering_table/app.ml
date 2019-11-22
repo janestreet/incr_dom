@@ -1,5 +1,4 @@
 open! Core_kernel
-open Poly
 open! Incr_dom
 open! Js_of_ocaml
 open! Async_kernel
@@ -24,12 +23,12 @@ end = struct
     type sort =
       | Num
       | Native
-    [@@deriving sexp, compare]
+    [@@deriving sexp, compare, equal]
 
     type t = sort * Row.Id.t [@@deriving sexp]
 
     let compare (sort, row_id) (sort', row_id') =
-      if sort <> sort'
+      if not ([%equal: sort] sort sort')
       then compare_sort sort sort'
       else (
         match sort with

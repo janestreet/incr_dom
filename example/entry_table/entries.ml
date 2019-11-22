@@ -1,6 +1,5 @@
 open! Async_kernel
 open! Core_kernel
-open Poly
 open! Import
 open Js_of_ocaml
 
@@ -13,7 +12,7 @@ module Model = struct
     ; search_string : string
     ; visible_range : (Entry_id.t * Entry_id.t) option
     }
-  [@@deriving fields, sexp, compare]
+  [@@deriving fields, sexp, compare, equal]
 
   let name_found_by_search ~search_string name =
     String.( = ) search_string ""
@@ -52,7 +51,7 @@ module State = struct
 end
 
 let do_kick_all (model : Model.t) =
-  if Random.float 1. < 0.6
+  if Float.( < ) (Random.float 1.) 0.6
   then model
   else (
     let entries = Map.map model.entries ~f:Entry.Model.kick in
@@ -256,7 +255,8 @@ let example ~entries : Model.t =
 
 let on_display ~(old_model : Model.t) (model : Model.t) _ ~schedule_action:_ =
   let get_focus (m : Model.t) = Option.map m.focus ~f:fst in
-  if get_focus old_model <> get_focus model then Js_misc.scroll ()
+  if not ([%equal: Entry_id.t option] (get_focus old_model) (get_focus model))
+  then Js_misc.scroll ()
 ;;
 
 let create model ~old_model ~inject =

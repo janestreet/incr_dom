@@ -1,5 +1,4 @@
 open! Core_kernel
-open Poly
 open! Async_kernel
 open! Incr_dom
 open! Js_of_ocaml
@@ -10,7 +9,7 @@ let () =
        end of search (https://bugs.python.org/issue23112) so we strip it. *)
     let search =
       Js.to_string Dom_html.window##.location##.search
-      |> String.rstrip ~drop:(fun c -> c = '/')
+      |> String.rstrip ~drop:(Char.equal '/')
     in
     let uri = Ocaml_uri.Uri.of_string search in
     Ocaml_uri.Uri.get_query_param uri "init_loc"

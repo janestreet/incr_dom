@@ -2,7 +2,7 @@ open! Core_kernel
 open! Import
 
 module Model : sig
-  type t [@@deriving sexp, compare]
+  type t [@@deriving sexp, compare, equal]
 
   val example : unit -> t
   val kick : t -> t

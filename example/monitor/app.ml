@@ -1,5 +1,4 @@
 open Core_kernel
-open Poly
 open Async_kernel
 open Incr_dom
 open Js_of_ocaml
@@ -37,10 +36,11 @@ module Model = struct
     ; exn_location : Exn_location.t
     ; monitor : Monitor.t
     ; stop : unit Ivar.t
+    (* An Ivar in the model? really? *)
     }
   [@@deriving fields]
 
-  let cutoff t1 t2 = compare t1 t2 = 0
+  let cutoff = phys_equal
 end
 
 module Action = struct

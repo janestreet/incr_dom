@@ -6,6 +6,59 @@ open Js_of_ocaml
 let timer_start s ~debug = if debug then Firebug.console##time (Js.string s)
 let timer_stop s ~debug = if debug then Firebug.console##timeEnd (Js.string s)
 
+module Request_ids : sig
+  type t
+
+  val create : unit -> t
+
+  val set_once_exn
+    :  t
+    -> animation_frame_id:Dom_html.animation_frame_request_id
+    -> set_timeout_id:Dom_html.timeout_id
+    -> unit
+
+  val cancelled : t -> bool
+  val cancel : t -> unit
+end = struct
+  type ids =
+    | Empty
+    | Cancelled
+    | Ids of
+        { animation_frame_id : Dom_html.animation_frame_request_id
+        ; set_timeout_id : Dom_html.timeout_id
+        }
+
+  type t = ids ref
+
+  let create () : t = ref Empty
+
+  let set_once_exn (t : t) ~animation_frame_id ~set_timeout_id =
+    match !t with
+    | Cancelled ->
+      (* This should not happen, but let's be defensive. *)
+      Dom_html.window##cancelAnimationFrame animation_frame_id;
+      Dom_html.window##clearTimeout set_timeout_id
+    | Empty -> t := Ids { animation_frame_id; set_timeout_id }
+    | Ids _ -> invalid_arg "request_ids already set"
+  ;;
+
+  let cancelled x =
+    match !x with
+    | Cancelled -> true
+    | Empty | Ids _ -> false
+  ;;
+
+  let cancel (t : t) =
+    match !t with
+    | Cancelled -> ()
+    | Empty -> t := Cancelled
+    | Ids { animation_frame_id; set_timeout_id } ->
+      Dom_html.window##cancelAnimationFrame animation_frame_id;
+      Dom_html.window##clearTimeout set_timeout_id;
+      t := Cancelled
+  ;;
+end
+
 (** [request_animation_frame] notifies the browser that you would like to do some
     computation before the next repaint. Because this needs to occur in the same
     synchronous call (called before the next repaint), returning a Deferred.t will not
@@ -13,20 +66,39 @@ let timer_stop s ~debug = if debug then Firebug.console##timeEnd (Js.string s)
 
     Note that if [callback] contains any asynchronous work before doing DOM changes, those
     changes will not be included in the repaint and will be saved until the following one.
+
+    When the tab is in the background, the browsers native requestAnimationFrame function
+    will never call the callback, so in order to continue processing events, we set an
+    alternate setTimeout at 1 second.
 *)
 let request_animation_frame callback =
-  let module Scheduler = Async_kernel_scheduler in
   (* We capture the current context to use it later when handling callbacks from
      requestAnimationFrame, since exceptions raised to that would otherwise not go through
      our ordinary Async monitor. *)
-  let current_context = Scheduler.current_execution_context () in
-  let callback _timestamp =
-    let callback_result = Scheduler.within_context current_context callback in
-    ignore (callback_result : (unit, unit) Result.t)
+  let current_context = Async_kernel_scheduler.current_execution_context () in
+  let request_ids = Request_ids.create () in
+  let callback () =
+    if Request_ids.cancelled request_ids
+    then ()
+    else (
+      Request_ids.cancel request_ids;
+      let callback_result =
+        Async_kernel_scheduler.within_context current_context callback
+      in
+      ignore (callback_result : (unit, unit) Result.t))
   in
-  let wrapped_callback = Js.wrap_callback callback in
-  let request_result = Dom_html.window##requestAnimationFrame wrapped_callback in
-  ignore (request_result : Dom_html.animation_frame_request_id)
+  let animation_frame_id =
+    let animation_callback = Js.wrap_callback (fun _ -> callback ()) in
+    Dom_html.window##requestAnimationFrame animation_callback
+  in
+  let set_timeout_id =
+    let timeout_callback = Js.wrap_callback (fun _ -> callback ()) in
+    (* 1000 ms = 1s;  Chosen because backgrounded tangle sends requests
+       at approximately this rate. *)
+    let timeout = 1000.0 in
+    Dom_html.window##setTimeout timeout_callback timeout
+  in
+  Request_ids.set_once_exn request_ids ~animation_frame_id ~set_timeout_id
 ;;
 
 (** The Js_of_ocaml type Dom_html.element doesn't have the correct options for
@@ -55,17 +127,12 @@ module Visibility : sig
   val mark_clean : t -> unit
   val mark_dirty : t -> unit
   val is_dirty : t -> bool
-
-  (** returns a deferred that becomes determined next time we're dirty, so immediately if
-      it's already dirty.  *)
-  val when_dirty : t -> unit Deferred.t
 end = struct
   type t = { mutable when_dirty : unit Ivar.t }
 
   let create_as_dirty () = { when_dirty = Ivar.create_full () }
   let mark_dirty t = Ivar.fill_if_empty t.when_dirty ()
   let is_dirty t = Ivar.is_full t.when_dirty
-  let when_dirty t = Ivar.read t.when_dirty
   let mark_clean t = if is_dirty t then t.when_dirty <- Ivar.create ()
 end
 
@@ -94,7 +161,7 @@ end = struct
     let init_message =
       " Incr_dom action logging is disabled by default.\n\
       \ To start logging actions, type startLogging()\n\
-      \ To stop logging actions, type stopLogging()\n"
+      \ To stop logging actions, type stopLogging()"
     in
     Firebug.console##log (Js.string init_message)
   ;;
@@ -147,10 +214,12 @@ let start
      let model = Incr.Var.watch model_v in
      let model_from_last_display_v = Incr.Var.create initial_model in
      let model_from_last_display = Incr.Var.watch model_from_last_display_v in
-     Incr.set_cutoff
-       model
-       (Incr.Cutoff.create (fun ~old_value ~new_value ->
-          App.Model.cutoff old_value new_value));
+     let cutoff =
+       Incr.Cutoff.create (fun ~old_value ~new_value ->
+         App.Model.cutoff old_value new_value)
+     in
+     Incr.set_cutoff model cutoff;
+     Incr.set_cutoff model_from_last_display cutoff;
      let r, w = Pipe.create () in
      let schedule_action action = Pipe.write_without_pushback w action in
      let module Event =
@@ -317,17 +386,6 @@ let start
      let rec callback () =
        if Deferred.is_determined stop
        then ()
-       else if (not (Visibility.is_dirty visibility)) && Pipe.is_empty r
-       then
-         don't_wait_for
-           (* Wait until actions have been enqueued before scheduling an animation frame *)
-           (let%map () =
-              Deferred.any_unit
-                [ Deferred.ignore_m (Pipe.values_available r : [ `Eof | `Ok ] Deferred.t)
-                ; Visibility.when_dirty visibility
-                ]
-            in
-            request_animation_frame callback)
        else (
          perform_update r;
          request_animation_frame callback)
