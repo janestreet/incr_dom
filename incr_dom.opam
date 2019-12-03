@@ -19,7 +19,7 @@ depends: [
   "incremental"
   "ppx_jane"
   "virtual_dom"
-  "dune"            {>= "1.5.1"}
+  "dune"            {>= "2.0.0"}
   "js_of_ocaml"     {>= "3.4.1"}
   "js_of_ocaml-ppx"
 ]
