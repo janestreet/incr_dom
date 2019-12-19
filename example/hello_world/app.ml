@@ -5,7 +5,7 @@ open Incr_dom
 module Model = struct
   type t = unit
 
-  let cutoff _ _ = true
+  let cutoff = phys_equal
 end
 
 module State = struct
