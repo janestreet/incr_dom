@@ -71,9 +71,7 @@ module Rn_spec = Incr_dom_partial_render.Row_node_spec
 let row_view (row : Row.t Incr.t) =
   let open Vdom in
   let%bind row = row in
-  let text_cell text =
-    { Rn_spec.Cell.attrs = []; node = Node.span [] [ Node.text text ] }
-  in
+  let text_cell text = { Rn_spec.Cell.attrs = []; nodes = [ Node.text text ] } in
   let cells =
     List.map columns ~f:(fun (_index, _col, to_string) -> text_cell (to_string row))
   in

@@ -282,7 +282,7 @@ let view
         else Rgb.background_style (row_background_color mode ~is_sort_column)
       in
       { Rn_spec.Cell.attrs = Attr.style style :: attrs
-      ; node = column_cell ~editing ~remember_edit m col
+      ; nodes = [ column_cell ~editing ~remember_edit m col ]
       })
   in
   { Rn_spec.row_attrs; cells }
