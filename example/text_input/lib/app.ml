@@ -28,8 +28,6 @@ module Action = struct
     | Update_input of string
     | Submit_input
   [@@deriving sexp]
-
-  let should_log _ = true
 end
 
 module State = struct
@@ -50,7 +48,9 @@ let view (m : Model.t Incr.t) ~inject =
   let open Incr.Let_syntax in
   let open Vdom in
   let button label action =
-    Node.button [ Attr.on_click (fun _ev -> inject action) ] [ Node.text label ]
+    Node.button
+      [ Attr.id (String.lowercase label); Attr.on_click (fun _ev -> inject action) ]
+      [ Node.text label ]
   in
   let submit_button = button "Submit" Action.Submit_input in
   let reset_button = button "Reset" Action.Reset_counter in
@@ -58,7 +58,8 @@ let view (m : Model.t Incr.t) ~inject =
   let%map input =
     let%map input_text = m >>| Model.input_text in
     Node.input
-      [ Attr.type_ "text"
+      [ Attr.id "input"
+      ; Attr.type_ "text"
       (* The value property controls the current value of the text input, whereas the
          value attribute only controls its initial value. *)
       ; Attr.string_property "value" input_text
@@ -88,3 +89,5 @@ let create model ~old_model:_ ~inject =
   and model = model in
   Component.create ~apply_action model view
 ;;
+
+let initial_model = Model.init ()

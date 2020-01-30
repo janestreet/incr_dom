@@ -1,5 +1,5 @@
-open Core_kernel
-open Async_kernel
+open! Core_kernel
+open! Async_kernel
 open Incr_dom
 
 module Model = struct

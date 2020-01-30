@@ -1,6 +1,7 @@
 open! Core_kernel
 open! Incr_dom
 open! Js_of_ocaml
+module App = Incr_dom_counter_example_lib.App
 
 let () =
   Start_app.start

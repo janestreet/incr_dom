@@ -48,8 +48,6 @@ module Action = struct
         ; diff : int
         }
   [@@deriving sexp]
-
-  let should_log _ = true
 end
 
 (** The state is for holding real imperative state, like RPC connections.  We have none of
@@ -95,3 +93,5 @@ let create model ~old_model:_ ~inject =
   let view = view model ~inject in
   Component.create ~apply_action model view
 ;;
+
+let initial_model_exn alist = { Model.counters = Int.Map.of_alist_exn alist }
