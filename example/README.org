@@ -33,6 +33,6 @@ To run any of these examples, follow the steps below:
 
 - =opam install incr_dom=
 
-- =jbuilder build example/incr_decr/{main.bc.js,index.html}=
+- =dune build example/incr_decr/bin/{main.bc.js,index.html}=
 
 - Open =_build/default/example/incr_decr/index.html= in a web browser!
