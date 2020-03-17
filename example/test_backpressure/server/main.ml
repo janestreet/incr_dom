@@ -96,7 +96,8 @@ let create_and_serve
               inet
               conn)
           ~where_to_listen:(Tcp.Where_to_listen.of_port vanilla_rpc_port)
-          krb_mode
+          ~krb_mode
+          ()
       in
       let web_server =
         Simple_web_server.create
