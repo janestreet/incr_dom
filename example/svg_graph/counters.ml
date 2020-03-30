@@ -130,10 +130,7 @@ let view (m : Model.t) ~(inject : Action.t -> Vdom.Event.t) =
   in
   Node.div
     [ Attr.style @@ Css_gen.padding_left @@ `Px 10 ]
-    (Jane_web_style.Css.bleeding_edge
-     :: graph
-     :: add_new_counter_button
-     :: Map.data elements)
+    (Jane_web_style.Css.style_4 :: graph :: add_new_counter_button :: Map.data elements)
 ;;
 
 let create model ~old_model:_ ~inject =

@@ -146,7 +146,7 @@ let view table (_m : Model.t Incr.t) ~inject:_ =
   let%map table = table >>| Component.view in
   Node.div
     [ Attr.id "app" ]
-    [ Jane_web_style.Css.bleeding_edge
+    [ Jane_web_style.Css.style_4
     ; Node.div ~key:"table" [ Attr.id "table-container"; scroll_attr ] [ table ]
     ]
 ;;
