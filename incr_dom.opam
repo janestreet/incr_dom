@@ -1,4 +1,5 @@
 opam-version: "2.0"
+version: "v0.14.0"
 maintainer: "opensource@janestreet.com"
 authors: ["Jane Street Group, LLC <opensource@janestreet.com>"]
 homepage: "https://github.com/janestreet/incr_dom"
@@ -10,15 +11,15 @@ build: [
   ["dune" "build" "-p" name "-j" jobs]
 ]
 depends: [
-  "ocaml" {>= "4.08.0"}
-  "async_js"
-  "async_kernel"
-  "core_kernel"
-  "incr_map"
-  "incr_select"
-  "incremental"
-  "ppx_jane"
-  "virtual_dom"
+  "ocaml"           {>= "4.08.0"}
+  "async_js"        {>= "v0.14" & < "v0.15"}
+  "async_kernel"    {>= "v0.14" & < "v0.15"}
+  "core_kernel"     {>= "v0.14" & < "v0.15"}
+  "incr_map"        {>= "v0.14" & < "v0.15"}
+  "incr_select"     {>= "v0.14" & < "v0.15"}
+  "incremental"     {>= "v0.14" & < "v0.15"}
+  "ppx_jane"        {>= "v0.14" & < "v0.15"}
+  "virtual_dom"     {>= "v0.14" & < "v0.15"}
   "dune"            {>= "2.0.0"}
   "js_of_ocaml"     {>= "3.4.1"}
   "js_of_ocaml-ppx"
