@@ -13,8 +13,6 @@ guides. The rest are stubs.)
 - Incr_decr: The simplest example, which you should be able to
   understand after reading through the Text_input guide. Makes use of
   [[https://ocaml.janestreet.com/ocaml-core/latest/doc/incr_dom/Incr_dom/Incr/Map/index.html#val-mapi][Incr.Map.mapi']].
-- [[./incr_decr_rpc/README.org][Incr_decr_rpc]]: A demo with client, web server, and application
-  server all working together using Async RPC.
 - [[./entry_table/README.md][Entry_table]]: A curses-like application that lets you move with the
   keyboard through rows of fake data that are constantly ticking with
   new information.
@@ -24,8 +22,6 @@ guides. The rest are stubs.)
   that's a part of Incr_dom_widgets to partially render a long
   vertical list.
 - [[./todo_mvc/README.md][Todo_mvc]]: Implements the TODO MVC app using Incr_dom.
-- [[./todo_mvc_rpc/README.md][Todo_mvc_rpc]]: Just like Todo_mvc, but persists its data to an
-  RPC server using websockets.
    
 ** Build instructions: Running the examples
 
