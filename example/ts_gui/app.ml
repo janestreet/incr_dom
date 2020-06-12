@@ -266,10 +266,7 @@ let key_handler ~inject =
   in
   let handler = Keyboard_event_handler.add_command_exn handler help_menu_command in
   let keydown_handler =
-    Attr.on_keydown (fun ev ->
-      Option.value
-        (Keyboard_event_handler.handle_event handler ev)
-        ~default:Event.Ignore)
+    Attr.on_keydown (fun ev -> Keyboard_event_handler.handle_or_ignore_event handler ev)
   in
   keydown_handler, help_menu_command
 ;;
