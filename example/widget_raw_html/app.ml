@@ -88,8 +88,15 @@ let view_colorize_button =
     ()
 ;;
 
+let raw_html =
+  Vdom.Node.inner_html
+    `This_html_is_sanitized_and_is_totally_safe_trust_me
+    ~tag:"div"
+    ~content:"<b>bold</b>"
+;;
+
 let view _ ~inject:_ =
-  Incr.return (Vdom.Node.div [] [ view_colorize_button; view_resize_observer ])
+  Incr.return (Vdom.Node.div [] [ view_colorize_button; view_resize_observer; raw_html ])
 ;;
 
 let create model ~old_model:_ ~inject =
