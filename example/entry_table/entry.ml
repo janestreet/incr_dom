@@ -146,9 +146,7 @@ module Action = struct
          (match Map.find (Model.focus_map ~collapsed:m.basic.collapsed) focus_point with
           | None -> m
           | Some pos ->
-            let basic =
-              Model.Basic.fset m.basic pos (Model.Basic.get m.basic pos +. amt)
-            in
+            let basic = Model.Basic.fset m.basic pos (Model.Basic.get m.basic pos +. amt) in
             { m with basic }))
     | Toggle_collapse ->
       let basic = { m.basic with collapsed = not m.basic.collapsed } in

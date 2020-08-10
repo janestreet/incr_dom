@@ -182,9 +182,7 @@ let override_root_element root =
   match (root : Node.t) with
   | Element e ->
     let new_element =
-      let new_attrs =
-        [ Attr.style (Css_gen.outline ~style:`None ()); Attr.tabindex 0 ]
-      in
+      let new_attrs = [ Attr.style (Css_gen.outline ~style:`None ()); Attr.tabindex 0 ] in
       Node.Element.map_attrs e ~f:(fun attrs ->
         Attrs.merge_classes_and_styles (new_attrs @ attrs))
     in

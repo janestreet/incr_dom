@@ -119,8 +119,7 @@ let view (m : Model.t) ~(inject : Action.t -> Vdom.Event.t) =
               []
           ]
       ; Node_svg.polyline
-          [ Attr.style
-              (Css_gen.create ~field:"vector-effect" ~value:"non-scaling-stroke")
+          [ Attr.style (Css_gen.create ~field:"vector-effect" ~value:"non-scaling-stroke")
           ; Attr_svg.points points
           ; Attr_svg.fill (`Url "#my-gradient")
           ; Attr_svg.stroke (`Name "black")

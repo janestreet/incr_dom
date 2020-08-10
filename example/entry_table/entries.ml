@@ -72,8 +72,7 @@ let do_kick_one (model : Model.t) =
 ;;
 
 let do_kick_n model n =
-  Sequence.fold ~init:model (Sequence.range 0 n) ~f:(fun old (_ : int) ->
-    do_kick_one old)
+  Sequence.fold ~init:model (Sequence.range 0 n) ~f:(fun old (_ : int) -> do_kick_one old)
 ;;
 
 let entry_apply (m : Model.t) entry_id focus_point action =

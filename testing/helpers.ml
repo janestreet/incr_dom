@@ -14,9 +14,7 @@ let make (type model action state) driver
     type nonrec state = state
 
     let show_view ?selector () =
-      let node =
-        view_obs |> Incr.Observer.value_exn |> Node_helpers.unsafe_convert_exn
-      in
+      let node = view_obs |> Incr.Observer.value_exn |> Node_helpers.unsafe_convert_exn in
       let node =
         match selector with
         | None -> node
@@ -38,9 +36,7 @@ let make (type model action state) driver
     let perform_update () = Driver.perform_update driver
 
     let get_element ~selector =
-      let node =
-        view_obs |> Incr.Observer.value_exn |> Node_helpers.unsafe_convert_exn
-      in
+      let node = view_obs |> Incr.Observer.value_exn |> Node_helpers.unsafe_convert_exn in
       Node_helpers.select_first_exn node ~selector
     ;;
 
