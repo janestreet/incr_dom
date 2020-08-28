@@ -11,8 +11,8 @@ let () =
       Js.to_string Dom_html.window##.location##.search
       |> String.rstrip ~drop:(Char.equal '/')
     in
-    let uri = Ocaml_uri.Uri.of_string search in
-    Ocaml_uri.Uri.get_query_param uri "init_loc"
+    let uri = Uri.of_string search in
+    Uri.get_query_param uri "init_loc"
   in
   let monitor = Monitor.create ~name:"My monitor" () in
   let stop = Ivar.create () in
