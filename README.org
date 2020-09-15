@@ -20,5 +20,4 @@ construction of rich web applications in a fairly comprehensible
 style.
 
 If you want a more concrete sense of how this works, look in the
-[[./example/README.org][examples directory]]. And see [[./doc/index.md][here for a list of relevant documents and
-resources]].
+[[./example/README.org][examples directory]]. 
