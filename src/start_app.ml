@@ -179,15 +179,18 @@ end
    https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/tabindex *)
 let override_root_element root =
   let open Vdom in
+  let should_add_focus_modifiers element =
+    element
+    |> Node.Element.attrs
+    |> List.exists ~f:(fun attr -> String.equal "disable_tab_index" (Attr.get_name attr))
+    |> not
+  in
   match (root : Node.t) with
-  | Element e ->
-    let new_element =
-      let new_attrs = [ Attr.style (Css_gen.outline ~style:`None ()); Attr.tabindex 0 ] in
-      Node.Element.map_attrs e ~f:(fun attrs ->
-        Attrs.merge_classes_and_styles (new_attrs @ attrs))
-    in
-    Node.Element new_element
-  | None | Text _ | Widget _ -> root
+  | Element element when should_add_focus_modifiers element ->
+    let new_attrs = [ Attr.style (Css_gen.outline ~style:`None ()); Attr.tabindex 0 ] in
+    let add_new_attrs attrs = Attrs.merge_classes_and_styles (new_attrs @ attrs) in
+    element |> Node.Element.map_attrs ~f:add_new_attrs |> Node.Element
+  | _ -> root
 ;;
 
 let get_tag_name (node : Vdom.Node.t) =

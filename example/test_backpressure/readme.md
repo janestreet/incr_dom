@@ -12,8 +12,8 @@ rather than completing when the data is actually written.
 
 Use this in your jbuild start file to build all the correct targets.
 ```
-(alias ${ROOT}/lib/incr_dom/DEFAULT)
-(alias ${ROOT}/lib/incr_dom/javascript-DEFAULT)
+(alias %{root}/lib/incr_dom/DEFAULT)
+(alias %{root}/lib/incr_dom/javascript-DEFAULT)
 ```
 
 ## Running
