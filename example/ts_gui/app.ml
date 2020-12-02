@@ -310,7 +310,7 @@ let row_renderer (m : Model.t Incr.t) ~(inject : Action.t -> Vdom.Event.t)
 
 let view table (m : Model.t Incr.t) ~(inject : Action.t -> Vdom.Event.t) =
   let open Vdom in
-  let scroll_attr = Vdom.Attr.on "scroll" (fun _ -> Vdom.Event.Viewport_changed) in
+  let scroll_attr = Vdom.Attr.on_scroll (fun _ -> Vdom.Event.Viewport_changed) in
   let key_handler, help_menu_command = key_handler ~inject in
   let help_text_view_spec =
     Help_text.View_spec.with_classes

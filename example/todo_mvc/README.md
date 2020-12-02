@@ -1,4 +1,8 @@
-# TODO MVC app using Incr\_dom
+---
+title: TODO MVC app using Incr\_dom
+parent: ../README.org
+uuid: 5c9b8641-9f60-39ef-28f6-db3a2124424e
+---
 
 This is an implementation of the TODO MVC app using Incr\_dom.
 In order to get it set up the following things were done:

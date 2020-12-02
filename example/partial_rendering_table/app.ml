@@ -141,7 +141,7 @@ let update_visibility (model : Model.t) row_view ~schedule_action:_ =
 ;;
 
 let view model row_view ~inject =
-  let scroll_attr = Vdom.Attr.on "scroll" (fun _ -> Vdom.Event.Viewport_changed) in
+  let scroll_attr = Vdom.Attr.on_scroll (fun _ -> Vdom.Event.Viewport_changed) in
   let filter_string_change =
     Vdom.Attr.on_input (fun (_ : Dom_html.event Js.t) value ->
       inject (Action.Update_filter value))

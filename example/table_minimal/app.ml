@@ -142,7 +142,7 @@ let init () : Model.t =
 
 let view table (_m : Model.t Incr.t) ~inject:_ =
   let open Vdom in
-  let scroll_attr = Vdom.Attr.on "scroll" (fun _ -> Vdom.Event.Viewport_changed) in
+  let scroll_attr = Vdom.Attr.on_scroll (fun _ -> Vdom.Event.Viewport_changed) in
   let%map table = table >>| Component.view in
   Node.div
     [ Attr.id "app" ]

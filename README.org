@@ -1,4 +1,6 @@
 #+TITLE: ~Incr_dom~: a library for writing dynamic web-apps
+#+PARENT: ../../doc/webdev/index.org
+#+UUID: 086c09e0-231f-34e8-ca21-0c37d14c4479
 
 A library for building dynamic webapps, using =Js_of_ocaml=.
 

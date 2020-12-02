@@ -1,4 +1,7 @@
-# An example-driven incr\_dom tutorial -- "widget" edition
+---
+title: An example-driven incr\_dom tutorial -- "widget" edition
+parent: ../README.org
+---
 
 This example shows how to sneak around behind the VirtualDom's back 
 and create a "widget" that gives the developer full access to the DOM 
