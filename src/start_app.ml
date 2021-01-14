@@ -182,7 +182,7 @@ let override_root_element root =
   let should_add_focus_modifiers element =
     element
     |> Node.Element.attrs
-    |> List.exists ~f:(fun attr -> String.equal "disable_tab_index" (Attr.get_name attr))
+    |> List.exists ~f:(Attr.Expert.contains_name "disable_tab_index")
     |> not
   in
   match (root : Node.t) with
