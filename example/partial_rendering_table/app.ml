@@ -134,8 +134,9 @@ let update_visibility (model : Model.t) row_view ~schedule_action:_ =
     ; list_rect = Js_misc.client_rect_of_element table_body
     }
   in
-  if [%compare.equal: Row_view.Height_cache.t] height_cache model.height_cache
-  && [%compare.equal: Measurements.t option] measurements model.measurements
+  if
+    [%compare.equal: Row_view.Height_cache.t] height_cache model.height_cache
+    && [%compare.equal: Measurements.t option] measurements model.measurements
   then model
   else { model with height_cache; measurements }
 ;;
@@ -195,7 +196,7 @@ let view model row_view ~inject =
         [ scroll_attr; Attr.id "table-container" ]
         [ Node.div
             [ Attr.id "table-body" ]
-            ((start_offset :: Map.data visible_rows_dom) @ [ end_offset ])
+            (start_offset :: Map.data visible_rows_dom @ [ end_offset ])
         ]
     ]
 ;;
