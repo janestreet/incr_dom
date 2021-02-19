@@ -20,8 +20,8 @@ depends: [
   "ppx_jane"
   "virtual_dom"
   "dune"            {>= "2.0.0"}
-  "js_of_ocaml"     {>= "3.4.1"}
-  "js_of_ocaml-ppx"
+  "js_of_ocaml"     {>= "3.9.0"}
+  "js_of_ocaml-ppx" {>= "3.9.0"}
 ]
 synopsis: "A library for building dynamic webapps, using Js_of_ocaml"
 description: "
