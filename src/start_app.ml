@@ -221,13 +221,13 @@ let start
      in
      Incr.set_cutoff model cutoff;
      Incr.set_cutoff model_from_last_display cutoff;
-     let r, w = Pipe.create () in
-     let schedule_action action = Pipe.write_without_pushback w action in
+     let action_queue = Deque.create () in
+     let schedule_action action = Deque.enqueue_back action_queue action in
      let module Event =
        Vdom.Event.Define (struct
          module Action = App.Action
 
-         let handle action = Pipe.write_without_pushback w action
+         let handle action = Deque.enqueue_back action_queue action
        end)
      in
      let visibility = Visibility.create_as_dirty () in
@@ -332,15 +332,14 @@ let start
        Incr.stabilize ();
        timer_stop "stabilize" ~debug
      in
-     let rec apply_actions pipe =
-       match Pipe.read_now pipe with
-       | `Eof -> failwith "bug: Action pipe closed"
-       | `Nothing_available -> ()
-       | `Ok action ->
+     let rec apply_actions () =
+       match Deque.dequeue_front action_queue with
+       | None -> ()
+       | Some action ->
          apply_action action;
-         apply_actions pipe
+         apply_actions ()
      in
-     let perform_update pipe =
+     let perform_update () =
        timer_start "stabilize" ~debug;
        (* The clock is set only once per call to perform_update, so that all actions that
           occur before each display update occur "at the same time." *)
@@ -356,7 +355,7 @@ let start
        if Visibility.is_dirty visibility then update_visibility ();
        timer_stop "update visibility" ~debug;
        timer_start "apply actions" ~debug;
-       apply_actions pipe;
+       apply_actions ();
        timer_stop "apply actions" ~debug;
        let html = Incr.Observer.value_exn app |> Component.view in
        let html = override_root_element html in
@@ -388,14 +387,14 @@ let start
        if Deferred.is_determined stop
        then ()
        else (
-         perform_update r;
+         perform_update ();
          request_animation_frame callback)
      in
      (* We want the root element to start out focused, so perform an initial
         update/render, then immediately focus the root (unless a non-body element already
         has focus).  This focusing can't happen inside of the `callback` because then it
         would refocus root every frame.  *)
-     perform_update r;
+     perform_update ();
      (match Js.Opt.to_option Dom_html.document##.activeElement with
       | Some el -> if Js.Opt.test (Dom_html.CoerceTo.body el) then refocus_root_element ()
       | None -> refocus_root_element ());
