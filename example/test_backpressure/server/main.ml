@@ -87,6 +87,7 @@ let create_and_serve
     | Authenticated_via_krb krb_mode ->
       let vanilla_rpc_server =
         Krb.Rpc.Connection.serve
+          ~authorize:Krb.Authorize.accept_all
           ~implementations
           ~initial_connection_state:(fun identity inet conn ->
             initial_connection_state
@@ -146,5 +147,5 @@ let command =
 
 let () =
   Command.group ~summary:"Commands for the Incr_decr RPC example" [ "server", command ]
-  |> Command.run
+  |> Command_unix.run
 ;;

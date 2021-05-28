@@ -11,6 +11,7 @@ let main () =
   Deferred.ignore_m
     (let%bind a =
        Krb.Rpc.Connection.with_client
+         ~authorize:Krb.Authorize.accept_all
          ~krb_mode:(Krb.Mode.Client.kerberized ())
          (Tcp.Where_to_connect.of_host_and_port
             (Host_and_port.of_string "localhost:12346"))
@@ -32,7 +33,7 @@ let main () =
 ;;
 
 let () =
-  Command.run
+  Command_unix.run
     (Command.group
        ~summary:""
        [ ( "run"
