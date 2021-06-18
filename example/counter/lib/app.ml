@@ -1,4 +1,4 @@
-open Core_kernel
+open Core
 open Async_kernel
 open Incr_dom
 
@@ -31,9 +31,9 @@ let create model ~old_model:_ ~inject:_ =
   and view =
     let%map counter =
       let%map counter = model >>| Model.counter in
-      Vdom.Node.div [] [ Vdom.Node.text (Int.to_string counter) ]
+      Vdom.Node.div [ Vdom.Node.text (Int.to_string counter) ]
     in
-    Vdom.Node.body [] [ counter ]
+    Vdom.Node.body [ counter ]
   and model = model in
   (* Note that we don't include [on_display] or [update_visibility], since
      these are optional arguments *)

@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 
 (* Things that really we should mostly get from a future Jane_kernel module... *)
 

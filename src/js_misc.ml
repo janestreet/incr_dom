@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open Js_of_ocaml
 
 module Rect = struct

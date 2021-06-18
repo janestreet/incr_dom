@@ -1,4 +1,4 @@
-open Core_kernel
+open Core
 open Async_kernel
 open Incr_dom
 open Js_of_ocaml
@@ -112,10 +112,10 @@ let view (m : Model.t Incr.t) ~(inject : Action.t -> Vdom.Event.t) =
       Node.text "Model 2"
   in
   Node.body
-    attr
-    [ Node.div [ Attr.on_click (fun _ -> inject Switch) ] [ text ]
+    ~attr:(Attr.many_without_merge attr)
+    [ Node.div ~attr:(Attr.on_click (fun _ -> inject Switch)) [ text ]
     ; Node.select
-        [ set_location ]
+        ~attr:set_location
         (List.map Exn_location.all ~f:(fun loc ->
            let s = Exn_location.to_string loc in
            let selected =
@@ -123,7 +123,9 @@ let view (m : Model.t Incr.t) ~(inject : Action.t -> Vdom.Event.t) =
              then [ Attr.create "selected" "selected" ]
              else []
            in
-           Node.option (selected @ [ Attr.value s ]) [ Node.text s ]))
+           Node.option
+             ~attr:(Attr.many_without_merge (selected @ [ Attr.value s ]))
+             [ Node.text s ]))
     ]
 ;;
 

@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Incr_dom_testing
 module App = Hello_world_example_lib.App
 

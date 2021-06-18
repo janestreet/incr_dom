@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Incr_dom
 open! Js_of_ocaml
 module App = Hello_world_example_lib.App

@@ -27,7 +27,7 @@ The Main file is typically just a few lines long and its only job is
 to start the app and declare which Incr\_dom interface you're using:
 
 ```ocaml
-open! Core_kernel
+open! Core
 open! Incr_dom
 open! Js_of_ocaml
 

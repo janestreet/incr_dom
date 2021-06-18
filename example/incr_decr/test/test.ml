@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Incr_dom_testing
 module App = Incr_decr_example_lib.App
 

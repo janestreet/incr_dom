@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Import
 
 (** A column type for use in constructing column-oriented views of a collection of "row"

@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Incr_dom
 open! Js_of_ocaml
 open! Async_kernel
@@ -157,7 +157,7 @@ let view model row_view ~inject =
   let offset_div key height =
     Vdom.Node.div
       ~key
-      [ Vdom.Attr.style (Css_gen.height (`Px (Float.iround_nearest_exn height))) ]
+      ~attr:(Vdom.Attr.style (Css_gen.height (`Px (Float.iround_nearest_exn height))))
       []
   in
   let visible_rows = row_view >>| Row_view.rows_to_render in
@@ -174,28 +174,27 @@ let view model row_view ~inject =
   let end_offset = offset_div "end_offset" end_height in
   let open Vdom in
   Node.body
-    []
     [ Node.div
-        [ Attr.class_ "header" ]
+        ~attr:(Attr.class_ "header")
         [ Node.div
-            [ Attr.id "text-input" ]
+            ~attr:(Attr.id "text-input")
             [ Node.input
-                [ Attr.type_ "text"; Attr.value filter_string; filter_string_change ]
+                ~attr:
+                  (Attr.many_without_merge
+                     [ Attr.type_ "text"; Attr.value filter_string; filter_string_change ])
                 []
             ; Node.select
-                [ sort_change ]
-                [ Node.option [ Attr.value "Num" ] [ Node.text "Numeric" ]
-                ; Node.option [ Attr.value "Native" ] [ Node.text "Lexicographic" ]
+                ~attr:sort_change
+                [ Node.option ~attr:(Attr.value "Num") [ Node.text "Numeric" ]
+                ; Node.option ~attr:(Attr.value "Native") [ Node.text "Lexicographic" ]
                 ]
-            ; Node.div
-                []
-                [ Node.text "Add ?number to the URL to change the number of rows" ]
+            ; Node.div [ Node.text "Add ?number to the URL to change the number of rows" ]
             ]
         ]
     ; Node.div
-        [ scroll_attr; Attr.id "table-container" ]
+        ~attr:(Attr.many_without_merge [ scroll_attr; Attr.id "table-container" ])
         [ Node.div
-            [ Attr.id "table-body" ]
+            ~attr:(Attr.id "table-body")
             (start_offset :: Map.data visible_rows_dom @ [ end_offset ])
         ]
     ]

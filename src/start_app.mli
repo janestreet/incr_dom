@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Async_kernel
 
 (** For starting up an [Incr_dom] app. *)
@@ -14,9 +14,10 @@ open! Async_kernel
     case in some browsers when the pane an application is running in is in the background.
 *)
 val start
-  :  ?debug:bool (** print info to JS console - default false *)
+  :  ?debug:bool (** print timing info to JS console - default false *)
   -> ?stop:unit Deferred.t
+  -> ?named_logging_filters:(string * ('action -> bool)) list
   -> bind_to_element_with_id:string
   -> initial_model:'model
-  -> (module App_intf.S with type Model.t = 'model)
+  -> (module App_intf.S with type Model.t = 'model and type Action.t = 'action)
   -> unit

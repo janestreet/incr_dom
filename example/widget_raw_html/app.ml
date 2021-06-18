@@ -1,4 +1,4 @@
-open Core_kernel
+open Core
 open Incr_dom
 open Js_of_ocaml
 
@@ -91,12 +91,12 @@ let view_colorize_button =
 let raw_html =
   Vdom.Node.inner_html
     ~tag:"div"
-    []
+    ~attr:Vdom.Attr.empty
     ~this_html_is_sanitized_and_is_totally_safe_trust_me:"<b>bold</b>"
 ;;
 
 let view _ ~inject:_ =
-  Incr.return (Vdom.Node.div [] [ view_colorize_button; view_resize_observer; raw_html ])
+  Incr.return (Vdom.Node.div [ view_colorize_button; view_resize_observer; raw_html ])
 ;;
 
 let create model ~old_model:_ ~inject =

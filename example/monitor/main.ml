@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Async_kernel
 open! Incr_dom
 open! Js_of_ocaml
@@ -43,11 +43,9 @@ let () =
     let dom =
       let open Vdom in
       Node.body
-        []
-        [ Node.h2 [] [ Node.text "Error!" ]
+        [ Node.h2 [ Node.text "Error!" ]
         ; Node.ul
-            []
-            (List.rev_map !all_messages ~f:(fun text -> Node.li [] [ Node.text text ]))
+            (List.rev_map !all_messages ~f:(fun text -> Node.li [ Node.text text ]))
         ]
       |> Node.to_dom
     in

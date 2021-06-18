@@ -1,4 +1,4 @@
-open Core_kernel
+open Core
 open Incr_dom
 
 module Model = struct
@@ -49,7 +49,9 @@ let view (m : Model.t Incr.t) ~inject =
   let open Vdom in
   let button label action =
     Node.button
-      [ Attr.id (String.lowercase label); Attr.on_click (fun _ev -> inject action) ]
+      ~attr:
+        (Attr.many_without_merge
+           [ Attr.id (String.lowercase label); Attr.on_click (fun _ev -> inject action) ])
       [ Node.text label ]
   in
   let submit_button = button "Submit" Action.Submit_input in
@@ -58,15 +60,17 @@ let view (m : Model.t Incr.t) ~inject =
   let%map input =
     let%map input_text = m >>| Model.input_text in
     Node.input
-      [ Attr.id "input"
-      ; Attr.type_ "text"
-      (* The value property controls the current value of the text input, whereas the
-         value attribute only controls its initial value. *)
-      ; Attr.string_property "value" input_text
-      (* We must update our model with the user's input to keep the virtual dom consistent
-         with the actual dom. *)
-      ; Attr.on_input (fun _ev text -> inject (Action.Update_input text))
-      ]
+      ~attr:
+        (Attr.many_without_merge
+           [ Attr.id "input"
+           ; Attr.type_ "text"
+           (* The value property controls the current value of the text input, whereas the
+              value attribute only controls its initial value. *)
+           ; Attr.string_property "value" input_text
+           (* We must update our model with the user's input to keep the virtual dom consistent
+              with the actual dom. *)
+           ; Attr.on_input (fun _ev text -> inject (Action.Update_input text))
+           ])
       []
   and submission =
     let%map submitted_text = m >>| Model.submitted_text in
@@ -75,9 +79,9 @@ let view (m : Model.t Incr.t) ~inject =
       | None -> "No submissions yet"
       | Some text -> "Your latest submission was: " ^ text
     in
-    Node.div [] [ Node.text text ]
+    Node.div [ Node.text text ]
   in
-  Node.body [] [ submission; input; submit_button; reset_button; incr_button ]
+  Node.body [ submission; input; submit_button; reset_button; incr_button ]
 ;;
 
 let create model ~old_model:_ ~inject =

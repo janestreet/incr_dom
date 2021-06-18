@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open Incr_dom
 open Js_of_ocaml
 open Incr.Let_syntax
@@ -89,33 +89,38 @@ let view (m : Model.t Incr.t) ~inject =
   and inner_click = inner_click
   and inner_keydown = inner_keydown in
   Node.body
-    []
     [ Node.p
-        []
         [ Node.text
             "With prevent default on, typing in the text box will prevent letters from \n\
              showing up. With stop propagation on, keypresses and clicks won't bubble \n\
              to the outer container."
         ]
     ; Node.div
-        []
         [ Node.label
-            []
             [ Node.text "Prevent default"
-            ; Node.input [ Attr.type_ "checkbox"; pd_click ] []
+            ; Node.input
+                ~attr:(Attr.many_without_merge [ Attr.type_ "checkbox"; pd_click ])
+                []
             ]
         ; Node.label
-            []
             [ Node.text "Stop propagation"
-            ; Node.input [ Attr.type_ "checkbox"; sp_click ] []
+            ; Node.input
+                ~attr:(Attr.many_without_merge [ Attr.type_ "checkbox"; sp_click ])
+                []
             ]
         ]
     ; Node.div
-        [ outer_click; outer_keydown; Attr.id "outer-click" ]
-        [ Node.div [] [ Node.text "Clicks: "; Node.text (Int.to_string clicks) ]
-        ; Node.div [] [ Node.text "Keydowns: "; Node.text (Int.to_string keydowns) ]
-        ; Node.div [ inner_click; Attr.id "inner-click" ] [ Node.text "Click me inner" ]
-        ; Node.input [ inner_click; inner_keydown; Attr.type_ "text" ] []
+        ~attr:
+          (Attr.many_without_merge [ outer_click; outer_keydown; Attr.id "outer-click" ])
+        [ Node.div [ Node.text "Clicks: "; Node.text (Int.to_string clicks) ]
+        ; Node.div [ Node.text "Keydowns: "; Node.text (Int.to_string keydowns) ]
+        ; Node.div
+            ~attr:(Attr.many_without_merge [ inner_click; Attr.id "inner-click" ])
+            [ Node.text "Click me inner" ]
+        ; Node.input
+            ~attr:
+              (Attr.many_without_merge [ inner_click; inner_keydown; Attr.type_ "text" ])
+            []
         ]
     ]
 ;;

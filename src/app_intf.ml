@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open Virtual_dom
 open Async_kernel
 

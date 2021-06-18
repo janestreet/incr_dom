@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Incr_dom
 open Incr.Let_syntax
 module Id : Identifiable = String
@@ -40,9 +40,11 @@ let view (model : Model.t Incr.t) ~row_id ~inject =
   let%map model = model in
   Vdom.Node.div
     ~key:(Id.to_string row_id)
-    [ Vdom.Attr.style Css_gen.(font_size (`Px model.font_size))
-    ; Vdom.Attr.id (Id.to_string row_id)
-    ; onclick
-    ]
+    ~attr:
+      (Vdom.Attr.many_without_merge
+         [ Vdom.Attr.style Css_gen.(font_size (`Px model.font_size))
+         ; Vdom.Attr.id (Id.to_string row_id)
+         ; onclick
+         ])
     [ Vdom.Node.text model.data ]
 ;;

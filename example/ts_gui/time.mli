@@ -1,4 +1,4 @@
-open Core_kernel
+open Core
 
 (** A time module intended to be used in constructing columns for a table view *)
 

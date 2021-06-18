@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open Poly
 open! Import
 
@@ -168,7 +168,10 @@ let field_is_focused ~collapsed (focus : focus_state) pos =
     Some pos = Option.bind focus_point ~f:(fun x -> Map.find focus_map x)
 ;;
 
-let align_left f attrs nodes = f (Attr.create "align" "left" :: attrs) nodes
+let align_left (f : Node.node_creator) attrs nodes =
+  f ~attr:(Attr.many_without_merge (Attr.create "align" "left" :: attrs)) nodes
+;;
+
 let th = align_left Node.th
 let td = align_left Node.td
 
@@ -195,7 +198,6 @@ let header ~collapsed ~set_inner_focus focus =
   in
   let field_header ff = maybe_fields ~collapsed ff [ bd ff Buy; bd ff Sell ] in
   Node.tr
-    []
     ([ th [] [ Node.text "name" ] ]
      @ field_header Fnorb
      @ field_header Snoot
@@ -270,7 +272,7 @@ let view
   let%bind focus = focus in
   let%map basic_data, header = basic >>| basic_data_and_header ~set_inner_focus ~focus
   and live_data = live_data in
-  let data = Node.tr [] (basic_data @ live_data) in
+  let data = Node.tr (basic_data @ live_data) in
   let table =
     let focused =
       match focus with
@@ -278,11 +280,13 @@ let view
       | Unfocused -> false
     in
     Node.table
-      ((if focused then [ Attr.id "keep-in-view" ] else [])
-       @ [ Attr.class_ (if focused then "focused" else "unfocused")
-         ; Attr.on_click (fun _ -> focus_me)
-         ])
+      ~attr:
+        (Attr.many_without_merge
+           ((if focused then [ Attr.id "keep-in-view" ] else [])
+            @ [ Attr.class_ (if focused then "focused" else "unfocused")
+              ; Attr.on_click (fun _ -> focus_me)
+              ]))
       [ header; data ]
   in
-  Node.div [ entry_id_attr; key_attr ] [ table ]
+  Node.div ~attr:(Attr.many_without_merge [ entry_id_attr; key_attr ]) [ table ]
 ;;

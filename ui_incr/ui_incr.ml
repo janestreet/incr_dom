@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 module Incr = Incremental.Make ()
 
 (* This is the default clock for running clients, but bonsai tests have their

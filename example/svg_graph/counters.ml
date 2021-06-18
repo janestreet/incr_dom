@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open Incr_dom
 module Node_svg = Virtual_dom_svg.Node
 module Attr_svg = Virtual_dom_svg.Attr
@@ -59,13 +59,15 @@ let view (m : Model.t) ~(inject : Action.t -> Vdom.Event.t) =
   let open Vdom in
   let on_add_new_click = Attr.on_click (fun _ev -> inject New_counter) in
   let add_new_counter_button =
-    Node.div [] [ Node.button [ on_add_new_click ] [ Node.text "add new counter" ] ]
+    Node.div [ Node.button ~attr:on_add_new_click [ Node.text "add new counter" ] ]
   in
   let button txt ~pos ~diff =
     let on_click = Attr.on_click (fun _ -> inject (Update { pos; diff })) in
     let open Css_gen in
     let button_style = min_width (`Px 0) @> margin_top (`Px 3) in
-    Node.button [ on_click; Attr.style button_style ] [ Node.text txt ]
+    Node.button
+      ~attr:(Attr.many_without_merge [ on_click; Attr.style button_style ])
+      [ Node.text txt ]
   in
   let elements =
     Map.mapi m.counters ~f:(fun ~key:pos ~data:value ->
@@ -73,10 +75,10 @@ let view (m : Model.t) ~(inject : Action.t -> Vdom.Event.t) =
       let button_plus = button "+" ~pos ~diff:1 in
       let text_span =
         Node.span
-          [ Attr.style @@ Css_gen.padding ~left:(`Px 10) ~right:(`Px 10) () ]
+          ~attr:(Attr.style @@ Css_gen.padding ~left:(`Px 10) ~right:(`Px 10) ())
           [ Node.text (Int.to_string value) ]
       in
-      Node.div [] [ button_minus; text_span; button_plus ])
+      Node.div [ button_minus; text_span; button_plus ])
   in
   let points =
     Map.to_alist m.counters
@@ -92,43 +94,57 @@ let view (m : Model.t) ~(inject : Action.t -> Vdom.Event.t) =
   in
   let graph =
     Node_svg.svg
-      [ Attr_svg.width 500.0
-      ; Attr_svg.height 500.0
-      ; Attr_svg.viewbox
-          ~min_x:0.0
-          ~min_y:0.0
-          ~width:(Float.of_int maximum_data_points)
-          ~height:(Float.of_int maximum_data_value)
-      ]
+      ~attr:
+        (Attr.many
+           [ Attr_svg.width 500.0
+           ; Attr_svg.height 500.0
+           ; Attr_svg.viewbox
+               ~min_x:0.0
+               ~min_y:0.0
+               ~width:(Float.of_int maximum_data_points)
+               ~height:(Float.of_int maximum_data_value)
+           ])
       [ Node_svg.linear_gradient
-          [ Attr.id "my-gradient"
-          ; Attr_svg.(gradient_transform [ Rotate { a = `Deg 90.0; x = 0.0; y = 0.0 } ])
-          ]
+          ~attr:
+            (Attr.many
+               [ Attr.id "my-gradient"
+               ; Attr_svg.(
+                   gradient_transform [ Rotate { a = `Deg 90.0; x = 0.0; y = 0.0 } ])
+               ])
           [ Node_svg.stop
-              [ Attr_svg.offset Percent.zero; Attr_svg.stop_color (`Hex "#254E70") ]
+              ~attr:
+                (Attr.many
+                   [ Attr_svg.offset Percent.zero; Attr_svg.stop_color (`Hex "#254E70") ])
               []
           ; Node_svg.stop
-              [ Attr_svg.offset (Percent.of_mult 0.5)
-              ; Attr_svg.stop_color (`Hex "#37718E")
-              ]
+              ~attr:
+                (Attr.many
+                   [ Attr_svg.offset (Percent.of_mult 0.5)
+                   ; Attr_svg.stop_color (`Hex "#37718E")
+                   ])
               []
           ; Node_svg.stop
-              [ Attr_svg.offset (Percent.of_mult 1.0)
-              ; Attr_svg.stop_color (`Hex "#8EE3EF")
-              ]
+              ~attr:
+                (Attr.many
+                   [ Attr_svg.offset (Percent.of_mult 1.0)
+                   ; Attr_svg.stop_color (`Hex "#8EE3EF")
+                   ])
               []
           ]
       ; Node_svg.polyline
-          [ Attr.style (Css_gen.create ~field:"vector-effect" ~value:"non-scaling-stroke")
-          ; Attr_svg.points points
-          ; Attr_svg.fill (`Url "#my-gradient")
-          ; Attr_svg.stroke (`Name "black")
-          ]
+          ~attr:
+            (Attr.many
+               [ Attr.style
+                   (Css_gen.create ~field:"vector-effect" ~value:"non-scaling-stroke")
+               ; Attr_svg.points points
+               ; Attr_svg.fill (`Url "#my-gradient")
+               ; Attr_svg.stroke (`Name "black")
+               ])
           []
       ]
   in
   Node.div
-    [ Attr.style @@ Css_gen.padding_left @@ `Px 10 ]
+    ~attr:(Attr.style @@ Css_gen.padding_left @@ `Px 10)
     (Jane_web_style.Css.style_4 :: graph :: add_new_counter_button :: Map.data elements)
 ;;
 

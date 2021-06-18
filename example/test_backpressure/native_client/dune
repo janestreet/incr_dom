@@ -1,3 +1,4 @@
 (executables (names main)
- (libraries async krb core backpressure_test_shared core.command_unix)
+ (libraries async krb core_kernel.core backpressure_test_shared
+  core.command_unix)
  (preprocess (pps ppx_jane)))

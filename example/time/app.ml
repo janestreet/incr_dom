@@ -1,4 +1,4 @@
-open Core_kernel
+open Core
 open Async_kernel
 open Incr_dom
 
@@ -24,6 +24,6 @@ let create model ~old_model:_ ~inject:_ =
   let%map model = model
   and time = Incr.Clock.watch_now Incr.clock in
   let apply_action action _ ~schedule_action:_ = Nothing.unreachable_code action in
-  let view = time |> Time_ns.to_string |> Vdom.Node.text in
+  let view = time |> Time_ns.to_string_utc |> Vdom.Node.text in
   Component.create ~apply_action model view
 ;;

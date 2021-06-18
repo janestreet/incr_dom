@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open Poly
 open! Import
 open Vdom_keyboard
@@ -320,18 +320,20 @@ let view table (m : Model.t Incr.t) ~(inject : Action.t -> Vdom.Event.t) =
   let help_menu_hint =
     let help_text = Keyboard_event_handler.Command.get_help_text help_menu_command in
     Node.div
-      [ Attr.style Css_gen.(combine (text_align `Center) (uniform_padding (`Px 5))) ]
+      ~attr:(Attr.style Css_gen.(combine (text_align `Center) (uniform_padding (`Px 5))))
       [ Help_text.Command.(view help_text help_text_view_spec Format.default) ]
   in
   let input =
     Node.div
-      [ Attr.id "search-container" ]
+      ~attr:(Attr.id "search-container")
       [ Node.input
-          [ Attr.id search_input_id
-          ; Attr.create "placeholder" "Search"
-          ; Attr.create "type" "text"
-          ; Attr.on_input (fun _ev text -> inject (Set_pattern text))
-          ]
+          ~attr:
+            (Attr.many_without_merge
+               [ Attr.id search_input_id
+               ; Attr.create "placeholder" "Search"
+               ; Attr.create "type" "text"
+               ; Attr.on_input (fun _ev text -> inject (Set_pattern text))
+               ])
           []
       ]
   in
@@ -342,19 +344,24 @@ let view table (m : Model.t Incr.t) ~(inject : Action.t -> Vdom.Event.t) =
     | Some help_text ->
       Node.div
         ~key:"help"
-        [ Attr.id "overlay"; Attr.on_double_click (fun _ev -> inject Action.Escape) ]
+        ~attr:
+          (Attr.many_without_merge
+             [ Attr.id "overlay"; Attr.on_double_click (fun _ev -> inject Action.Escape) ])
         [ Node.div
-            [ Attr.id "help-menu" ]
-            [ Node.h4 [] [ Node.text "Help Menu" ]
+            ~attr:(Attr.id "help-menu")
+            [ Node.h4 [ Node.text "Help Menu" ]
             ; Help_text.view help_text help_text_view_spec
             ]
         ]
   in
   Node.div
-    [ Attr.id "app"; key_handler ]
+    ~attr:(Attr.many_without_merge [ Attr.id "app"; key_handler ])
     [ maybe_help_menu
-    ; Node.div ~key:"top" [ Attr.id "top-container" ] [ input; help_menu_hint ]
-    ; Node.div ~key:"table" [ Attr.id "table-container"; scroll_attr ] [ table ]
+    ; Node.div ~key:"top" ~attr:(Attr.id "top-container") [ input; help_menu_hint ]
+    ; Node.div
+        ~key:"table"
+        ~attr:(Attr.many_without_merge [ Attr.id "table-container"; scroll_attr ])
+        [ table ]
     ]
 ;;
 

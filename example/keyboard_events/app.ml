@@ -1,4 +1,4 @@
-open Core_kernel
+open Core
 open Async_kernel
 open Incr_dom
 module Js = Js_of_ocaml.Js
@@ -53,27 +53,29 @@ let create (model : Model.t Incr.t) ~old_model:_ ~(inject : Action.t -> Vdom.Eve
     let contents =
       [ Node.text (model.last_key_code |> Int.to_string)
       ; Node.textarea
-          [ Attr.string_property "value" model.text_box_content
-          ; Attr.on_keypress (fun _ -> Event.Stop_propagation)
-          ; Attr.on_keyup (fun e ->
-              match
-                let open Option.Let_syntax in
-                let%map target =
-                  Js.Opt.to_option
-                    (Js.Opt.bind e##.target Js_of_ocaml.Dom_html.CoerceTo.textarea)
-                in
-                Js.to_string target##.value
-              with
-              | Some s ->
-                Event.Many [ Event.Stop_propagation; inject (Set_text_content s) ]
-              | None -> Event.Stop_propagation)
-          ]
+          ~attr:
+            (Attr.many_without_merge
+               [ Attr.string_property "value" model.text_box_content
+               ; Attr.on_keypress (fun _ -> Event.Stop_propagation)
+               ; Attr.on_keyup (fun e ->
+                   match
+                     let open Option.Let_syntax in
+                     let%map target =
+                       Js.Opt.to_option
+                         (Js.Opt.bind e##.target Js_of_ocaml.Dom_html.CoerceTo.textarea)
+                     in
+                     Js.to_string target##.value
+                   with
+                   | Some s ->
+                     Event.Many [ Event.Stop_propagation; inject (Set_text_content s) ]
+                   | None -> Event.Stop_propagation)
+               ])
           []
       ]
     in
     if Int.rem model.last_key_code 2 = 0
-    then Node.div container_attributes contents
-    else Node.span container_attributes contents
+    then Node.div ~attr:(Attr.many_without_merge container_attributes) contents
+    else Node.span ~attr:(Attr.many_without_merge container_attributes) contents
   and model = model in
   (* Note that we don't include [on_display] or [update_visibility], since
      these are optional arguments *)

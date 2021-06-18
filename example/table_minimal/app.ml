@@ -1,4 +1,4 @@
-open Core_kernel
+open Core
 open Incr_dom
 open Incr.Let_syntax
 
@@ -55,7 +55,7 @@ let columns =
   let open Vdom in
   let open Incr_dom_partial_render.Table.Default_sort_spec in
   let column ?sort_by header =
-    T.Column.create ?sort_by ~header:(Node.span [] [ Node.text header ]) ()
+    T.Column.create ?sort_by ~header:(Node.span [ Node.text header ]) ()
   in
   [ ( 0
     , column ~sort_by:(fun _ row -> Sort_key.String (Row.field1 row)) "Field1"
@@ -145,9 +145,12 @@ let view table (_m : Model.t Incr.t) ~inject:_ =
   let scroll_attr = Vdom.Attr.on_scroll (fun _ -> Vdom.Event.Viewport_changed) in
   let%map table = table >>| Component.view in
   Node.div
-    [ Attr.id "app" ]
+    ~attr:(Attr.id "app")
     [ Jane_web_style.Css.style_4
-    ; Node.div ~key:"table" [ Attr.id "table-container"; scroll_attr ] [ table ]
+    ; Node.div
+        ~key:"table"
+        ~attr:(Attr.many_without_merge [ Attr.id "table-container"; scroll_attr ])
+        [ table ]
     ]
 ;;
 

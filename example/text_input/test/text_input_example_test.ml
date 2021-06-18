@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Incr_dom_testing
 module App = Incr_dom_text_input_example_lib.App
 

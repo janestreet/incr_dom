@@ -1,2 +1,2 @@
-(executables (names app) (libraries async_kernel core_kernel incr_dom)
+(executables (names app) (libraries async_kernel core_kernel.core incr_dom)
  (preprocess (pps js_of_ocaml-ppx ppx_jane)))

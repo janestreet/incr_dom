@@ -1,5 +1,5 @@
 module My_time = Time
-open! Core_kernel
+open! Core
 open Poly
 open! Import
 module Time = My_time
@@ -141,14 +141,14 @@ let editable_cell m col ~remember_edit =
     ]
     @ if Column.focus_on_edit col then [ Attr.id "focus-on-edit" ] else []
   in
-  Node.input attrs []
+  Node.input ~attr:(Attr.many_without_merge attrs) []
 ;;
 
 let column_cell m col ~editing ~remember_edit =
   let open Vdom in
   if editing && Column.editable col
   then editable_cell m col ~remember_edit
-  else Node.span [] [ Node.text (Column.get col m) ]
+  else Node.span [ Node.text (Column.get col m) ]
 ;;
 
 let now = Incr.Clock.watch_now Incr.clock

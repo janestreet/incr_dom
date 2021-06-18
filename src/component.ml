@@ -1,5 +1,5 @@
 open Virtual_dom
-open Core_kernel
+open Core
 
 type ('action, 'model, 'state, 'extra) with_extra =
   { apply_action : 'action -> 'state -> schedule_action:('action -> unit) -> 'model

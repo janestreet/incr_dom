@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open Incr_dom
 
 (** The [Model] represents the full state of the application.  The module has methods for
@@ -68,19 +68,19 @@ let view (m : Model.t) ~(inject : Action.t -> Vdom.Event.t) =
   let open Vdom in
   let on_add_new_click = Attr.on_click (fun _ev -> inject New_counter) in
   let add_new_counter_button =
-    Node.div [] [ Node.button [ on_add_new_click ] [ Node.text "add new counter" ] ]
+    Node.div [ Node.button ~attr:on_add_new_click [ Node.text "add new counter" ] ]
   in
   let button txt ~pos ~diff =
     let on_click _ev = inject (Update { pos; diff }) in
-    Node.button [ Attr.on_click on_click ] [ Node.text txt ]
+    Node.button ~attr:(Attr.on_click on_click) [ Node.text txt ]
   in
   let elements =
     Map.mapi m.counters ~f:(fun ~key:pos ~data:value ->
       let button_minus = button "-" ~pos ~diff:(-1) in
       let button_plus = button "+" ~pos ~diff:1 in
-      Node.div [] [ button_minus; Node.text (Int.to_string value); button_plus ])
+      Node.div [ button_minus; Node.text (Int.to_string value); button_plus ])
   in
-  Node.body [] (add_new_counter_button :: Node.hr [] :: Map.data elements)
+  Node.body (add_new_counter_button :: Node.hr Attr.empty :: Map.data elements)
 ;;
 
 let create model ~old_model:_ ~inject =

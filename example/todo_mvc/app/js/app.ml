@@ -1,5 +1,5 @@
 open! Js_of_ocaml
-open! Core_kernel
+open! Core
 open! Incr_dom
 open! Js_of_ocaml
 

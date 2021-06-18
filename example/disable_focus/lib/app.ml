@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Async_kernel
 open Incr_dom
 
@@ -23,6 +23,6 @@ let create model ~old_model:_ ~inject:_ =
   let open Incr.Let_syntax in
   let%map model = model in
   let apply_action action _ ~schedule_action:_ = Nothing.unreachable_code action in
-  let view = Vdom.Node.div [ Vdom.Attr.create "disable_tab_index" "" ] [] in
+  let view = Vdom.Node.div ~attr:(Vdom.Attr.create "disable_tab_index" "") [] in
   Component.create ~apply_action model view
 ;;

@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open Js_of_ocaml
 
 (** This module has a small collection of helpful bits of javascript that have no other

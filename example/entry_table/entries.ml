@@ -1,5 +1,5 @@
 open! Async_kernel
-open! Core_kernel
+open! Core
 open! Import
 open Js_of_ocaml
 
@@ -185,9 +185,11 @@ let view (m : Model.t Incr.t) ~inject =
      Incremental. *)
   let input =
     Node.input
-      [ Attr.create "type" "text"
-      ; Attr.on_input (fun _ev text -> inject (Set_search_string text))
-      ]
+      ~attr:
+        (Attr.many_without_merge
+           [ Attr.create "type" "text"
+           ; Attr.on_input (fun _ev text -> inject (Set_search_string text))
+           ])
       []
   in
   let entries = m >>| Model.entries in
@@ -221,7 +223,7 @@ let view (m : Model.t Incr.t) ~inject =
         in
         Some view))
   and on_keydown = on_keydown in
-  Node.body [ on_keydown ] (input :: Map.data entries)
+  Node.body ~attr:on_keydown (input :: Map.data entries)
 ;;
 
 let update_visibility m ~schedule_action:_ =

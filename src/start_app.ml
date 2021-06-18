@@ -1,10 +1,25 @@
-open! Core_kernel
+open! Core
 open Virtual_dom
 open Async_kernel
 open Js_of_ocaml
+module Performance = Javascript_profiling
 
-let timer_start s ~debug = if debug then Firebug.console##time (Js.string s)
-let timer_stop s ~debug = if debug then Firebug.console##timeEnd (Js.string s)
+let timer_start s ~debug ~profile =
+  if profile then Performance.Manual.mark (s ^ "before");
+  if debug then Firebug.console##time (Js.string s)
+;;
+
+let timer_stop s ~debug ~profile =
+  if profile
+  then (
+    let before = s ^ "before" in
+    let after = s ^ "after" in
+    Performance.Manual.mark after;
+    Performance.Manual.measure ~name:s ~start:before ~end_:after);
+  if debug then Firebug.console##timeEnd (Js.string s)
+;;
+
+let print_errorf fmt = ksprintf (fun s -> Firebug.console##error (Js.string s)) fmt
 
 module Request_ids : sig
   type t
@@ -136,41 +151,211 @@ end = struct
   let mark_clean t = if is_dirty t then t.when_dirty <- Ivar.create ()
 end
 
-module Action_log : sig
-  val init : unit -> unit
-  val should_log : unit -> bool
+module Logging_filter = struct
+  module String_blang = struct
+    module T = struct
+      type t = string Blang.t [@@deriving sexp, compare]
+    end
+
+    include T
+    include Comparable.Make (T)
+  end
+
+  type t =
+    | All
+    | None
+    | Named_filter_blang of String_blang.t
+    | Custom_filter of (Sexp.t -> bool)
+end
+
+module Debug_flags : sig
+  type t =
+    { logging_filter : unit -> Logging_filter.t
+    ; should_profile : unit -> bool
+    ; should_debug : unit -> bool
+    }
+
+  val init_app
+    :  app_id:string
+    -> filter_names:String.Set.t
+    -> debug:bool
+    -> stop:unit Deferred.t
+    -> t
 end = struct
+  type t =
+    { logging_filter : unit -> Logging_filter.t
+    ; should_profile : unit -> bool
+    ; should_debug : unit -> bool
+    }
+
+  module App_state = struct
+    type t =
+      { filter_names : String.Set.t
+      ; logging_filter : Logging_filter.t ref
+      ; should_profile : bool ref
+      ; should_debug : bool ref
+      }
+
+    let set_logging_filter t ~logging_filter = t.logging_filter := logging_filter
+    let set_should_profile t ~should_profile = t.should_profile := should_profile
+    let set_should_debug t ~should_debug = t.should_debug := should_debug
+  end
+
   class type global =
     object
-      method logFlag : bool Js.t Js.writeonly_prop
+      method startLoggingAll :
+        (Js.js_string Js.t Js.opt -> unit) Js.callback Js.writeonly_prop
 
-      method logFlag_untyped : 'a Js.t Js.optdef Js.readonly_prop
+      method startLogging :
+        (Js.js_string Js.t -> Js.js_string Js.t Js.opt -> unit) Js.callback
+          Js.writeonly_prop
 
-      method startLogging : (unit -> unit) Js.callback Js.writeonly_prop
+      method startLoggingCustom :
+        ((Js.js_string Js.t -> bool Js.t) -> Js.js_string Js.t Js.opt -> unit) Js.callback
+          Js.writeonly_prop
 
-      method stopLogging : (unit -> unit) Js.callback Js.writeonly_prop
+      method stopLogging :
+        (Js.js_string Js.t Js.opt -> unit) Js.callback Js.writeonly_prop
+
+      method startProfiling :
+        (Js.js_string Js.t Js.opt -> unit) Js.callback Js.writeonly_prop
+
+      method stopProfiling :
+        (Js.js_string Js.t Js.opt -> unit) Js.callback Js.writeonly_prop
+
+      method startDebugging :
+        (Js.js_string Js.t Js.opt -> unit) Js.callback Js.writeonly_prop
+
+      method stopDebugging :
+        (Js.js_string Js.t Js.opt -> unit) Js.callback Js.writeonly_prop
     end
 
   let global : global Js.t = Js.Unsafe.global
+  let global_is_initialized = ref false
+  let app_states : App_state.t String.Table.t = String.Table.create ()
 
-  let init () =
-    let set_flag b = global##.logFlag := Js.bool b in
-    set_flag false;
-    global##.startLogging := Js.wrap_callback (fun () -> set_flag true);
-    global##.stopLogging := Js.wrap_callback (fun () -> set_flag false);
+  let single_line_string_list strings =
+    strings |> List.map ~f:(fun str -> "\"" ^ str ^ "\"") |> String.concat ~sep:", "
+  ;;
+
+  let multi_line_string_list strings =
+    strings |> List.map ~f:(fun str -> "  " ^ str) |> String.concat ~sep:"\n"
+  ;;
+
+  let init_global () =
+    let with_app_id_opt update_state app_id_opt =
+      let app_id_opt = Js.Opt.to_option app_id_opt |> Option.map ~f:Js.to_string in
+      match app_id_opt with
+      | None -> Hashtbl.iter app_states ~f:update_state
+      | Some app_id ->
+        (match Hashtbl.find app_states app_id with
+         | Some state -> update_state state
+         | None ->
+           print_errorf
+             "Unable to find app with id \"%s\". Valid app ids are: %s"
+             app_id
+             (Hashtbl.keys app_states |> single_line_string_list))
+    in
+    let update_logging_filter logging_filter =
+      with_app_id_opt (App_state.set_logging_filter ~logging_filter)
+    in
+    let update_should_profile should_profile =
+      with_app_id_opt (App_state.set_should_profile ~should_profile)
+    in
+    let update_should_debug should_debug =
+      with_app_id_opt (App_state.set_should_debug ~should_debug)
+    in
+    global##.startLoggingAll := Js.wrap_callback (update_logging_filter All);
+    global##.startLogging
+    := Js.wrap_callback (fun blang_str ->
+      let blang_str = Js.to_string blang_str in
+      with_app_id_opt (fun app_state ->
+        let blang =
+          Blang.t_of_sexp String.t_of_sexp (Sexp.of_string blang_str)
+        in
+        let invalid_names =
+          Blang.fold blang ~init:String.Set.empty ~f:(fun invalid_names name ->
+            if Set.mem app_state.filter_names name
+            then invalid_names
+            else Set.add invalid_names name)
+        in
+        if Set.is_empty invalid_names
+        then
+          App_state.set_logging_filter
+            app_state
+            ~logging_filter:(Named_filter_blang blang)
+        else
+          print_errorf
+            "Unable to find named filter(s): %s. Valid names are:\n%s"
+            (Set.to_list invalid_names |> single_line_string_list)
+            (Set.to_list app_state.filter_names |> multi_line_string_list)));
+    global##.startLoggingCustom
+    := Js.wrap_callback (fun filter ->
+      let filter action_sexp =
+        action_sexp |> Sexp.to_string |> Js.string |> filter |> Js.to_bool
+      in
+      update_logging_filter (Custom_filter filter));
+    global##.stopLogging := Js.wrap_callback (update_logging_filter None);
+    global##.startProfiling := Js.wrap_callback (update_should_profile true);
+    global##.stopProfiling := Js.wrap_callback (update_should_profile false);
+    global##.startDebugging := Js.wrap_callback (update_should_debug true);
+    global##.stopDebugging := Js.wrap_callback (update_should_debug false);
     let init_message =
-      " Incr_dom action logging is disabled by default.\n\
-      \ To start logging actions, type startLogging()\n\
-      \ To stop logging actions, type stopLogging()"
+      " Incr_dom Action Logging\n\
+      \ =======================\n\
+      \ Logging prints action info to the console.\n\
+      \ It is disabled by default.\n\
+      \ To start logging, type one of the following:\n\
+      \ \tstartLoggingAll([app_id]) - log all actions\n\
+      \ \tstartLogging(filter_name [, app_id]) - filter actions using a pre-defined \
+       named filter [filter_name]\n\
+      \ \tstartLogging(filter_name_blang [, app_id]) - filter actions using a blang of \
+       named filters [filter_name_blang]\n\
+      \ \tstartLoggingCustom(filter [, app_id]) - filter actions using a custom function \
+       [filter] from a string (the action sexp) to a bool\n\
+      \ To stop logging, type: stopLogging([app_id])\n\n\
+      \ Incr_dom Action Profiling\n\
+      \ =========================\n\
+      \ Profiling is disabled by default.\n\
+      \ To start profiling, type: startProfiling([app_id])\n\
+      \ To stop profiling, type: stopProfiling([app_id])\n\n\
+      \ Incr_dom Debugging\n\
+      \ ==================\n\
+      \ Debugging prints timing info to the console.\n\
+      \ It is disabled by default unless otherwise specified by the app.\n\
+      \ To start debugging, type: startDebugging([app_id])\n\
+      \ To stop debugging, type: stopDebugging([app_id])\n\n\
+      \ [app_id] is equal to the id of the element that the incr-dom app is bound to. If \
+       the page only has one app or you want to apply the action to all apps, you can \
+       pass in [null] (or for single-argument functions, omit it altogether)."
     in
     Firebug.console##log (Js.string init_message)
   ;;
 
-  let should_log () =
-    Js.Optdef.case global##.logFlag_untyped (Fn.const false) (fun log_flag ->
-      match Js.to_string (Js.typeof log_flag) with
-      | "boolean" -> Js.to_bool log_flag
-      | _ -> false)
+  let init_app ~app_id ~filter_names ~debug ~stop =
+    if not !global_is_initialized
+    then (
+      init_global ();
+      global_is_initialized := true);
+    let app_init_message =
+      sprintf
+        "Available logging filters for \"%s\":\n%s"
+        app_id
+        (Set.to_list filter_names |> multi_line_string_list)
+    in
+    Firebug.console##log (Js.string app_init_message);
+    let logging_filter = ref Logging_filter.None in
+    let should_profile = ref false in
+    let should_debug = ref debug in
+    Hashtbl.set
+      app_states
+      ~key:app_id
+      ~data:{ filter_names; logging_filter; should_profile; should_debug };
+    upon stop (fun () -> Hashtbl.remove app_states app_id);
+    { logging_filter = (fun () -> !logging_filter)
+    ; should_profile = (fun () -> !should_profile)
+    ; should_debug = (fun () -> !should_debug)
+    }
   ;;
 end
 
@@ -180,15 +365,13 @@ end
 let override_root_element root =
   let open Vdom in
   let should_add_focus_modifiers element =
-    element
-    |> Node.Element.attrs
-    |> List.exists ~f:(Attr.Expert.contains_name "disable_tab_index")
-    |> not
+    element |> Node.Element.attrs |> Attr.Expert.contains_name "disable_tab_index" |> not
   in
   match (root : Node.t) with
   | Element element when should_add_focus_modifiers element ->
-    let new_attrs = [ Attr.style (Css_gen.outline ~style:`None ()); Attr.tabindex 0 ] in
-    let add_new_attrs attrs = Attrs.merge_classes_and_styles (new_attrs @ attrs) in
+    let add_new_attrs attrs =
+      Vdom.Attr.(style (Css_gen.outline ~style:`None ()) @ tabindex 0 @ attrs)
+    in
     element |> Node.Element.map_attrs ~f:add_new_attrs |> Node.Element
   | _ -> root
 ;;
@@ -200,12 +383,13 @@ let get_tag_name (node : Vdom.Node.t) =
 ;;
 
 let start
-      (type model)
+      (type model action)
       ?(debug = false)
       ?(stop = Deferred.never ())
+      ?(named_logging_filters = [])
       ~bind_to_element_with_id
       ~initial_model
-      (module App : App_intf.S with type Model.t = model)
+      (module App : App_intf.S with type Model.t = model and type Action.t = action)
   =
   (* This is idempotent and so fine to do. *)
   Async_js.init ();
@@ -244,7 +428,14 @@ let start
          (App.create model ~old_model:model_from_last_display ~inject:Event.inject)
      in
      Incr.stabilize ();
-     Action_log.init ();
+     let named_logging_filters =
+       ("all", Fn.const true) :: ("none", Fn.const false) :: named_logging_filters
+       |> String.Table.of_alist_exn
+     in
+     let { Debug_flags.logging_filter; should_profile; should_debug } =
+       let filter_names = Hashtbl.keys named_logging_filters |> String.Set.of_list in
+       Debug_flags.init_app ~app_id:bind_to_element_with_id ~filter_names ~debug ~stop
+     in
      let html = Incr.Observer.value_exn app |> Component.view in
      let html_dom = Vdom.Node.to_dom html in
      let elem = Dom_html.getElementById_exn bind_to_element_with_id in
@@ -282,6 +473,12 @@ let start
              val preventScroll = Js._true
            end))
      in
+     let timer_start s =
+       timer_start s ~debug:(should_debug ()) ~profile:(should_profile ())
+     in
+     let timer_stop s =
+       timer_stop s ~debug:(should_debug ()) ~profile:(should_profile ())
+     in
      (*
         Take action on any blur event, refocusing to the root node if the relatedTarget is
         null or undefined, signifying that focus was lost and would otherwise be reset to
@@ -314,13 +511,46 @@ let start
          Component.update_visibility (Incr.Observer.value_exn app) ~schedule_action
        in
        Incr.Var.set model_v new_model;
-       timer_start "stabilize" ~debug;
+       timer_start "stabilize";
        Incr.stabilize ();
-       timer_stop "stabilize" ~debug
+       timer_stop "stabilize"
+     in
+     let maybe_log_action =
+       let safe_filter ~name filter action =
+         match Or_error.try_with (fun () -> filter action) with
+         | Ok should_log -> should_log
+         | Error err ->
+           print_errorf !"Exception raised by %s: %{Error#hum}" name err;
+           false
+       in
+       let named_filter_blang_cache =
+         Core.Memo.of_comparable
+           (module Logging_filter.String_blang)
+           (fun blang ->
+              let filter = Hashtbl.find_exn named_logging_filters in
+              safe_filter
+                ~name:(sprintf !"named filter blang \"%{sexp:string Blang.t}\"" blang)
+                (match blang with
+                 | Base name -> filter name
+                 | _ -> fun action -> Blang.eval blang (fun name -> filter name action)))
+       in
+       fun action ->
+         let should_log_action =
+           match logging_filter () with
+           | All -> true
+           | None -> false
+           | Named_filter_blang blang -> named_filter_blang_cache blang action
+           | Custom_filter filter ->
+             safe_filter
+               ~name:"custom filter"
+               (fun action -> filter (App.Action.sexp_of_t action))
+               action
+         in
+         if should_log_action
+         then Async_js.log_s_as_string [%message "Action" (action : App.Action.t)]
      in
      let apply_action action =
-       if Action_log.should_log ()
-       then Async_js.Debug.log_s [%message "Action" (action : App.Action.t)];
+       maybe_log_action action;
        let new_model =
          (app |> Incr.Observer.value_exn |> Component.apply_action)
            action
@@ -328,9 +558,9 @@ let start
            ~schedule_action
        in
        Incr.Var.set model_v new_model;
-       timer_start "stabilize" ~debug;
+       timer_start "stabilize";
        Incr.stabilize ();
-       timer_stop "stabilize" ~debug
+       timer_stop "stabilize"
      in
      let rec apply_actions () =
        match Deque.dequeue_front action_queue with
@@ -340,7 +570,7 @@ let start
          apply_actions ()
      in
      let perform_update () =
-       timer_start "stabilize" ~debug;
+       timer_start "stabilize";
        (* The clock is set only once per call to perform_update, so that all actions that
           occur before each display update occur "at the same time." *)
        let now =
@@ -349,34 +579,34 @@ let start
        in
        Incr.Clock.advance_clock Incr.clock ~to_:now;
        Incr.stabilize ();
-       timer_stop "stabilize" ~debug;
-       timer_start "total" ~debug;
-       timer_start "update visibility" ~debug;
+       timer_stop "stabilize";
+       timer_start "total";
+       timer_start "update visibility";
        if Visibility.is_dirty visibility then update_visibility ();
-       timer_stop "update visibility" ~debug;
-       timer_start "apply actions" ~debug;
+       timer_stop "update visibility";
+       timer_start "apply actions";
        apply_actions ();
-       timer_stop "apply actions" ~debug;
+       timer_stop "apply actions";
        let html = Incr.Observer.value_exn app |> Component.view in
        let html = override_root_element html in
-       timer_start "diff" ~debug;
+       timer_start "diff";
        let patch = Vdom.Node.Patch.create ~previous:!prev_html ~current:html in
-       timer_stop "diff" ~debug;
+       timer_stop "diff";
        if not (Vdom.Node.Patch.is_empty patch) then Visibility.mark_dirty visibility;
-       timer_start "patch" ~debug;
+       timer_start "patch";
        let elt = Vdom.Node.Patch.apply patch !prev_elt in
-       timer_stop "patch" ~debug;
-       timer_start "on_display" ~debug;
+       timer_stop "patch";
+       timer_start "on_display";
        Component.on_display (Incr.Observer.value_exn app) state ~schedule_action;
-       timer_stop "on_display" ~debug;
+       timer_stop "on_display";
        Incr.Var.set model_from_last_display_v (Incr.Var.value model_v);
        let old_tag_name = get_tag_name !prev_html in
        let new_tag_name = get_tag_name html in
        let tags_the_same = Option.equal String.equal old_tag_name new_tag_name in
        prev_html := html;
        prev_elt := elt;
-       timer_stop "total" ~debug;
-       if debug then Firebug.console##debug (Js.string "-------");
+       timer_stop "total";
+       if should_debug () then Firebug.console##debug (Js.string "-------");
        (* Changing the tag name causes focus to be lost.  Refocus in that case. *)
        if not tags_the_same then refocus_root_element ()
      in
