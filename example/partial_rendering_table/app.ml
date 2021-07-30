@@ -142,7 +142,7 @@ let update_visibility (model : Model.t) row_view ~schedule_action:_ =
 ;;
 
 let view model row_view ~inject =
-  let scroll_attr = Vdom.Attr.on_scroll (fun _ -> Vdom.Event.Viewport_changed) in
+  let scroll_attr = Vdom.Attr.on_scroll (fun _ -> Vdom.Effect.Viewport_changed) in
   let filter_string_change =
     Vdom.Attr.on_input (fun (_ : Dom_html.event Js.t) value ->
       inject (Action.Update_filter value))
@@ -152,7 +152,7 @@ let view model row_view ~inject =
       match value with
       | "Num" -> inject (Action.Update_sort Key.Num)
       | "Native" -> inject (Action.Update_sort Key.Native)
-      | _ -> Vdom.Event.Ignore)
+      | _ -> Vdom.Effect.Ignore)
   in
   let offset_div key height =
     Vdom.Node.div

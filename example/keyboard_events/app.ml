@@ -27,7 +27,11 @@ end
 let initial_model = { Model.last_key_code = 0; text_box_content = "type here" }
 let on_startup ~schedule_action:_ _model = Deferred.unit
 
-let create (model : Model.t Incr.t) ~old_model:_ ~(inject : Action.t -> Vdom.Event.t) =
+let create
+      (model : Model.t Incr.t)
+      ~old_model:_
+      ~(inject : Action.t -> unit Vdom.Effect.t)
+  =
   let open Incr.Let_syntax in
   let open Vdom in
   let%map apply_action =
@@ -56,7 +60,7 @@ let create (model : Model.t Incr.t) ~old_model:_ ~(inject : Action.t -> Vdom.Eve
           ~attr:
             (Attr.many_without_merge
                [ Attr.string_property "value" model.text_box_content
-               ; Attr.on_keypress (fun _ -> Event.Stop_propagation)
+               ; Attr.on_keypress (fun _ -> Effect.Stop_propagation)
                ; Attr.on_keyup (fun e ->
                    match
                      let open Option.Let_syntax in
@@ -67,8 +71,9 @@ let create (model : Model.t Incr.t) ~old_model:_ ~(inject : Action.t -> Vdom.Eve
                      Js.to_string target##.value
                    with
                    | Some s ->
-                     Event.Many [ Event.Stop_propagation; inject (Set_text_content s) ]
-                   | None -> Event.Stop_propagation)
+                     Effect.Many
+                       [ Effect.Stop_propagation; inject (Set_text_content s) ]
+                   | None -> Effect.Stop_propagation)
                ])
           []
       ]

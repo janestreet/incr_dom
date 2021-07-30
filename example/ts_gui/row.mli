@@ -34,9 +34,9 @@ val view
   -> mode:Mode.t Incr.t
   -> sort_columns:int list
   -> focused_column:int option Incr.t
-  -> focus_me:Vdom.Event.t
-  -> focus_nth_column:(int -> Vdom.Event.t)
-  -> remember_edit:(column:string -> string -> Vdom.Event.t)
+  -> focus_me:unit Vdom.Effect.t
+  -> focus_nth_column:(int -> unit Vdom.Effect.t)
+  -> remember_edit:(column:string -> string -> unit Vdom.Effect.t)
   -> Row_node_spec.t Incr.t
 
 

@@ -271,7 +271,7 @@ let key_handler ~inject =
   keydown_handler, help_menu_command
 ;;
 
-let row_renderer (m : Model.t Incr.t) ~(inject : Action.t -> Vdom.Event.t)
+let row_renderer (m : Model.t Incr.t) ~(inject : Action.t -> unit Vdom.Effect.t)
   : Row.Model.t Ts_table.row_renderer
   =
   let table_m = m >>| Model.table in
@@ -308,9 +308,9 @@ let row_renderer (m : Model.t Incr.t) ~(inject : Action.t -> Vdom.Event.t)
       ~remember_edit:(fun ~column value -> inject (Remember_edit { column; value }))
 ;;
 
-let view table (m : Model.t Incr.t) ~(inject : Action.t -> Vdom.Event.t) =
+let view table (m : Model.t Incr.t) ~(inject : Action.t -> unit Vdom.Effect.t) =
   let open Vdom in
-  let scroll_attr = Vdom.Attr.on_scroll (fun _ -> Vdom.Event.Viewport_changed) in
+  let scroll_attr = Vdom.Attr.on_scroll (fun _ -> Vdom.Effect.Viewport_changed) in
   let key_handler, help_menu_command = key_handler ~inject in
   let help_text_view_spec =
     Help_text.View_spec.with_classes

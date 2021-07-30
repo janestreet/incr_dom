@@ -64,7 +64,7 @@ let apply_action model action _ ~schedule_action:_ =
 
 let on_startup ~schedule_action:_ _ = Async_kernel.return ()
 
-let view (m : Model.t) ~(inject : Action.t -> Vdom.Event.t) =
+let view (m : Model.t) ~(inject : Action.t -> unit Vdom.Effect.t) =
   let open Vdom in
   let on_add_new_click = Attr.on_click (fun _ev -> inject New_counter) in
   let add_new_counter_button =
@@ -80,7 +80,7 @@ let view (m : Model.t) ~(inject : Action.t -> Vdom.Event.t) =
       let button_plus = button "+" ~pos ~diff:1 in
       Node.div [ button_minus; Node.text (Int.to_string value); button_plus ])
   in
-  Node.body (add_new_counter_button :: Node.hr Attr.empty :: Map.data elements)
+  Node.body (add_new_counter_button :: Node.hr () :: Map.data elements)
 ;;
 
 let create model ~old_model:_ ~inject =

@@ -26,7 +26,7 @@ let create
   =
   let action_queue = Queue.create () in
   let module Event =
-    Vdom.Event.Define (struct
+    Vdom.Effect.Define (struct
       module Action = App.Action
 
       let handle = Queue.enqueue action_queue

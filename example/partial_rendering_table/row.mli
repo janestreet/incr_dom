@@ -26,5 +26,5 @@ end
 val view
   :  Model.t Incr.t
   -> row_id:Id.t
-  -> inject:(Action.t -> Vdom.Event.t)
+  -> inject:(Action.t -> unit Vdom.Effect.t)
   -> Vdom.Node.t Incr.t

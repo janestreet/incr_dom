@@ -85,7 +85,7 @@ all of the incremental computations pertaining to the table are shared
 via `Component`. We can see this in `view`:
 
 ```ocaml
-let view table (m : Model.t Incr.t) ~(inject : Action.t -> Vdom.Event.t) =
+let view table (m : Model.t Incr.t) ~(inject : Action.t -> unit Vdom.Effect.t) =
   ...
   let%map table = table >>| Component.view
   and ... in

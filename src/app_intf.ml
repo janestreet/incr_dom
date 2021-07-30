@@ -96,7 +96,7 @@ module type S = sig
     :  Model.t Incr.t
     -> old_model:Model.t Incr.t
     (** [old_model] contains the previous version of the model *)
-    -> inject:(Action.t -> Vdom.Event.t)
+    -> inject:(Action.t -> unit Vdom.Effect.t)
     (** [inject] gives you the ability to create event handlers in the virtual DOM. In
         your event handler, call this function on the action you would like to
         schedule. Virtual DOM will automatically delegate that action back to the

@@ -20,10 +20,10 @@ let%expect_test "default model" =
     {|
     <body>
       <div> No submissions yet </div>
-      <input id="input" type="text" #value="Default #0" oninput={handler}> </input>
-      <button id="submit" onclick={handler}> Submit </button>
-      <button id="reset" onclick={handler}> Reset </button>
-      <button id="increment" onclick={handler}> Increment </button>
+      <input id="input" type="text" #value="Default #0" oninput> </input>
+      <button id="submit" onclick> Submit </button>
+      <button id="reset" onclick> Reset </button>
+      <button id="increment" onclick> Increment </button>
     </body> |}]
 ;;
 
@@ -36,10 +36,10 @@ let%expect_test "submit with default" =
     {|
     <body>
       <div> Your latest submission was: Default #0 </div>
-      <input id="input" type="text" #value="Default #0" oninput={handler}> </input>
-      <button id="submit" onclick={handler}> Submit </button>
-      <button id="reset" onclick={handler}> Reset </button>
-      <button id="increment" onclick={handler}> Increment </button>
+      <input id="input" type="text" #value="Default #0" oninput> </input>
+      <button id="submit" onclick> Submit </button>
+      <button id="reset" onclick> Reset </button>
+      <button id="increment" onclick> Increment </button>
     </body> |}]
 ;;
 
@@ -54,10 +54,10 @@ let%expect_test "Increment twice and then submit" =
     {|
     <body>
       <div> Your latest submission was: Default #2 </div>
-      <input id="input" type="text" #value="Default #2" oninput={handler}> </input>
-      <button id="submit" onclick={handler}> Submit </button>
-      <button id="reset" onclick={handler}> Reset </button>
-      <button id="increment" onclick={handler}> Increment </button>
+      <input id="input" type="text" #value="Default #2" oninput> </input>
+      <button id="submit" onclick> Submit </button>
+      <button id="reset" onclick> Reset </button>
+      <button id="increment" onclick> Increment </button>
     </body> |}]
 ;;
 
@@ -71,10 +71,10 @@ let%expect_test "Set value and then submit" =
     {|
     <body>
       <div> Your latest submission was: hello world </div>
-      <input id="input" type="text" #value="hello world" oninput={handler}> </input>
-      <button id="submit" onclick={handler}> Submit </button>
-      <button id="reset" onclick={handler}> Reset </button>
-      <button id="increment" onclick={handler}> Increment </button>
+      <input id="input" type="text" #value="hello world" oninput> </input>
+      <button id="submit" onclick> Submit </button>
+      <button id="reset" onclick> Reset </button>
+      <button id="increment" onclick> Increment </button>
     </body> |}]
 ;;
 
@@ -89,9 +89,9 @@ let%expect_test "Set value and then increment" =
     {|
     <body>
       <div> Your latest submission was: Default #1 </div>
-      <input id="input" type="text" #value="Default #1" oninput={handler}> </input>
-      <button id="submit" onclick={handler}> Submit </button>
-      <button id="reset" onclick={handler}> Reset </button>
-      <button id="increment" onclick={handler}> Increment </button>
+      <input id="input" type="text" #value="Default #1" oninput> </input>
+      <button id="submit" onclick> Submit </button>
+      <button id="reset" onclick> Reset </button>
+      <button id="increment" onclick> Increment </button>
     </body> |}]
 ;;

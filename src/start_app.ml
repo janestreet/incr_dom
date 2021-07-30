@@ -408,7 +408,7 @@ let start
      let action_queue = Deque.create () in
      let schedule_action action = Deque.enqueue_back action_queue action in
      let module Event =
-       Vdom.Event.Define (struct
+       Vdom.Effect.Define (struct
          module Action = App.Action
 
          let handle action = Deque.enqueue_back action_queue action
@@ -417,9 +417,9 @@ let start
      let visibility = Visibility.create_as_dirty () in
      let viewport_changed () = Visibility.mark_dirty visibility in
      (* This registers the [viewport_changed] handler with Virtual_dom. If event handlers
-        use the [Vdom.Event.Viewport_changed] event, we are notified. *)
+        use the [Vdom.Effect.Viewport_changed] event, we are notified. *)
      let module Viewport_handler =
-       Vdom.Event.Define_visibility (struct
+       Vdom.Effect.Define_visibility (struct
          let handle = viewport_changed
        end)
      in

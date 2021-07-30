@@ -172,14 +172,14 @@ let view (m : Model.t Incr.t) ~inject =
       | KeyX ->
         if Js.to_bool ev##.ctrlKey
         then inject (Raise (Error.of_string "got X"))
-        else Vdom.Event.Ignore
-      | KeyY -> if Js.to_bool ev##.ctrlKey then inject Raise_js else Vdom.Event.Ignore
+        else Vdom.Effect.Ignore
+      | KeyY -> if Js.to_bool ev##.ctrlKey then inject Raise_js else Vdom.Effect.Ignore
       | KeyD -> inject Nop
       | KeyS -> inject Dump_state
       | KeyE -> inject (Entry (focus, Toggle_collapse))
       | Equal -> inject (Entry (focus, Bump Incr))
       | Minus -> inject (Entry (focus, Bump Decr))
-      | _ -> Vdom.Event.Ignore)
+      | _ -> Vdom.Effect.Ignore)
   in
   (* Right now, the incrementality of this is terrible.  Waiting on better support from
      Incremental. *)

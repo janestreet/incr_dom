@@ -55,7 +55,7 @@ let apply_action model action _ ~schedule_action:_ =
 
 let on_startup ~schedule_action:_ _ = Async_kernel.return ()
 
-let view (m : Model.t) ~(inject : Action.t -> Vdom.Event.t) =
+let view (m : Model.t) ~(inject : Action.t -> unit Vdom.Effect.t) =
   let open Vdom in
   let on_add_new_click = Attr.on_click (fun _ev -> inject New_counter) in
   let add_new_counter_button =

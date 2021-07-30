@@ -52,8 +52,8 @@ let view (m : Model.t Incr.t) ~inject =
   let open Vdom in
   let inner_click =
     match%map m >>| Model.propagation_stopped with
-    | true -> Attr.on_click (fun _ -> Event.Stop_propagation)
-    | false -> Attr.on_click (fun _ -> Event.Ignore)
+    | true -> Attr.on_click (fun _ -> Effect.Stop_propagation)
+    | false -> Attr.on_click (fun _ -> Effect.Ignore)
   in
   let outer_click = Attr.on_click (fun _ -> inject Action.Outer_click) in
   let outer_keydown = Attr.on_keydown (fun _ -> inject Action.Outer_keydown) in
@@ -62,11 +62,11 @@ let view (m : Model.t Incr.t) ~inject =
     and propagation_stopped = m >>| Model.propagation_stopped in
     let events =
       List.filter_opt
-        [ Option.some_if default_prevented Event.Prevent_default
-        ; Option.some_if propagation_stopped Event.Stop_propagation
+        [ Option.some_if default_prevented Effect.Prevent_default
+        ; Option.some_if propagation_stopped Effect.Stop_propagation
         ]
     in
-    Attr.on_keydown (fun _ -> Event.Many events)
+    Attr.on_keydown (fun _ -> Effect.Many events)
   in
   let pd_click =
     Attr.on_click (fun evt ->
@@ -74,7 +74,7 @@ let view (m : Model.t Incr.t) ~inject =
        let%bind target = Js.Opt.to_option evt##.target in
        let%map inp = Js.Opt.to_option (Dom_html.CoerceTo.input target) in
        inject (Action.Set_default_prevented (Js.to_bool inp##.checked)))
-      |> Option.value ~default:Event.Ignore)
+      |> Option.value ~default:Effect.Ignore)
   in
   let sp_click =
     Attr.on_click (fun evt ->
@@ -82,7 +82,7 @@ let view (m : Model.t Incr.t) ~inject =
        let%bind target = Js.Opt.to_option evt##.target in
        let%map inp = Js.Opt.to_option (Dom_html.CoerceTo.input target) in
        inject (Action.Set_propagation_stopped (Js.to_bool inp##.checked)))
-      |> Option.value ~default:Event.Ignore)
+      |> Option.value ~default:Effect.Ignore)
   in
   let%map clicks = m >>| Model.outer_click_count
   and keydowns = m >>| Model.outer_keydown_count

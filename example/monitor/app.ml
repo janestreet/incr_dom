@@ -80,25 +80,25 @@ let update_visibility m ~schedule_action:_ =
   m
 ;;
 
-let key_handler (m : Model.t) ~(inject : Action.t -> Vdom.Event.t) =
+let key_handler (m : Model.t) ~(inject : Action.t -> unit Vdom.Effect.t) =
   Attr.on_keydown (fun ev ->
     Async_kernel_scheduler.within_v ~monitor:m.monitor (fun () ->
       maybe_fail m On_keydown;
       match Dom_html.Keyboard_code.of_event ev with
       | KeyS -> inject Switch
       | KeyX -> inject Stop
-      | _ -> Vdom.Event.Ignore)
-    |> Option.value ~default:Vdom.Event.Ignore)
+      | _ -> Vdom.Effect.Ignore)
+    |> Option.value ~default:Vdom.Effect.Ignore)
 ;;
 
-let view (m : Model.t Incr.t) ~(inject : Action.t -> Vdom.Event.t) =
+let view (m : Model.t Incr.t) ~(inject : Action.t -> unit Vdom.Effect.t) =
   let open Incr.Let_syntax in
   let set_location =
     let open Js_of_ocaml in
     Vdom.Attr.on_change (fun (_ : Dom_html.event Js.t) value ->
       match Exn_location.of_string value with
       | Some loc -> inject (Set_exn_location loc)
-      | None -> Vdom.Event.Ignore)
+      | None -> Vdom.Effect.Ignore)
   in
   let%map m = m in
   let attr = [ key_handler m ~inject ] in

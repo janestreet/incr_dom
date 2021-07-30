@@ -30,6 +30,6 @@ val view
   -> Entry_id.t
   -> visible:bool Incr.t
   -> focus:focus_state Incr.t
-  -> focus_me:Vdom.Event.t
-  -> set_inner_focus:(Focus_point.t -> Vdom.Event.t)
+  -> focus_me:unit Vdom.Effect.t
+  -> set_inner_focus:(Focus_point.t -> unit Vdom.Effect.t)
   -> Vdom.Node.t Incr.t

@@ -165,7 +165,7 @@ let input_section inject clear_input =
       ~attr:
         (Attr.many_without_merge
            ([ Attr.on_change (fun _ s ->
-              Vdom.Event.Many
+              Vdom.Effect.Many
                 [ inject (Action.Clear_input true); inject (Action.Add s) ])
             ; Attr.class_ "new-todo"
             ; Attr.placeholder "What needs to be done?"
@@ -238,7 +238,7 @@ let view model ~inject : Vdom.Node.t Incr.t =
                inject (Action.Editing_state { editing = true; id }))
              ~editing_ended
              ~set_text:(fun _elt str ->
-               Vdom.Event.Many [ inject (Action.Set_text (id, str)); editing_ended ]))
+               Vdom.Effect.Many [ inject (Action.Set_text (id, str)); editing_ended ]))
     and model = model
     and clear_input = model >>| Model.clear_input in
     let todos = Model.todos model in
@@ -270,7 +270,7 @@ let view model ~inject : Vdom.Node.t Incr.t =
   let main =
     Node.create
       "section"
-      [ Attr.class_ "main" ]
+      ~attr:(Attr.class_ "main")
       [ Node.input
           ~attr:
             (Attr.many_without_merge
@@ -286,7 +286,7 @@ let view model ~inject : Vdom.Node.t Incr.t =
   Node.body
     [ Node.create
         "section"
-        [ Attr.class_ "todoapp" ]
+        ~attr:(Attr.class_ "todoapp")
         (List.filter_opt [ Some (input_section inject clear_input); Some main; footer ])
     ; info
     ]
