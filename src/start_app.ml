@@ -418,7 +418,7 @@ let start
      let viewport_changed () = Visibility.mark_dirty visibility in
      (* This registers the [viewport_changed] handler with Virtual_dom. If event handlers
         use the [Vdom.Effect.Viewport_changed] event, we are notified. *)
-     let module Viewport_handler =
+     let module _ =
        Vdom.Effect.Define_visibility (struct
          let handle = viewport_changed
        end)

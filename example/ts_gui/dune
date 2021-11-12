@@ -1,3 +1,3 @@
 (executables (names main)
- (libraries incr_dom_partial_render async_kernel incr_dom_keyboard)
+ (libraries incr_dom_partial_render async_kernel virtual_dom.keyboard)
  (preprocess (pps js_of_ocaml-ppx ppx_jane)))
