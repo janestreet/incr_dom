@@ -1,4 +1,4 @@
 (executables (names main)
- (libraries backpressure_test_shared cohttp_static_handler core.command_unix
-  simple_web_server)
+ (libraries backpressure_test_shared cohttp_static_handler
+  core_unix.command_unix simple_web_server)
  (preprocess (pps ppx_jane)))
