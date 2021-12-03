@@ -1,3 +1,3 @@
 (executables (names main)
- (libraries core_kernel.core incr_dom incr_dom_partial_render jane_web_style)
+ (libraries core incr_dom incr_dom_partial_render jane_web_style)
  (preprocess (pps ppx_jane)))
