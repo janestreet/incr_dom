@@ -16,3 +16,13 @@ CAMLprim value js_prof_measure(value name, value before, value after) {
   (void) after;
   return Val_unit;
 }
+
+CAMLprim value js_prof_clear_marks(value u) {
+  (void) u;
+  return Val_unit;
+}
+
+CAMLprim value js_prof_clear_measures(value u) {
+  (void) u;
+  return Val_unit;
+}

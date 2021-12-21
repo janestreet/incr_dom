@@ -2,6 +2,12 @@
 var js_performance = {mark: (function () {}), measure: (function () {}) };
 if (typeof joo_global_object.performance !== 'undefined') {
     js_performance = joo_global_object.performance;
+} else {
+  try {
+    js_performance = require('perf_hooks').performance;
+  } catch (_e) {
+    joo_global_object.console.warn("couldn't load performance hooks");
+  }
 }
 
 //Provides: js_prof_mark
@@ -23,6 +29,28 @@ function js_prof_measure(name, start, end) {
             caml_jsbytes_of_string(name), 
             caml_jsbytes_of_string(start), 
             caml_jsbytes_of_string(end));
+    } catch (e) {
+        joo_global_object.console.warn(e);
+    }
+    return 0;
+}
+
+//Provides: js_prof_clear_marks
+//Requires: caml_jsbytes_of_string,js_performance
+function js_prof_clear_marks() {
+    try {
+        js_performance.clearMarks();
+    } catch (e) {
+        joo_global_object.console.warn(e);
+    }
+    return 0;
+}
+
+//Provides: js_prof_clear_measures
+//Requires: caml_jsbytes_of_string,js_performance
+function js_prof_clear_measures() {
+    try {
+        js_performance.clearMeasures();
     } catch (e) {
         joo_global_object.console.warn(e);
     }
