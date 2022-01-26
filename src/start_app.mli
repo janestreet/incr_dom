@@ -21,3 +21,16 @@ val start
   -> initial_model:'model
   -> (module App_intf.S with type Model.t = 'model and type Action.t = 'action)
   -> unit
+
+module Private : sig
+  val start_bonsai
+    :  ?debug:bool (** print timing info to JS console - default false *)
+    -> ?stop:unit Deferred.t
+    -> ?named_logging_filters:(string * ('action -> bool)) list
+    -> bind_to_element_with_id:string
+    -> initial_model:'model
+    -> (module App_intf.Private.S_for_bonsai
+         with type Model.t = 'model
+          and type Action.t = 'action)
+    -> unit
+end

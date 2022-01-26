@@ -103,3 +103,28 @@ module type S = sig
         [Start_app] main loop. *)
     -> (Action.t, Model.t, State.t) Component.t Incr.t
 end
+
+module Private = struct
+  type ('state, 'model, 'action) snapshot =
+    { view : Vdom.Node.t
+    ; apply_action :
+        'state -> schedule_event:(unit Ui_effect.t -> unit) -> 'model -> 'action -> 'model
+    ; update_visibility : 'model -> schedule_event:(unit Ui_effect.t -> unit) -> 'model
+    ; on_display : 'state -> schedule_event:(unit Ui_effect.t -> unit) -> unit
+    }
+
+  module type S_for_bonsai = sig
+    module Model : Model
+    module Action : Action
+    module State : State
+
+    val action_requires_stabilization : Action.t -> bool
+    val on_startup : schedule_action:(Action.t -> unit) -> Model.t -> State.t Deferred.t
+
+    val create
+      :  Model.t Incr.t
+      -> old_model:Model.t Incr.t
+      -> inject:(Action.t -> unit Vdom.Effect.t)
+      -> (State.t, Model.t, Action.t) snapshot Incr.t
+  end
+end

@@ -168,7 +168,7 @@ let field_is_focused ~collapsed (focus : focus_state) pos =
     Some pos = Option.bind focus_point ~f:(fun x -> Map.find focus_map x)
 ;;
 
-let align_left (f : Node.node_creator) attrs nodes =
+let align_left (f : Node.Aliases.node_creator) attrs nodes =
   f ~attr:(Attr.many_without_merge (Attr.create "align" "left" :: attrs)) nodes
 ;;
 

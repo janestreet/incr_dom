@@ -1,4 +1,4 @@
 (library (name incr_dom) (public_name incr_dom)
  (preprocess (pps js_of_ocaml-ppx ppx_jane))
  (libraries js_of_ocaml virtual_dom core async_js async_kernel incremental
-  incr_map incr_select javascript_profiling ui_incr))
+  incr_map incr_select javascript_profiling vdom_file_download ui_incr))

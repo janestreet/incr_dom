@@ -228,6 +228,8 @@ end = struct
 
       method stopDebugging :
         (Js.js_string Js.t Js.opt -> unit) Js.callback Js.writeonly_prop
+
+      method saveIncrementalGraph : (unit -> unit) Js.callback Js.writeonly_prop
     end
 
   let global : global Js.t = Js.Unsafe.global
@@ -300,6 +302,13 @@ end = struct
     global##.stopProfiling := Js.wrap_callback (update_should_profile false);
     global##.startDebugging := Js.wrap_callback (update_should_debug true);
     global##.stopDebugging := Js.wrap_callback (update_should_debug false);
+    global##.saveIncrementalGraph
+    := Js.wrap_callback (fun () ->
+      let filename = "current_incr_dom_dot_graph.dot" in
+      Ui_incr.save_dot_to_file filename;
+      let contents = In_channel.read_all filename in
+      Vdom_file_download.create ~filename ~mimetype:"plain/text" ~contents
+      |> Vdom_file_download.trigger);
     let init_message =
       " Incr_dom Action Logging\n\
       \ =======================\n\
@@ -382,14 +391,16 @@ let get_tag_name (node : Vdom.Node.t) =
   | None | Text _ | Widget _ -> None
 ;;
 
-let start
+let start_bonsai
       (type model action)
       ?(debug = false)
       ?(stop = Deferred.never ())
       ?(named_logging_filters = [])
       ~bind_to_element_with_id
       ~initial_model
-      (module App : App_intf.S with type Model.t = model and type Action.t = action)
+      (module App : App_intf.Private.S_for_bonsai
+        with type Model.t = model
+         and type Action.t = action)
   =
   (* This is idempotent and so fine to do. *)
   Async_js.init ();
@@ -406,7 +417,6 @@ let start
      Incr.set_cutoff model cutoff;
      Incr.set_cutoff model_from_last_display cutoff;
      let action_queue = Deque.create () in
-     let schedule_action action = Deque.enqueue_back action_queue action in
      let module Event =
        Vdom.Effect.Define (struct
          module Action = App.Action
@@ -423,9 +433,18 @@ let start
          let handle = viewport_changed
        end)
      in
-     let app =
-       Incr.observe
-         (App.create model ~old_model:model_from_last_display ~inject:Event.inject)
+     let get_view, get_apply_action, get_update_visibility, get_on_display =
+       let obs =
+         Incr.observe
+           (App.create model ~old_model:model_from_last_display ~inject:Event.inject)
+       in
+       let fetch (f : _ App_intf.Private.snapshot -> _) () =
+         f (Incr.Observer.value_exn obs)
+       in
+       ( fetch (fun { view; _ } -> view)
+       , fetch (fun { apply_action; _ } -> apply_action)
+       , fetch (fun { update_visibility; _ } -> update_visibility)
+       , fetch (fun { on_display; _ } -> on_display) )
      in
      Incr.stabilize ();
      let named_logging_filters =
@@ -436,7 +455,7 @@ let start
        let filter_names = Hashtbl.keys named_logging_filters |> String.Set.of_list in
        Debug_flags.init_app ~app_id:bind_to_element_with_id ~filter_names ~debug ~stop
      in
-     let html = Incr.Observer.value_exn app |> Component.view in
+     let html = get_view () in
      let html_dom = Vdom.Node.to_dom html in
      let elem = Dom_html.getElementById_exn bind_to_element_with_id in
      let parent = Option.value_exn ~here:[%here] (Js.Opt.to_option elem##.parentNode) in
@@ -456,7 +475,11 @@ let start
      in
      call_viewport_changed_on_event "scroll" (Js_misc.get_scroll_container html_dom);
      call_viewport_changed_on_event "resize" Dom_html.window;
-     let%bind state = App.on_startup ~schedule_action (Incr.Var.value model_v) in
+     let%bind state =
+       App.on_startup
+         ~schedule_action:(fun a -> Ui_effect.Expert.handle (Event.inject a))
+         (Incr.Var.value model_v)
+     in
      let prev_html = ref html in
      let prev_elt = ref html_dom in
      let refocus_root_element () =
@@ -508,7 +531,9 @@ let start
      let update_visibility () =
        Visibility.mark_clean visibility;
        let new_model =
-         Component.update_visibility (Incr.Observer.value_exn app) ~schedule_action
+         (get_update_visibility ())
+           ~schedule_event:Ui_effect.Expert.handle
+           (Incr.Var.latest_value model_v)
        in
        Incr.Var.set model_v new_model;
        timer_start "stabilize";
@@ -551,16 +576,21 @@ let start
      in
      let apply_action action =
        maybe_log_action action;
+       if App.action_requires_stabilization action
+       then (
+         timer_start "stabilize-for-action";
+         Incr.stabilize ();
+         timer_stop "stabilize-for-action")
+       else if should_debug ()
+       then Firebug.console##debug (Js.string "action applied without stabilizing");
        let new_model =
-         (app |> Incr.Observer.value_exn |> Component.apply_action)
-           action
+         (get_apply_action ())
            state
-           ~schedule_action
+           ~schedule_event:Ui_effect.Expert.handle
+           (Incr.Var.latest_value model_v)
+           action
        in
-       Incr.Var.set model_v new_model;
-       timer_start "stabilize";
-       Incr.stabilize ();
-       timer_stop "stabilize"
+       Incr.Var.set model_v new_model
      in
      let rec apply_actions () =
        match Deque.dequeue_front action_queue with
@@ -587,7 +617,10 @@ let start
        timer_start "apply actions";
        apply_actions ();
        timer_stop "apply actions";
-       let html = Incr.Observer.value_exn app |> Component.view in
+       timer_start "stabilize";
+       Incr.stabilize ();
+       timer_stop "stabilize";
+       let html = get_view () in
        let html = override_root_element html in
        timer_start "diff";
        let patch = Vdom.Node.Patch.create ~previous:!prev_html ~current:html in
@@ -597,7 +630,7 @@ let start
        let elt = Vdom.Node.Patch.apply patch !prev_elt in
        timer_stop "patch";
        timer_start "on_display";
-       Component.on_display (Incr.Observer.value_exn app) state ~schedule_action;
+       (get_on_display ()) state ~schedule_event:Ui_effect.Expert.handle;
        timer_stop "on_display";
        Incr.Var.set model_from_last_display_v (Incr.Var.value model_v);
        let old_tag_name = get_tag_name !prev_html in
@@ -630,4 +663,49 @@ let start
       | None -> refocus_root_element ());
      request_animation_frame callback;
      Deferred.never ())
+;;
+
+module Private = struct
+  let start_bonsai = start_bonsai
+end
+
+let start
+      (type model action)
+      ?(debug = false)
+      ?(stop = Deferred.never ())
+      ?(named_logging_filters = [])
+      ~bind_to_element_with_id
+      ~initial_model
+      (module App : App_intf.S with type Model.t = model and type Action.t = action)
+  =
+  start_bonsai
+    ~debug
+    ~stop
+    ~named_logging_filters
+    ~bind_to_element_with_id
+    ~initial_model
+    (module struct
+      include App
+
+      let action_requires_stabilization _ = true
+
+      let create model ~old_model ~inject =
+        let open Incr.Let_syntax in
+        let%map component = create model ~old_model ~inject in
+        let view = Component.view component in
+        let apply_action state ~schedule_event _model action =
+          let schedule_action a = schedule_event (inject a) in
+          Component.apply_action component action state ~schedule_action
+        in
+        let update_visibility _model ~schedule_event =
+          let schedule_action a = schedule_event (inject a) in
+          Component.update_visibility component ~schedule_action
+        in
+        let on_display state ~schedule_event =
+          let schedule_action a = schedule_event (inject a) in
+          Component.on_display component state ~schedule_action
+        in
+        { App_intf.Private.view; apply_action; update_visibility; on_display }
+      ;;
+    end)
 ;;
