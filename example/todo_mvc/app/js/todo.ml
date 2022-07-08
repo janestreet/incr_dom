@@ -62,7 +62,7 @@ module Todo = struct
                ~attr:(Attr.class_ "view")
                (List.concat
                   [ (if not editing
-                     then [ Node.input ~attr:(Attr.many_without_merge input_attrs) [] ]
+                     then [ Node.input ~attr:(Attr.many_without_merge input_attrs) () ]
                      else [])
                   ; [ Node.label
                         ~attr:(Attr.on_double_click edit_started)
@@ -86,7 +86,7 @@ module Todo = struct
                        ; Attr.on_blur (fun _ -> editing_ended)
                        ; Vdom.Attr.on_change set_text
                        ])
-                  []
+                  ()
               ])
          ])
   ;;
@@ -172,7 +172,7 @@ let input_section inject clear_input =
             ; Attr.autofocus true
             ]
             @ text_attr))
-      []
+      ()
   in
   Node.header [ Node.h1 [ Node.text "todos" ]; input ]
 ;;
@@ -278,7 +278,7 @@ let view model ~inject : Vdom.Node.t Incr.t =
                ; Attr.type_ "checkbox"
                ; Attr.on_click (fun _ -> inject Action.Toggle_all)
                ])
-          []
+          ()
       ; Node.label ~attr:(Attr.for_ "toggle-all") [ Node.text "Mark all as complete" ]
       ; Node.ul ~attr:(Attr.class_ "todo-list") (Map.data todos)
       ]

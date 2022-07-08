@@ -22,19 +22,15 @@ let () =
   Monitor.detach_and_iter_errors monitor ~f:(fun exn ->
     let exn = Monitor.extract_exn exn in
     Ivar.fill_if_empty stop ();
-    let js_error = Js.Opt.to_option (Js.js_error_of_exn exn) in
+    let js_error = Js_error.of_exn exn in
     (* Raise the exception to the top-level outside of async so that Chrome can print out
        its source-mapped backtrace (and the async program can continue to run). *)
-    ignore
-      (Dom_html.setTimeout (fun () -> Option.iter js_error ~f:Js.raise_js_error) 0.);
+    ignore (Dom_html.setTimeout (fun () -> Option.iter js_error ~f:Js_error.raise_) 0.);
     let backtrace =
       Option.value_map
         js_error
         ~f:(fun js_error ->
-          Option.value_map
-            (Js.Optdef.to_option js_error##.stack)
-            ~f:Js.to_string
-            ~default:"no backtrace found")
+          Option.value (Js_error.stack js_error) ~default:"no backtrace found")
         ~default:"no js error found"
     in
     let message = sprintf !"%{Exn} (%s)" exn backtrace in

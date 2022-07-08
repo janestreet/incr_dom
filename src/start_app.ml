@@ -385,9 +385,10 @@ let override_root_element root =
   | _ -> root
 ;;
 
-let get_tag_name (node : Vdom.Node.t) =
+let rec get_tag_name (node : Vdom.Node.t) =
   match node with
   | Element e -> Some (Vdom.Node.Element.tag e)
+  | Lazy { t; _ } -> get_tag_name (Lazy.force t)
   | None | Text _ | Widget _ -> None
 ;;
 

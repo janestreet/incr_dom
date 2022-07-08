@@ -100,13 +100,13 @@ let view (m : Model.t Incr.t) ~inject =
             [ Node.text "Prevent default"
             ; Node.input
                 ~attr:(Attr.many_without_merge [ Attr.type_ "checkbox"; pd_click ])
-                []
+                ()
             ]
         ; Node.label
             [ Node.text "Stop propagation"
             ; Node.input
                 ~attr:(Attr.many_without_merge [ Attr.type_ "checkbox"; sp_click ])
-                []
+                ()
             ]
         ]
     ; Node.div
@@ -120,7 +120,7 @@ let view (m : Model.t Incr.t) ~inject =
         ; Node.input
             ~attr:
               (Attr.many_without_merge [ inner_click; inner_keydown; Attr.type_ "text" ])
-            []
+            ()
         ]
     ]
 ;;

@@ -334,7 +334,7 @@ let view table (m : Model.t Incr.t) ~(inject : Action.t -> unit Vdom.Effect.t) =
                ; Attr.create "type" "text"
                ; Attr.on_input (fun _ev text -> inject (Set_pattern text))
                ])
-          []
+          ()
       ]
   in
   let%map table = table >>| Component.view

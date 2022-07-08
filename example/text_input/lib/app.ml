@@ -71,7 +71,7 @@ let view (m : Model.t Incr.t) ~inject =
               with the actual dom. *)
            ; Attr.on_input (fun _ev text -> inject (Action.Update_input text))
            ])
-      []
+      ()
   and submission =
     let%map submitted_text = m >>| Model.submitted_text in
     let text =

@@ -1,4 +1,3 @@
 (library (name javascript_profiling) (c_names c_stubs)
  (public_name incr_dom.javascript_profiling)
- (js_of_ocaml (javascript_files ./runtime.js)) (libraries js_of_ocaml)
- (preprocess (pps ppx_jane)))
+ (js_of_ocaml (javascript_files ./runtime.js)) (preprocess (pps ppx_jane)))

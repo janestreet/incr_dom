@@ -141,7 +141,7 @@ let editable_cell m col ~remember_edit =
     ]
     @ if Column.focus_on_edit col then [ Attr.id "focus-on-edit" ] else []
   in
-  Node.input ~attr:(Attr.many_without_merge attrs) []
+  Node.input ~attr:(Attr.many_without_merge attrs) ()
 ;;
 
 let column_cell m col ~editing ~remember_edit =

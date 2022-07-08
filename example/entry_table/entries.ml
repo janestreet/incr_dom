@@ -190,7 +190,7 @@ let view (m : Model.t Incr.t) ~inject =
            [ Attr.create "type" "text"
            ; Attr.on_input (fun _ev text -> inject (Set_search_string text))
            ])
-      []
+      ()
   in
   let entries = m >>| Model.entries in
   let search_string = m >>| Model.search_string in

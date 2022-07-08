@@ -4,7 +4,9 @@ if (typeof joo_global_object.performance !== 'undefined') {
     js_performance = joo_global_object.performance;
 } else {
   try {
-    js_performance = require('perf_hooks').performance;
+    var perf_hooks = require('perf_hooks');
+    js_performance = perf_hooks.performance;
+    joo_global_object.PerformanceObserver = perf_hooks.PerformanceObserver;
   } catch (_e) {
     joo_global_object.console.warn("couldn't load performance hooks");
   }
@@ -56,3 +58,4 @@ function js_prof_clear_measures() {
     }
     return 0;
 }
+

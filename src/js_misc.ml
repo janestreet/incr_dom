@@ -27,19 +27,8 @@ type rows_or_columns =
   | Columns
 [@@deriving sexp, bin_io, variants, compare]
 
-let innerHeight () =
-  Js.Optdef.case
-    Dom_html.window##.innerHeight
-    (fun () -> Dom_html.document##.documentElement##.clientHeight)
-    Fn.id
-;;
-
-let innerWidth () =
-  Js.Optdef.case
-    Dom_html.window##.innerWidth
-    (fun () -> Dom_html.document##.documentElement##.clientWidth)
-    Fn.id
-;;
+let innerHeight () = Dom_html.window##.innerHeight
+let innerWidth () = Dom_html.window##.innerWidth
 
 let element_is_in_viewport (elt : Dom_html.element Js.t) =
   let rect = elt##getBoundingClientRect in

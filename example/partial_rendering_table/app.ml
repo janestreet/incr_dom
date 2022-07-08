@@ -181,7 +181,7 @@ let view model row_view ~inject =
                 ~attr:
                   (Attr.many_without_merge
                      [ Attr.type_ "text"; Attr.value filter_string; filter_string_change ])
-                []
+                ()
             ; Node.select
                 ~attr:sort_change
                 [ Node.option ~attr:(Attr.value "Num") [ Node.text "Numeric" ]
