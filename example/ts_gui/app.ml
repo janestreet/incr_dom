@@ -422,7 +422,7 @@ let on_startup ~schedule_action (m : Model.t) =
   Deferred.unit
 ;;
 
-let height_guess = 43.
+let height_guess = 43.01587
 
 let create_table_component (model : Model.t Incr.t) ~old_model ~inject =
   let columns = List.map ~f:Column.to_table_widget_column Row.Model.columns in

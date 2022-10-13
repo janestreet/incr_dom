@@ -244,7 +244,7 @@ end = struct
     strings |> List.map ~f:(fun str -> "  " ^ str) |> String.concat ~sep:"\n"
   ;;
 
-  let init_global () =
+  let init_global ~app_filters () =
     let with_app_id_opt update_state app_id_opt =
       let app_id_opt = Js.Opt.to_option app_id_opt |> Option.map ~f:Js.to_string in
       match app_id_opt with
@@ -309,50 +309,49 @@ end = struct
       let contents = In_channel.read_all filename in
       Vdom_file_download.create ~filename ~mimetype:"plain/text" ~contents
       |> Vdom_file_download.trigger);
-    let init_message =
-      " Incr_dom Action Logging\n\
-      \ =======================\n\
-      \ Logging prints action info to the console.\n\
-      \ It is disabled by default.\n\
-      \ To start logging, type one of the following:\n\
-      \ \tstartLoggingAll([app_id]) - log all actions\n\
-      \ \tstartLogging(filter_name [, app_id]) - filter actions using a pre-defined \
-       named filter [filter_name]\n\
-      \ \tstartLogging(filter_name_blang [, app_id]) - filter actions using a blang of \
-       named filters [filter_name_blang]\n\
-      \ \tstartLoggingCustom(filter [, app_id]) - filter actions using a custom function \
-       [filter] from a string (the action sexp) to a bool\n\
-      \ To stop logging, type: stopLogging([app_id])\n\n\
-      \ Incr_dom Action Profiling\n\
-      \ =========================\n\
-      \ Profiling is disabled by default.\n\
-      \ To start profiling, type: startProfiling([app_id])\n\
-      \ To stop profiling, type: stopProfiling([app_id])\n\n\
-      \ Incr_dom Debugging\n\
-      \ ==================\n\
-      \ Debugging prints timing info to the console.\n\
-      \ It is disabled by default unless otherwise specified by the app.\n\
-      \ To start debugging, type: startDebugging([app_id])\n\
-      \ To stop debugging, type: stopDebugging([app_id])\n\n\
-      \ [app_id] is equal to the id of the element that the incr-dom app is bound to. If \
-       the page only has one app or you want to apply the action to all apps, you can \
-       pass in [null] (or for single-argument functions, omit it altogether)."
+    let group s ~f =
+      Firebug.console##groupCollapsed (Js.string s);
+      f ();
+      Firebug.console##groupEnd
     in
-    Firebug.console##log (Js.string init_message)
+    let log s = Firebug.console##log (Js.string s) in
+    group "Incr_dom / Bonsai Console" ~f:(fun () ->
+      group "Action Logging" ~f:(fun () ->
+        log
+          {|Logging prints action info to the console. It is disabled by default. To start logging, type one of the following:
+startLoggingAll([app_id]) - log all actions
+startLogging(filter_name [, app_id]) - filter actions using a pre-defined named filter [filter_name]
+startLogging(filter_name_blang [, app_id]) - filter actions using a blang of named filters [filter_name_blang]
+startLoggingCustom(filter [, app_id]) - filter actions using a custom function [filter] from a string (the action sexp) to a bool
+To stop logging, type: stopLogging([app_id])|});
+      group "Action Profiling" ~f:(fun () ->
+        log
+          {|Profiling is disabled by default.
+To start profiling, type: startProfiling([app_id])
+To stop profiling, type: stopProfiling([app_id])|});
+      group "Debugging" ~f:(fun () ->
+        log
+          {|Debugging prints timing info to the console. It is disabled by default unless otherwise specified by the app.
+To start debugging, type: startDebugging([app_id])
+To stop debugging, type: stopDebugging([app_id])
+
+[app_id] is equal to the id of the element that the incr-dom app is bound to. If the page only has one app or you want to apply the action to all apps, you can pass in [null] (or for single-argument functions, omit it altogether).|});
+      log app_filters)
   ;;
 
   let init_app ~app_id ~filter_names ~debug ~stop =
-    if not !global_is_initialized
-    then (
-      init_global ();
-      global_is_initialized := true);
     let app_init_message =
       sprintf
-        "Available logging filters for \"%s\":\n%s"
+        {|Available logging filters for "%s":
+%s|}
         app_id
         (Set.to_list filter_names |> multi_line_string_list)
     in
-    Firebug.console##log (Js.string app_init_message);
+    if not !global_is_initialized
+    then (
+      init_global ~app_filters:app_init_message ();
+      global_is_initialized := true)
+    else Firebug.console##log (Js.string app_init_message);
     let logging_filter = ref Logging_filter.None in
     let should_profile = ref false in
     let should_debug = ref debug in
