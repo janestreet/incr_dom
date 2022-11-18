@@ -90,6 +90,7 @@ let view_colorize_button =
 
 let raw_html =
   Vdom.Node.inner_html
+    ()
     ~tag:"div"
     ~attr:Vdom.Attr.empty
     ~this_html_is_sanitized_and_is_totally_safe_trust_me:"<b>bold</b>"
