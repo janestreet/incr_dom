@@ -42,6 +42,8 @@ let () =
              (let%map.Command () = Command.Spec.return () in
               fun () ->
                 print_endline "hi";
-                main ()) )
+                main ())
+             ~behave_nicely_in_pipeline:false
+         )
        ])
 ;;

@@ -13,7 +13,7 @@ let sexp_of_t t = Sexp.Atom (sprintf "<downloader: %s>" t.filename)
 
 let trigger { filename; mimetype; contents } =
   let open Js_of_ocaml in
-  if am_running_inline_test
+  if Ppx_inline_test_lib.am_running
   then
     print_s
       [%message "Download triggered" (filename : string) (mimetype : string) contents]

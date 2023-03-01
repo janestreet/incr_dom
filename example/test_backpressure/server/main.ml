@@ -38,13 +38,12 @@ let create_and_serve
     Rpc.Implementations.create_exn ~implementations ~on_unknown_rpc:`Raise
   in
   let http_handler =
-    let handler =
-      Cohttp_static_handler.Single_page_handler.default_with_body_div ~div_id:"app"
-    in
-    Cohttp_static_handler.Single_page_handler.js_handler
+    let open Cohttp_static_handler in
+    let handler = Single_page_handler.default_with_body_div ~div_id:"app" in
+    Single_page_handler.create_handler
       handler
-      ~js_files:[ js_path ]
-      ~css_files:[]
+      ~assets:
+        [ Asset.local Asset.Kind.javascript (Asset.What_to_serve.file ~path:js_path) ]
       ~on_unknown_url:`Not_found
   in
   let initial_connection_state get_principal identity initiated_from addr conn =
@@ -143,7 +142,9 @@ let command =
            ~js_path
        in
        close_finished server)
+    ~behave_nicely_in_pipeline:false
 ;;
+
 
 let () =
   Command.group ~summary:"Commands for the Incr_decr RPC example" [ "server", command ]
