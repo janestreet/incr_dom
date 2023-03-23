@@ -56,21 +56,22 @@ module Todo = struct
       @ if completed then [ Attr.checked ] else []
     in
     Node.li
-      ~attr:(Attr.many_without_merge li_attrs)
+      ~attrs:[ Attr.many_without_merge li_attrs ]
       (List.concat
          [ [ Node.div
-               ~attr:(Attr.class_ "view")
+               ~attrs:[ Attr.class_ "view" ]
                (List.concat
                   [ (if not editing
-                     then [ Node.input ~attr:(Attr.many_without_merge input_attrs) () ]
+                     then [ Node.input ~attrs:[ Attr.many_without_merge input_attrs ] () ]
                      else [])
                   ; [ Node.label
-                        ~attr:(Attr.on_double_click edit_started)
+                        ~attrs:[ Attr.on_double_click edit_started ]
                         [ Node.text todo_text ]
                     ; Node.button
-                        ~attr:
-                          (Attr.many_without_merge
-                             [ Attr.class_ "destroy"; Attr.on_click destroy ])
+                        ~attrs:
+                          [ Attr.many_without_merge
+                              [ Attr.class_ "destroy"; Attr.on_click destroy ]
+                          ]
                         []
                     ]
                   ])
@@ -79,13 +80,14 @@ module Todo = struct
             then []
             else
               [ Node.input
-                  ~attr:
-                    (Attr.many_without_merge
-                       [ Attr.class_ "edit"
-                       ; Attr.value todo_text
-                       ; Attr.on_blur (fun _ -> editing_ended)
-                       ; Vdom.Attr.on_change set_text
-                       ])
+                  ~attrs:
+                    [ Attr.many_without_merge
+                        [ Attr.class_ "edit"
+                        ; Attr.value todo_text
+                        ; Attr.on_blur (fun _ -> editing_ended)
+                        ; Vdom.Attr.on_change set_text
+                        ]
+                    ]
                   ()
               ])
          ])
@@ -162,16 +164,17 @@ let input_section inject clear_input =
   let input =
     let text_attr = if clear_input then [ Attr.string_property "value" "" ] else [] in
     Node.input
-      ~attr:
-        (Attr.many_without_merge
-           ([ Attr.on_change (fun _ s ->
-              Vdom.Effect.Many
-                [ inject (Action.Clear_input true); inject (Action.Add s) ])
-            ; Attr.class_ "new-todo"
-            ; Attr.placeholder "What needs to be done?"
-            ; Attr.autofocus true
-            ]
-            @ text_attr))
+      ~attrs:
+        [ Attr.many_without_merge
+            ([ Attr.on_change (fun _ s ->
+               Vdom.Effect.Many
+                 [ inject (Action.Clear_input true); inject (Action.Add s) ])
+             ; Attr.class_ "new-todo"
+             ; Attr.placeholder "What needs to be done?"
+             ; Attr.autofocus true
+             ]
+             @ text_attr)
+        ]
       ()
   in
   Node.header [ Node.h1 [ Node.text "todos" ]; input ]
@@ -179,11 +182,11 @@ let input_section inject clear_input =
 
 let info =
   Node.footer
-    ~attr:(Attr.class_ "info")
+    ~attrs:[ Attr.class_ "info" ]
     [ Node.p [ Node.text "Double-click to edit a todo" ]
     ; Node.p
         [ Node.text "part of "
-        ; Node.a ~attr:(Attr.href "http://todomvc.com") [ Node.text "TodoMVC" ]
+        ; Node.a ~attrs:[ Attr.href "http://todomvc.com" ] [ Node.text "TodoMVC" ]
         ]
     ]
 ;;
@@ -201,10 +204,10 @@ let filters inject visibility =
         Attr.href "#" :: selected
       in
       Node.li
-        ~attr:(Attr.on_click (fun _ -> inject (Action.Change_visibility vis)))
-        [ Node.a ~attr:(Attr.many_without_merge attrs) [ Node.text name ] ])
+        ~attrs:[ Attr.on_click (fun _ -> inject (Action.Change_visibility vis)) ]
+        [ Node.a ~attrs:[ Attr.many_without_merge attrs ] [ Node.text name ] ])
   in
-  Node.ul ~attr:(Attr.class_ "filters") buttons
+  Node.ul ~attrs:[ Attr.class_ "filters" ] buttons
 ;;
 
 let todo_count map_length =
@@ -216,7 +219,7 @@ let todo_count map_length =
     | _ -> "s"
   in
   Node.span
-    ~attr:(Attr.class_ "todo-count")
+    ~attrs:[ Attr.class_ "todo-count" ]
     [ Node.strong [ Node.text (Int.to_string map_length) ]; Node.text pluralized_items ]
 ;;
 
@@ -234,8 +237,7 @@ let view model ~inject : Vdom.Node.t Incr.t =
              ~visibility
              ~change_completion:(fun _ -> inject (Action.Change_completion id))
              ~destroy:(fun _ -> inject (Action.Delete id))
-             ~edit_started:(fun _ ->
-               inject (Action.Editing_state { editing = true; id }))
+             ~edit_started:(fun _ -> inject (Action.Editing_state { editing = true; id }))
              ~editing_ended
              ~set_text:(fun _elt str ->
                Vdom.Effect.Many [ inject (Action.Set_text (id, str)); editing_ended ]))
@@ -251,17 +253,18 @@ let view model ~inject : Vdom.Node.t Incr.t =
              if Map.exists todos ~f:Todo.completed
              then
                [ Node.button
-                   ~attr:
-                     (Attr.many_without_merge
-                        [ Attr.class_ "clear-completed"
-                        ; Attr.on_click (fun _ -> inject Clear_completed)
-                        ])
+                   ~attrs:
+                     [ Attr.many_without_merge
+                         [ Attr.class_ "clear-completed"
+                         ; Attr.on_click (fun _ -> inject Clear_completed)
+                         ]
+                     ]
                    [ Node.text "Clear completed" ]
                ]
              else []
            in
            Node.footer
-             ~attr:(Attr.class_ "footer")
+             ~attrs:[ Attr.class_ "footer" ]
              ([ todo_count (Map.length todos); filters inject visibility ]
               @ maybe_clear_completed))
     in
@@ -270,23 +273,24 @@ let view model ~inject : Vdom.Node.t Incr.t =
   let main =
     Node.create
       "section"
-      ~attr:(Attr.class_ "main")
+      ~attrs:[ Attr.class_ "main" ]
       [ Node.input
-          ~attr:
-            (Attr.many_without_merge
-               [ Attr.class_ "toggle-all"
-               ; Attr.type_ "checkbox"
-               ; Attr.on_click (fun _ -> inject Action.Toggle_all)
-               ])
+          ~attrs:
+            [ Attr.many_without_merge
+                [ Attr.class_ "toggle-all"
+                ; Attr.type_ "checkbox"
+                ; Attr.on_click (fun _ -> inject Action.Toggle_all)
+                ]
+            ]
           ()
-      ; Node.label ~attr:(Attr.for_ "toggle-all") [ Node.text "Mark all as complete" ]
-      ; Node.ul ~attr:(Attr.class_ "todo-list") (Map.data todos)
+      ; Node.label ~attrs:[ Attr.for_ "toggle-all" ] [ Node.text "Mark all as complete" ]
+      ; Node.ul ~attrs:[ Attr.class_ "todo-list" ] (Map.data todos)
       ]
   in
   Node.body
     [ Node.create
         "section"
-        ~attr:(Attr.class_ "todoapp")
+        ~attrs:[ Attr.class_ "todoapp" ]
         (List.filter_opt [ Some (input_section inject clear_input); Some main; footer ])
     ; info
     ]

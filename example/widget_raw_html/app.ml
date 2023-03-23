@@ -44,14 +44,10 @@ let view_resize_observer =
             |> Array.to_list
             |> List.iter ~f:(fun entry ->
               let width =
-                entry##.contentRect##.width
-                |> Js.Optdef.to_option
-                |> Option.value_exn
+                entry##.contentRect##.width |> Js.Optdef.to_option |> Option.value_exn
               in
               let height =
-                entry##.contentRect##.height
-                |> Js.Optdef.to_option
-                |> Option.value_exn
+                entry##.contentRect##.height |> Js.Optdef.to_option |> Option.value_exn
               in
               div##.textContent
               := Js.Opt.return (Js.string (sprintf "%f x %f" width height))))
@@ -92,7 +88,7 @@ let raw_html =
   Vdom.Node.inner_html
     ()
     ~tag:"div"
-    ~attr:Vdom.Attr.empty
+    ~attrs:[ Vdom.Attr.empty ]
     ~this_html_is_sanitized_and_is_totally_safe_trust_me:"<b>bold</b>"
 ;;
 

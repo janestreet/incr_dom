@@ -201,36 +201,34 @@ end = struct
     let set_should_debug t ~should_debug = t.should_debug := should_debug
   end
 
-  class type global =
-    object
-      method startLoggingAll :
-        (Js.js_string Js.t Js.opt -> unit) Js.callback Js.writeonly_prop
+  class type global = object
+    method startLoggingAll :
+      (Js.js_string Js.t Js.opt -> unit) Js.callback Js.writeonly_prop
 
-      method startLogging :
-        (Js.js_string Js.t -> Js.js_string Js.t Js.opt -> unit) Js.callback
-          Js.writeonly_prop
+    method startLogging :
+      (Js.js_string Js.t -> Js.js_string Js.t Js.opt -> unit) Js.callback
+        Js.writeonly_prop
 
-      method startLoggingCustom :
-        ((Js.js_string Js.t -> bool Js.t) -> Js.js_string Js.t Js.opt -> unit) Js.callback
-          Js.writeonly_prop
+    method startLoggingCustom :
+      ((Js.js_string Js.t -> bool Js.t) -> Js.js_string Js.t Js.opt -> unit) Js.callback
+        Js.writeonly_prop
 
-      method stopLogging :
-        (Js.js_string Js.t Js.opt -> unit) Js.callback Js.writeonly_prop
+    method stopLogging : (Js.js_string Js.t Js.opt -> unit) Js.callback Js.writeonly_prop
 
-      method startProfiling :
-        (Js.js_string Js.t Js.opt -> unit) Js.callback Js.writeonly_prop
+    method startProfiling :
+      (Js.js_string Js.t Js.opt -> unit) Js.callback Js.writeonly_prop
 
-      method stopProfiling :
-        (Js.js_string Js.t Js.opt -> unit) Js.callback Js.writeonly_prop
+    method stopProfiling :
+      (Js.js_string Js.t Js.opt -> unit) Js.callback Js.writeonly_prop
 
-      method startDebugging :
-        (Js.js_string Js.t Js.opt -> unit) Js.callback Js.writeonly_prop
+    method startDebugging :
+      (Js.js_string Js.t Js.opt -> unit) Js.callback Js.writeonly_prop
 
-      method stopDebugging :
-        (Js.js_string Js.t Js.opt -> unit) Js.callback Js.writeonly_prop
+    method stopDebugging :
+      (Js.js_string Js.t Js.opt -> unit) Js.callback Js.writeonly_prop
 
-      method saveIncrementalGraph : (unit -> unit) Js.callback Js.writeonly_prop
-    end
+    method saveIncrementalGraph : (unit -> unit) Js.callback Js.writeonly_prop
+  end
 
   let global : global Js.t = Js.Unsafe.global
   let global_is_initialized = ref false
@@ -272,9 +270,7 @@ end = struct
     := Js.wrap_callback (fun blang_str ->
       let blang_str = Js.to_string blang_str in
       with_app_id_opt (fun app_state ->
-        let blang =
-          Blang.t_of_sexp String.t_of_sexp (Sexp.of_string blang_str)
-        in
+        let blang = Blang.t_of_sexp String.t_of_sexp (Sexp.of_string blang_str) in
         let invalid_names =
           Blang.fold blang ~init:String.Set.empty ~f:(fun invalid_names name ->
             if Set.mem app_state.filter_names name
@@ -519,8 +515,7 @@ let start_bonsai
              (* [Js.Unsafe.*] is like [Obj.magic]. We should be explicit about what we
                 expect. *)
              let e
-               : < relatedTarget : Dom_html.element Js.t Js.opt Js.readonly_prop >
-                   Js.t
+               : < relatedTarget : Dom_html.element Js.t Js.opt Js.readonly_prop > Js.t
                =
                Js.Unsafe.coerce e
              in

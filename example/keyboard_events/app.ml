@@ -57,30 +57,30 @@ let create
     let contents =
       [ Node.text (model.last_key_code |> Int.to_string)
       ; Node.textarea
-          ~attr:
-            (Attr.many_without_merge
-               [ Attr.string_property "value" model.text_box_content
-               ; Attr.on_keypress (fun _ -> Effect.Stop_propagation)
-               ; Attr.on_keyup (fun e ->
-                   match
-                     let open Option.Let_syntax in
-                     let%map target =
-                       Js.Opt.to_option
-                         (Js.Opt.bind e##.target Js_of_ocaml.Dom_html.CoerceTo.textarea)
-                     in
-                     Js.to_string target##.value
-                   with
-                   | Some s ->
-                     Effect.Many
-                       [ Effect.Stop_propagation; inject (Set_text_content s) ]
-                   | None -> Effect.Stop_propagation)
-               ])
+          ~attrs:
+            [ Attr.many_without_merge
+                [ Attr.string_property "value" model.text_box_content
+                ; Attr.on_keypress (fun _ -> Effect.Stop_propagation)
+                ; Attr.on_keyup (fun e ->
+                    match
+                      let open Option.Let_syntax in
+                      let%map target =
+                        Js.Opt.to_option
+                          (Js.Opt.bind e##.target Js_of_ocaml.Dom_html.CoerceTo.textarea)
+                      in
+                      Js.to_string target##.value
+                    with
+                    | Some s ->
+                      Effect.Many [ Effect.Stop_propagation; inject (Set_text_content s) ]
+                    | None -> Effect.Stop_propagation)
+                ]
+            ]
           []
       ]
     in
     if Int.rem model.last_key_code 2 = 0
-    then Node.div ~attr:(Attr.many_without_merge container_attributes) contents
-    else Node.span ~attr:(Attr.many_without_merge container_attributes) contents
+    then Node.div ~attrs:[ Attr.many_without_merge container_attributes ] contents
+    else Node.span ~attrs:[ Attr.many_without_merge container_attributes ] contents
   and model = model in
   (* Note that we don't include [on_display] or [update_visibility], since
      these are optional arguments *)

@@ -99,27 +99,29 @@ let view (m : Model.t Incr.t) ~inject =
         [ Node.label
             [ Node.text "Prevent default"
             ; Node.input
-                ~attr:(Attr.many_without_merge [ Attr.type_ "checkbox"; pd_click ])
+                ~attrs:[ Attr.many_without_merge [ Attr.type_ "checkbox"; pd_click ] ]
                 ()
             ]
         ; Node.label
             [ Node.text "Stop propagation"
             ; Node.input
-                ~attr:(Attr.many_without_merge [ Attr.type_ "checkbox"; sp_click ])
+                ~attrs:[ Attr.many_without_merge [ Attr.type_ "checkbox"; sp_click ] ]
                 ()
             ]
         ]
     ; Node.div
-        ~attr:
-          (Attr.many_without_merge [ outer_click; outer_keydown; Attr.id "outer-click" ])
+        ~attrs:
+          [ Attr.many_without_merge [ outer_click; outer_keydown; Attr.id "outer-click" ]
+          ]
         [ Node.div [ Node.text "Clicks: "; Node.text (Int.to_string clicks) ]
         ; Node.div [ Node.text "Keydowns: "; Node.text (Int.to_string keydowns) ]
         ; Node.div
-            ~attr:(Attr.many_without_merge [ inner_click; Attr.id "inner-click" ])
+            ~attrs:[ Attr.many_without_merge [ inner_click; Attr.id "inner-click" ] ]
             [ Node.text "Click me inner" ]
         ; Node.input
-            ~attr:
-              (Attr.many_without_merge [ inner_click; inner_keydown; Attr.type_ "text" ])
+            ~attrs:
+              [ Attr.many_without_merge [ inner_click; inner_keydown; Attr.type_ "text" ]
+              ]
             ()
         ]
     ]

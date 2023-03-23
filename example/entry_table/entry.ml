@@ -146,7 +146,9 @@ module Action = struct
          (match Map.find (Model.focus_map ~collapsed:m.basic.collapsed) focus_point with
           | None -> m
           | Some pos ->
-            let basic = Model.Basic.fset m.basic pos (Model.Basic.get m.basic pos +. amt) in
+            let basic =
+              Model.Basic.fset m.basic pos (Model.Basic.get m.basic pos +. amt)
+            in
             { m with basic }))
     | Toggle_collapse ->
       let basic = { m.basic with collapsed = not m.basic.collapsed } in
@@ -169,7 +171,7 @@ let field_is_focused ~collapsed (focus : focus_state) pos =
 ;;
 
 let align_left (f : Node.Aliases.node_creator) attrs nodes =
-  f ~attr:(Attr.many_without_merge (Attr.create "align" "left" :: attrs)) nodes
+  f ~attrs:[ Attr.many_without_merge (Attr.create "align" "left" :: attrs) ] nodes
 ;;
 
 let th = align_left Node.th
@@ -280,13 +282,14 @@ let view
       | Unfocused -> false
     in
     Node.table
-      ~attr:
-        (Attr.many_without_merge
-           ((if focused then [ Attr.id "keep-in-view" ] else [])
-            @ [ Attr.class_ (if focused then "focused" else "unfocused")
-              ; Attr.on_click (fun _ -> focus_me)
-              ]))
+      ~attrs:
+        [ Attr.many_without_merge
+            ((if focused then [ Attr.id "keep-in-view" ] else [])
+             @ [ Attr.class_ (if focused then "focused" else "unfocused")
+               ; Attr.on_click (fun _ -> focus_me)
+               ])
+        ]
       [ header; data ]
   in
-  Node.div ~attr:(Attr.many_without_merge [ entry_id_attr; key_attr ]) [ table ]
+  Node.div ~attrs:[ Attr.many_without_merge [ entry_id_attr; key_attr ] ] [ table ]
 ;;

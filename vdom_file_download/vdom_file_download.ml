@@ -57,6 +57,6 @@ module Button = struct
       [ extra_attrs; enabled_disabled; [ Attr.on_click trigger_csv_download ] ]
       |> List.concat
     in
-    Node.button ~attr:(Attr.many_without_merge attrs) [ Node.text button_text ]
+    Node.button ~attrs:[ Attr.many_without_merge attrs ] [ Node.text button_text ]
   ;;
 end

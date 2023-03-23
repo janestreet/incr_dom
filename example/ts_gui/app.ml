@@ -320,20 +320,22 @@ let view table (m : Model.t Incr.t) ~(inject : Action.t -> unit Vdom.Effect.t) =
   let help_menu_hint =
     let help_text = Keyboard_event_handler.Command.get_help_text help_menu_command in
     Node.div
-      ~attr:(Attr.style Css_gen.(combine (text_align `Center) (uniform_padding (`Px 5))))
+      ~attrs:
+        [ Attr.style Css_gen.(combine (text_align `Center) (uniform_padding (`Px 5))) ]
       [ Help_text.Command.(view help_text help_text_view_spec Format.default) ]
   in
   let input =
     Node.div
-      ~attr:(Attr.id "search-container")
+      ~attrs:[ Attr.id "search-container" ]
       [ Node.input
-          ~attr:
-            (Attr.many_without_merge
-               [ Attr.id search_input_id
-               ; Attr.create "placeholder" "Search"
-               ; Attr.create "type" "text"
-               ; Attr.on_input (fun _ev text -> inject (Set_pattern text))
-               ])
+          ~attrs:
+            [ Attr.many_without_merge
+                [ Attr.id search_input_id
+                ; Attr.create "placeholder" "Search"
+                ; Attr.create "type" "text"
+                ; Attr.on_input (fun _ev text -> inject (Set_pattern text))
+                ]
+            ]
           ()
       ]
   in
@@ -344,23 +346,26 @@ let view table (m : Model.t Incr.t) ~(inject : Action.t -> unit Vdom.Effect.t) =
     | Some help_text ->
       Node.div
         ~key:"help"
-        ~attr:
-          (Attr.many_without_merge
-             [ Attr.id "overlay"; Attr.on_double_click (fun _ev -> inject Action.Escape) ])
+        ~attrs:
+          [ Attr.many_without_merge
+              [ Attr.id "overlay"
+              ; Attr.on_double_click (fun _ev -> inject Action.Escape)
+              ]
+          ]
         [ Node.div
-            ~attr:(Attr.id "help-menu")
+            ~attrs:[ Attr.id "help-menu" ]
             [ Node.h4 [ Node.text "Help Menu" ]
             ; Help_text.view help_text help_text_view_spec
             ]
         ]
   in
   Node.div
-    ~attr:(Attr.many_without_merge [ Attr.id "app"; key_handler ])
+    ~attrs:[ Attr.many_without_merge [ Attr.id "app"; key_handler ] ]
     [ maybe_help_menu
-    ; Node.div ~key:"top" ~attr:(Attr.id "top-container") [ input; help_menu_hint ]
+    ; Node.div ~key:"top" ~attrs:[ Attr.id "top-container" ] [ input; help_menu_hint ]
     ; Node.div
         ~key:"table"
-        ~attr:(Attr.many_without_merge [ Attr.id "table-container"; scroll_attr ])
+        ~attrs:[ Attr.many_without_merge [ Attr.id "table-container"; scroll_attr ] ]
         [ table ]
     ]
 ;;

@@ -40,8 +40,7 @@ let () =
       let open Vdom in
       Node.body
         [ Node.h2 [ Node.text "Error!" ]
-        ; Node.ul
-            (List.rev_map !all_messages ~f:(fun text -> Node.li [ Node.text text ]))
+        ; Node.ul (List.rev_map !all_messages ~f:(fun text -> Node.li [ Node.text text ]))
         ]
       |> Node.to_dom
     in

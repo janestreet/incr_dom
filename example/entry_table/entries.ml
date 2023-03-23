@@ -185,11 +185,12 @@ let view (m : Model.t Incr.t) ~inject =
      Incremental. *)
   let input =
     Node.input
-      ~attr:
-        (Attr.many_without_merge
-           [ Attr.create "type" "text"
-           ; Attr.on_input (fun _ev text -> inject (Set_search_string text))
-           ])
+      ~attrs:
+        [ Attr.many_without_merge
+            [ Attr.create "type" "text"
+            ; Attr.on_input (fun _ev text -> inject (Set_search_string text))
+            ]
+        ]
       ()
   in
   let entries = m >>| Model.entries in
@@ -223,7 +224,7 @@ let view (m : Model.t Incr.t) ~inject =
         in
         Some view))
   and on_keydown = on_keydown in
-  Node.body ~attr:on_keydown (input :: Map.data entries)
+  Node.body ~attrs:[ on_keydown ] (input :: Map.data entries)
 ;;
 
 let update_visibility m ~schedule_action:_ =

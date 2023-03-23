@@ -156,7 +156,7 @@ let view model row_view ~inject =
   let offset_div key height =
     Vdom.Node.div
       ~key
-      ~attr:(Vdom.Attr.style (Css_gen.height (`Px (Float.iround_nearest_exn height))))
+      ~attrs:[ Vdom.Attr.style (Css_gen.height (`Px (Float.iround_nearest_exn height))) ]
       []
   in
   let visible_rows = row_view >>| Row_view.rows_to_render in
@@ -174,26 +174,30 @@ let view model row_view ~inject =
   let open Vdom in
   Node.body
     [ Node.div
-        ~attr:(Attr.class_ "header")
+        ~attrs:[ Attr.class_ "header" ]
         [ Node.div
-            ~attr:(Attr.id "text-input")
+            ~attrs:[ Attr.id "text-input" ]
             [ Node.input
-                ~attr:
-                  (Attr.many_without_merge
-                     [ Attr.type_ "text"; Attr.value filter_string; filter_string_change ])
+                ~attrs:
+                  [ Attr.many_without_merge
+                      [ Attr.type_ "text"
+                      ; Attr.value filter_string
+                      ; filter_string_change
+                      ]
+                  ]
                 ()
             ; Node.select
-                ~attr:sort_change
-                [ Node.option ~attr:(Attr.value "Num") [ Node.text "Numeric" ]
-                ; Node.option ~attr:(Attr.value "Native") [ Node.text "Lexicographic" ]
+                ~attrs:[ sort_change ]
+                [ Node.option ~attrs:[ Attr.value "Num" ] [ Node.text "Numeric" ]
+                ; Node.option ~attrs:[ Attr.value "Native" ] [ Node.text "Lexicographic" ]
                 ]
             ; Node.div [ Node.text "Add ?number to the URL to change the number of rows" ]
             ]
         ]
     ; Node.div
-        ~attr:(Attr.many_without_merge [ scroll_attr; Attr.id "table-container" ])
+        ~attrs:[ Attr.many_without_merge [ scroll_attr; Attr.id "table-container" ] ]
         [ Node.div
-            ~attr:(Attr.id "table-body")
+            ~attrs:[ Attr.id "table-body" ]
             ((start_offset :: Map.data visible_rows_dom) @ [ end_offset ])
         ]
     ]

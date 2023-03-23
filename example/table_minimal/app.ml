@@ -145,11 +145,11 @@ let view table (_m : Model.t Incr.t) ~inject:_ =
   let scroll_attr = Vdom.Attr.on_scroll (fun _ -> Vdom.Effect.Viewport_changed) in
   let%map table = table >>| Component.view in
   Node.div
-    ~attr:(Attr.id "app")
+    ~attrs:[ Attr.id "app" ]
     [ Jane_web_style.Css.style_4
     ; Node.div
         ~key:"table"
-        ~attr:(Attr.many_without_merge [ Attr.id "table-container"; scroll_attr ])
+        ~attrs:[ Attr.many_without_merge [ Attr.id "table-container"; scroll_attr ] ]
         [ table ]
     ]
 ;;

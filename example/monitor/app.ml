@@ -112,10 +112,10 @@ let view (m : Model.t Incr.t) ~(inject : Action.t -> unit Vdom.Effect.t) =
       Node.text "Model 2"
   in
   Node.body
-    ~attr:(Attr.many_without_merge attr)
-    [ Node.div ~attr:(Attr.on_click (fun _ -> inject Switch)) [ text ]
+    ~attrs:[ Attr.many_without_merge attr ]
+    [ Node.div ~attrs:[ Attr.on_click (fun _ -> inject Switch) ] [ text ]
     ; Node.select
-        ~attr:set_location
+        ~attrs:[ set_location ]
         (List.map Exn_location.all ~f:(fun loc ->
            let s = Exn_location.to_string loc in
            let selected =
@@ -124,7 +124,7 @@ let view (m : Model.t Incr.t) ~(inject : Action.t -> unit Vdom.Effect.t) =
              else []
            in
            Node.option
-             ~attr:(Attr.many_without_merge (selected @ [ Attr.value s ]))
+             ~attrs:[ Attr.many_without_merge (selected @ [ Attr.value s ]) ]
              [ Node.text s ]))
     ]
 ;;

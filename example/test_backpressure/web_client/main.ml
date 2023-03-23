@@ -12,14 +12,15 @@ let rec fib = function
 
 let () =
   Async_kernel.don't_wait_for
-  @@ let%bind conn =
-       Rpc.Connection.client_exn
-         ()
-         ~check_hg_version_upon_connection:
-           (Yes
-              { on_version_mismatch = Alert
-              ; custom_error_message_on_version_mismatch = None
-              })
+  @@
+  let%bind conn =
+    Rpc.Connection.client_exn
+      ()
+      ~check_hg_version_upon_connection:
+        (Yes
+           { on_version_mismatch = Alert
+           ; custom_error_message_on_version_mismatch = None
+           })
   in
   let%bind pipe, _ =
     Rpc.Pipe_rpc.dispatch_exn Backpressure_test_shared.Protocol.Fibonacci.t conn ()
