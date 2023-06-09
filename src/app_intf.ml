@@ -120,6 +120,7 @@ module Private = struct
 
     val action_requires_stabilization : Action.t -> bool
     val on_startup : schedule_action:(Action.t -> unit) -> Model.t -> State.t Deferred.t
+    val advance_clock_to : Time_ns.t -> unit
 
     val create
       :  Model.t Incr.t
