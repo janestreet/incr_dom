@@ -1,0 +1,3 @@
+(library (name ui_time_source) (public_name incr_dom.ui_time_source)
+ (libraries core ui_incr virtual_dom.ui_effect core_kernel.reversed_list)
+ (preprocess (pps ppx_jane)))

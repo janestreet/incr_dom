@@ -33,4 +33,6 @@ module Private : sig
          with type Model.t = 'model
           and type Action.t = 'action)
     -> unit
+
+  val time_source : Ui_time_source.t
 end

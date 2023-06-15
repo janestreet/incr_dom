@@ -387,6 +387,8 @@ let rec get_tag_name (node : Vdom.Node.t) =
   | None | Text _ | Widget _ -> None
 ;;
 
+let time_source : Ui_time_source.t = Ui_time_source.create ~start:(Time_ns.now ())
+
 let start_bonsai
       (type model action)
       ?(debug = false)
@@ -662,6 +664,7 @@ let start_bonsai
 
 module Private = struct
   let start_bonsai = start_bonsai
+  let time_source = time_source
 end
 
 let start
@@ -683,7 +686,12 @@ let start
       include App
 
       let action_requires_stabilization _ = true
-      let advance_clock_to to_ = Incr.Clock.advance_clock Incr.clock ~to_
+
+      let advance_clock_to to_ =
+        Incr.Clock.advance_clock Incr.clock ~to_;
+        Ui_time_source.advance_clock time_source ~to_;
+        Ui_time_source.Private.flush time_source
+      ;;
 
       let create model ~old_model ~inject =
         let open Incr.Let_syntax in

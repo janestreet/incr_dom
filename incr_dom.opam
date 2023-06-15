@@ -14,6 +14,7 @@ depends: [
   "async_js"
   "async_kernel"
   "core"
+  "core_kernel"
   "incr_map"
   "incr_select"
   "incremental"
