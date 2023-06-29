@@ -604,6 +604,7 @@ let start_bonsai
          let date = new%js Js.date_now in
          Time_ns.Span.of_ms date##getTime |> Time_ns.of_span_since_epoch
        in
+       Incr.Clock.advance_clock Incr.clock ~to_:now;
        App.advance_clock_to now;
        Incr.stabilize ();
        timer_stop "stabilize";
@@ -688,7 +689,6 @@ let start
       let action_requires_stabilization _ = true
 
       let advance_clock_to to_ =
-        Incr.Clock.advance_clock Incr.clock ~to_;
         Ui_time_source.advance_clock time_source ~to_;
         Ui_time_source.Private.flush time_source
       ;;
