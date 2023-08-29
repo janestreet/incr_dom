@@ -22,7 +22,7 @@ module Model = struct
     ; table : Ts_table.Model.t
     ; help_text : Help_text.t option
     }
-  [@@deriving fields, compare]
+  [@@deriving fields ~getters, compare]
 
   let cutoff t1 t2 = compare t1 t2 = 0
   let set_pattern t pattern = { t with pattern = String.lowercase pattern }

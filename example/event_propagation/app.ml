@@ -10,7 +10,7 @@ module Model = struct
     ; outer_click_count : int
     ; outer_keydown_count : int
     }
-  [@@deriving sexp, fields, compare]
+  [@@deriving sexp, fields ~getters, compare]
 
   let cutoff t1 t2 = compare t1 t2 = 0
 

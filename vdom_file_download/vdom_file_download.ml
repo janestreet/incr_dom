@@ -6,7 +6,7 @@ type t =
   ; mimetype : string
   ; contents : string
   }
-[@@deriving fields]
+[@@deriving fields ~iterators:create]
 
 let create = Fields.create
 let sexp_of_t t = Sexp.Atom (sprintf "<downloader: %s>" t.filename)

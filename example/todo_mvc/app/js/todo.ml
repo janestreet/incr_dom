@@ -19,7 +19,7 @@ module Todo = struct
     ; text : string
     ; editing : bool
     }
-  [@@deriving fields, sexp, compare]
+  [@@deriving fields ~getters, sexp, compare]
 
   let of_text text = { completed = false; editing = false; text }
   let swap_completion x = { x with completed = not x.completed }
@@ -101,7 +101,7 @@ module Model = struct
     (* Determines if the main input element should be cleared of its' value *)
     ; clear_input : bool
     }
-  [@@deriving fields, sexp, compare]
+  [@@deriving fields ~getters ~fields ~iterators:create, sexp, compare]
 
   let empty = Fields.create ~visibility:All ~todos:Id.Map.empty ~clear_input:true
   let cutoff t1 t2 = compare t1 t2 = 0

@@ -8,7 +8,7 @@ module Model = struct
     { last_key_code : int
     ; text_box_content : string
     }
-  [@@deriving fields, compare]
+  [@@deriving compare]
 
   let cutoff t1 t2 = compare t1 t2 = 0
 end

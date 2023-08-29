@@ -18,7 +18,7 @@ module Model = struct
     ; last_fill : Time.t option
     ; trader : string
     }
-  [@@deriving compare, fields]
+  [@@deriving compare, fields ~getters ~iterators:fold]
 
   let columns =
     let append f list field = f field :: list in
@@ -171,7 +171,7 @@ end = struct
     ; g : int
     ; b : int
     }
-  [@@deriving fields]
+  [@@deriving fields ~iterators:map]
 
   let to_css_color { r; g; b } = `RGBA (Css_gen.Color.RGBA.create ~r ~g ~b ())
   let background_style t = Css_gen.background_color (to_css_color t)

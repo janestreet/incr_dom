@@ -3,7 +3,7 @@ open Async_kernel
 open Incr_dom
 
 module Model = struct
-  type t = { counter : int } [@@deriving fields, compare, sexp]
+  type t = { counter : int } [@@deriving fields ~getters, compare, sexp]
 
   let cutoff = [%compare.equal: t]
 end

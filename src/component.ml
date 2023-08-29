@@ -8,7 +8,7 @@ type ('action, 'model, 'state, 'extra) with_extra =
   ; on_display : 'state -> schedule_action:('action -> unit) -> unit
   ; extra : 'extra
   }
-[@@deriving fields]
+[@@deriving fields ~getters]
 
 type ('action, 'state, 'model) t = ('action, 'state, 'model, unit) with_extra
 

@@ -5,7 +5,7 @@ open Incr_dom
     updating the model as well, which will be used when applying actions, in the
     [apply_action] function below.  *)
 module Model = struct
-  type t = { counters : int Int.Map.t } [@@deriving sexp, fields, equal]
+  type t = { counters : int Int.Map.t } [@@deriving sexp, equal]
 
   let add_new t = { counters = Map.set t.counters ~key:(Map.length t.counters) ~data:0 }
 

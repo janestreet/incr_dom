@@ -7,7 +7,7 @@ module Model = struct
     ; input_text : string
     ; submitted_text : string option
     }
-  [@@deriving sexp, fields, compare]
+  [@@deriving sexp, fields ~getters, compare]
 
   let set_default_input counter submitted_text =
     { counter; input_text = sprintf "Default #%d" counter; submitted_text }

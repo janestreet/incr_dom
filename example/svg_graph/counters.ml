@@ -8,7 +8,7 @@ let minimum_data_value = 0
 let maximum_data_value = 10
 
 module Model = struct
-  type t = { counters : int Int.Map.t } [@@deriving sexp, fields, equal]
+  type t = { counters : int Int.Map.t } [@@deriving sexp, fields ~iterators:create, equal]
 
   let add_new t =
     let map_len = Map.length t.counters in

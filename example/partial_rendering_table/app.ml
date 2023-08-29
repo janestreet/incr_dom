@@ -56,7 +56,7 @@ module Model = struct
     ; height_cache : Row_view.Height_cache.t
     ; measurements : Measurements.t option
     }
-  [@@deriving sexp_of, fields, compare]
+  [@@deriving sexp_of, fields ~getters, compare]
 
   let create size =
     { filter_string = ""

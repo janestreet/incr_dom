@@ -11,7 +11,7 @@ module Rect : sig
     ; bottom : 'a
     ; right : 'a
     }
-  [@@deriving sexp, bin_io, compare, fields]
+  [@@deriving sexp, bin_io, compare, fields ~getters]
 
   val map : 'a t -> f:('a -> 'b) -> 'b t
   val int_height : int t -> int

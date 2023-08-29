@@ -384,7 +384,7 @@ let rec get_tag_name (node : Vdom.Node.t) =
   match node with
   | Element e -> Some (Vdom.Node.Element.tag e)
   | Lazy { t; _ } -> get_tag_name (Lazy.force t)
-  | None | Text _ | Widget _ -> None
+  | None | Text _ | Widget _ | Fragment _ -> None
 ;;
 
 let time_source : Ui_time_source.t = Ui_time_source.create ~start:(Time_ns.now ())

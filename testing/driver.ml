@@ -12,7 +12,7 @@ type ('model, 'action, 'state) t =
   ; set_time : Time_ns.t -> unit
   ; sexp_of_model : 'model -> Sexp.t
   }
-[@@deriving fields]
+[@@deriving fields ~getters]
 
 let create
       (type model action state)

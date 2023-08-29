@@ -12,7 +12,7 @@ module Row = struct
     ; field1 : string
     ; field2 : float
     }
-  [@@deriving fields, compare]
+  [@@deriving fields ~getters, compare]
 end
 
 module T =
@@ -24,7 +24,7 @@ module Model = struct
     { rows : Row.t Row.Id.Map.t
     ; table : T.Model.t
     }
-  [@@deriving fields, compare]
+  [@@deriving fields ~getters, compare]
 
   let cutoff t1 t2 = compare t1 t2 = 0
 end

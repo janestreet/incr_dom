@@ -8,7 +8,7 @@ module Rect = struct
     ; bottom : 'a
     ; right : 'a
     }
-  [@@deriving sexp, bin_io, compare, fields]
+  [@@deriving sexp, bin_io, compare, fields ~getters]
 
   let map t ~f =
     { top = f t.top; left = f t.left; bottom = f t.bottom; right = f t.right }

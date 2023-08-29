@@ -38,7 +38,6 @@ module Model = struct
     ; stop : unit Ivar.t
     (* An Ivar in the model? really? *)
     }
-  [@@deriving fields]
 
   let cutoff = phys_equal
 end

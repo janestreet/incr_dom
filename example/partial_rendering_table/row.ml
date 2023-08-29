@@ -8,7 +8,7 @@ module Model = struct
     { data : string
     ; font_size : int
     }
-  [@@deriving sexp_of, fields, compare]
+  [@@deriving sexp_of, compare]
 
   let create ~data = { data; font_size = 16 }
 end

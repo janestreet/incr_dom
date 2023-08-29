@@ -12,7 +12,7 @@ module Model = struct
     ; search_string : string
     ; visible_range : (Entry_id.t * Entry_id.t) option
     }
-  [@@deriving fields, sexp, compare, equal]
+  [@@deriving fields ~getters, sexp, compare, equal]
 
   let name_found_by_search ~search_string name =
     String.( = ) search_string ""
