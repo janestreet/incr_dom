@@ -18,15 +18,15 @@ end
 type 'a t = (module T with type row = 'a)
 
 let create
-      (type row contents)
-      ~name
-      ?group
-      ?sort_by
-      ?focus_on_edit
-      (module Contents : Stringable with type t = contents)
-      ~editable
-      ~get
-      ~set
+  (type row contents)
+  ~name
+  ?group
+  ?sort_by
+  ?focus_on_edit
+  (module Contents : Stringable with type t = contents)
+  ~editable
+  ~get
+  ~set
   =
   let sort_by =
     match sort_by with
@@ -55,13 +55,13 @@ let create
 ;;
 
 let of_field
-      (type contents)
-      field
-      ?group
-      ?sort_by
-      ?focus_on_edit
-      (module Contents : Stringable with type t = contents)
-      ~editable
+  (type contents)
+  field
+  ?group
+  ?sort_by
+  ?focus_on_edit
+  (module Contents : Stringable with type t = contents)
+  ~editable
   =
   create
     ~name:(Field.name field)

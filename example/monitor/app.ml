@@ -35,8 +35,7 @@ module Model = struct
     { mode : mode
     ; exn_location : Exn_location.t
     ; monitor : Monitor.t
-    ; stop : unit Ivar.t
-    (* An Ivar in the model? really? *)
+    ; stop : unit Ivar.t (* An Ivar in the model? really? *)
     }
 
   let cutoff = phys_equal

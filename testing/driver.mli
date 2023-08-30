@@ -9,9 +9,9 @@ val create
   -> sexp_of_model:('model -> Sexp.t)
   -> initial_state:'state
   -> (module Incr_dom.App_intf.S
-       with type Action.t = 'action
-        and type Model.t = 'model
-        and type State.t = 'state)
+        with type Action.t = 'action
+         and type Model.t = 'model
+         and type State.t = 'state)
   -> ('model, 'action, 'state) t
 
 val model_var : ('model, _, _) t -> 'model Incr.Var.t

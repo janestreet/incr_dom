@@ -28,9 +28,9 @@ let initial_model = { Model.last_key_code = 0; text_box_content = "type here" }
 let on_startup ~schedule_action:_ _model = Deferred.unit
 
 let create
-      (model : Model.t Incr.t)
-      ~old_model:_
-      ~(inject : Action.t -> unit Vdom.Effect.t)
+  (model : Model.t Incr.t)
+  ~old_model:_
+  ~(inject : Action.t -> unit Vdom.Effect.t)
   =
   let open Incr.Let_syntax in
   let open Vdom in

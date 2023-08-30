@@ -25,7 +25,7 @@ module Button : sig
   val create
     :  ?enabled:bool
     -> ?on_click:(Dom_html.mouseEvent Js.t -> unit Ui_effect.t)
-    (** What event, aside from triggering the download, should happen when the button is
+         (** What event, aside from triggering the download, should happen when the button is
         clicked? *)
     -> ?extra_attrs:Attr.t list
     -> get_download:(unit -> t)

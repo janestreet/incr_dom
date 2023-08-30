@@ -15,14 +15,14 @@ type ('model, 'action, 'state) t =
 [@@deriving fields ~getters]
 
 let create
-      (type model action state)
-      ~(initial_model : model)
-      ~sexp_of_model
-      ~initial_state:state
-      (module App : Incr_dom.App_intf.S
-        with type Model.t = model
-         and type Action.t = action
-         and type State.t = state)
+  (type model action state)
+  ~(initial_model : model)
+  ~sexp_of_model
+  ~initial_state:state
+  (module App : Incr_dom.App_intf.S
+    with type Model.t = model
+     and type Action.t = action
+     and type State.t = state)
   =
   let action_queue = Queue.create () in
   let module Event =

@@ -207,11 +207,11 @@ end = struct
 
     method startLogging :
       (Js.js_string Js.t -> Js.js_string Js.t Js.opt -> unit) Js.callback
-        Js.writeonly_prop
+      Js.writeonly_prop
 
     method startLoggingCustom :
       ((Js.js_string Js.t -> bool Js.t) -> Js.js_string Js.t Js.opt -> unit) Js.callback
-        Js.writeonly_prop
+      Js.writeonly_prop
 
     method stopLogging : (Js.js_string Js.t Js.opt -> unit) Js.callback Js.writeonly_prop
 
@@ -267,44 +267,44 @@ end = struct
     in
     global##.startLoggingAll := Js.wrap_callback (update_logging_filter All);
     global##.startLogging
-    := Js.wrap_callback (fun blang_str ->
-      let blang_str = Js.to_string blang_str in
-      with_app_id_opt (fun app_state ->
-        let blang = Blang.t_of_sexp String.t_of_sexp (Sexp.of_string blang_str) in
-        let invalid_names =
-          Blang.fold blang ~init:String.Set.empty ~f:(fun invalid_names name ->
-            if Set.mem app_state.filter_names name
-            then invalid_names
-            else Set.add invalid_names name)
-        in
-        if Set.is_empty invalid_names
-        then
-          App_state.set_logging_filter
-            app_state
-            ~logging_filter:(Named_filter_blang blang)
-        else
-          print_errorf
-            "Unable to find named filter(s): %s. Valid names are:\n%s"
-            (Set.to_list invalid_names |> single_line_string_list)
-            (Set.to_list app_state.filter_names |> multi_line_string_list)));
+      := Js.wrap_callback (fun blang_str ->
+           let blang_str = Js.to_string blang_str in
+           with_app_id_opt (fun app_state ->
+             let blang = Blang.t_of_sexp String.t_of_sexp (Sexp.of_string blang_str) in
+             let invalid_names =
+               Blang.fold blang ~init:String.Set.empty ~f:(fun invalid_names name ->
+                 if Set.mem app_state.filter_names name
+                 then invalid_names
+                 else Set.add invalid_names name)
+             in
+             if Set.is_empty invalid_names
+             then
+               App_state.set_logging_filter
+                 app_state
+                 ~logging_filter:(Named_filter_blang blang)
+             else
+               print_errorf
+                 "Unable to find named filter(s): %s. Valid names are:\n%s"
+                 (Set.to_list invalid_names |> single_line_string_list)
+                 (Set.to_list app_state.filter_names |> multi_line_string_list)));
     global##.startLoggingCustom
-    := Js.wrap_callback (fun filter ->
-      let filter action_sexp =
-        action_sexp |> Sexp.to_string |> Js.string |> filter |> Js.to_bool
-      in
-      update_logging_filter (Custom_filter filter));
+      := Js.wrap_callback (fun filter ->
+           let filter action_sexp =
+             action_sexp |> Sexp.to_string |> Js.string |> filter |> Js.to_bool
+           in
+           update_logging_filter (Custom_filter filter));
     global##.stopLogging := Js.wrap_callback (update_logging_filter None);
     global##.startProfiling := Js.wrap_callback (update_should_profile true);
     global##.stopProfiling := Js.wrap_callback (update_should_profile false);
     global##.startDebugging := Js.wrap_callback (update_should_debug true);
     global##.stopDebugging := Js.wrap_callback (update_should_debug false);
     global##.saveIncrementalGraph
-    := Js.wrap_callback (fun () ->
-      let filename = "current_incr_dom_dot_graph.dot" in
-      Ui_incr.save_dot_to_file filename;
-      let contents = In_channel.read_all filename in
-      Vdom_file_download.create ~filename ~mimetype:"plain/text" ~contents
-      |> Vdom_file_download.trigger);
+      := Js.wrap_callback (fun () ->
+           let filename = "current_incr_dom_dot_graph.dot" in
+           Ui_incr.save_dot_to_file filename;
+           let contents = In_channel.read_all filename in
+           Vdom_file_download.create ~filename ~mimetype:"plain/text" ~contents
+           |> Vdom_file_download.trigger);
     let group s ~f =
       Firebug.console##groupCollapsed (Js.string s);
       f ();
@@ -390,15 +390,15 @@ let rec get_tag_name (node : Vdom.Node.t) =
 let time_source : Ui_time_source.t = Ui_time_source.create ~start:(Time_ns.now ())
 
 let start_bonsai
-      (type model action)
-      ?(debug = false)
-      ?(stop = Deferred.never ())
-      ?(named_logging_filters = [])
-      ~bind_to_element_with_id
-      ~initial_model
-      (module App : App_intf.Private.S_for_bonsai
-        with type Model.t = model
-         and type Action.t = action)
+  (type model action)
+  ?(debug = false)
+  ?(stop = Deferred.never ())
+  ?(named_logging_filters = [])
+  ~bind_to_element_with_id
+  ~initial_model
+  (module App : App_intf.Private.S_for_bonsai
+    with type Model.t = model
+     and type Action.t = action)
   =
   (* This is idempotent and so fine to do. *)
   Async_js.init ();
@@ -469,7 +469,7 @@ let start_bonsai
                viewport_changed ();
                Js._true))
             Js._false
-          : Dom.event_listener_id)
+           : Dom.event_listener_id)
      in
      call_viewport_changed_on_event "scroll" (Js_misc.get_scroll_container html_dom);
      call_viewport_changed_on_event "resize" Dom_html.window;
@@ -489,10 +489,10 @@ let start_bonsai
        |> Js.Opt.to_option
        |> Option.map ~f:as_focusable
        |> Option.iter ~f:(fun element ->
-         element##focus
-           (object%js
-             val preventScroll = Js._true
-           end))
+            element##focus
+              (object%js
+                 val preventScroll = Js._true
+              end))
      in
      let timer_start s =
        timer_start s ~debug:(should_debug ()) ~profile:(should_profile ())
@@ -549,12 +549,12 @@ let start_bonsai
          Core.Memo.of_comparable
            (module Logging_filter.String_blang)
            (fun blang ->
-              let filter = Hashtbl.find_exn named_logging_filters in
-              safe_filter
-                ~name:(sprintf !"named filter blang \"%{sexp:string Blang.t}\"" blang)
-                (match blang with
-                 | Base name -> filter name
-                 | _ -> fun action -> Blang.eval blang (fun name -> filter name action)))
+             let filter = Hashtbl.find_exn named_logging_filters in
+             safe_filter
+               ~name:(sprintf !"named filter blang \"%{sexp:string Blang.t}\"" blang)
+               (match blang with
+                | Base name -> filter name
+                | _ -> fun action -> Blang.eval blang (fun name -> filter name action)))
        in
        fun action ->
          let should_log_action =
@@ -669,13 +669,13 @@ module Private = struct
 end
 
 let start
-      (type model action)
-      ?(debug = false)
-      ?(stop = Deferred.never ())
-      ?(named_logging_filters = [])
-      ~bind_to_element_with_id
-      ~initial_model
-      (module App : App_intf.S with type Model.t = model and type Action.t = action)
+  (type model action)
+  ?(debug = false)
+  ?(stop = Deferred.never ())
+  ?(named_logging_filters = [])
+  ~bind_to_element_with_id
+  ~initial_model
+  (module App : App_intf.S with type Model.t = model and type Action.t = action)
   =
   start_bonsai
     ~debug

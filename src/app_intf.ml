@@ -6,7 +6,6 @@ open Async_kernel
 module type Model = sig
   type t
 
-
   (** A function for testing whether the model has changed enough to require refiring
       the incremental graph.
 
@@ -95,9 +94,9 @@ module type S = sig
   val create
     :  Model.t Incr.t
     -> old_model:Model.t Incr.t
-    (** [old_model] contains the previous version of the model *)
+         (** [old_model] contains the previous version of the model *)
     -> inject:(Action.t -> unit Vdom.Effect.t)
-    (** [inject] gives you the ability to create event handlers in the virtual DOM. In
+         (** [inject] gives you the ability to create event handlers in the virtual DOM. In
         your event handler, call this function on the action you would like to
         schedule. Virtual DOM will automatically delegate that action back to the
         [Start_app] main loop. *)

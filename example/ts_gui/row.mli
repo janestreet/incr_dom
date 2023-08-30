@@ -7,8 +7,6 @@ module Model : sig
 
   val columns : t Column.t list
   val matches_pattern : t -> string -> bool
-
-
   val apply_edit : t -> column:string -> string -> t
 end
 
@@ -38,7 +36,6 @@ val view
   -> focus_nth_column:(int -> unit Vdom.Effect.t)
   -> remember_edit:(column:string -> string -> unit Vdom.Effect.t)
   -> Row_node_spec.t Incr.t
-
 
 val random_row : unit -> Model.t
 val random_rows : int -> Model.t list

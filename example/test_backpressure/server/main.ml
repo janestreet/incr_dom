@@ -28,10 +28,10 @@ module Mode = struct
 end
 
 let create_and_serve
-      ~vanilla_rpc_port
-      ~(serve_mode : Mode.t)
-      ~(http_settings : Http_settings.t)
-      ~js_path
+  ~vanilla_rpc_port
+  ~(serve_mode : Mode.t)
+  ~(http_settings : Http_settings.t)
+  ~js_path
   =
   let module Connection_index = Unique_id.Int () in
   let implementations =
@@ -145,7 +145,6 @@ let command =
        close_finished server)
     ~behave_nicely_in_pipeline:false
 ;;
-
 
 let () =
   Command.group ~summary:"Commands for the Incr_decr RPC example" [ "server", command ]

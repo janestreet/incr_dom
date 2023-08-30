@@ -6,10 +6,10 @@ type t =
   { incr : Incr.Clock.t
   ; timing_wheel : (unit, unit) Ui_effect.Private.Callback.t Timing_wheel.t
   ; mutable
-    add_before_advance :
+      add_before_advance :
       (Time_ns.t * (unit, unit) Ui_effect.Private.Callback.t) Reversed_list.t
   ; mutable
-    wait_after_display_callbacks :
+      wait_after_display_callbacks :
       (unit, unit) Ui_effect.Private.Callback.t Reversed_list.t
   ; mutable advance_to : Time_ns.t option
   }

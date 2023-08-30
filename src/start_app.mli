@@ -30,8 +30,8 @@ module Private : sig
     -> bind_to_element_with_id:string
     -> initial_model:'model
     -> (module App_intf.Private.S_for_bonsai
-         with type Model.t = 'model
-          and type Action.t = 'action)
+          with type Model.t = 'model
+           and type Action.t = 'action)
     -> unit
 
   val time_source : Ui_time_source.t

@@ -135,7 +135,7 @@ let update_visibility (model : Model.t) row_view ~schedule_action:_ =
     }
   in
   if [%compare.equal: Row_view.Height_cache.t] height_cache model.height_cache
-  && [%compare.equal: Measurements.t option] measurements model.measurements
+     && [%compare.equal: Measurements.t option] measurements model.measurements
   then model
   else { model with height_cache; measurements }
 ;;

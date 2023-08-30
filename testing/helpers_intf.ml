@@ -1,7 +1,6 @@
 open! Core
 open! Import
 
-
 module type S = sig
   type model
   type action
@@ -22,7 +21,7 @@ module type Helpers = sig
   val make
     :  ('model, 'action, 'state) Driver.t
     -> (module S
-         with type model = 'model
-          and type action = 'action
-          and type state = 'state)
+          with type model = 'model
+           and type action = 'action
+           and type state = 'state)
 end

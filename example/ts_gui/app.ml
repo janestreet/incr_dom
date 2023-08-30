@@ -261,8 +261,8 @@ let key_handler ~inject =
       ~keys:[ key F1; key ~ctrl:() ~shift:() Slash ]
       ~description:"See the help menu"
       (fun _ev ->
-         let help_text = Keyboard_event_handler.get_help_text handler in
-         inject (Action.Show_help_menu help_text))
+        let help_text = Keyboard_event_handler.get_help_text handler in
+        inject (Action.Show_help_menu help_text))
   in
   let handler = Keyboard_event_handler.add_command_exn handler help_menu_command in
   let keydown_handler =

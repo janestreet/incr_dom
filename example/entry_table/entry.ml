@@ -258,12 +258,12 @@ let live_data visible live =
 ;;
 
 let view
-      (m : Model.t Incr.t)
-      (entry_id : Entry_id.t)
-      ~visible
-      ~focus
-      ~focus_me
-      ~set_inner_focus
+  (m : Model.t Incr.t)
+  (entry_id : Entry_id.t)
+  ~visible
+  ~focus
+  ~focus_me
+  ~set_inner_focus
   =
   let open Incr.Let_syntax in
   let entry_id_attr = Attr.id (Entry_id.id_string entry_id) in

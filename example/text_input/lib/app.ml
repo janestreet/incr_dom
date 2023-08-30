@@ -65,10 +65,10 @@ let view (m : Model.t Incr.t) ~inject =
         [ Attr.many_without_merge
             [ Attr.id "input"
             ; Attr.type_ "text"
-            (* The value property controls the current value of the text input, whereas the
+              (* The value property controls the current value of the text input, whereas the
                value attribute only controls its initial value. *)
             ; Attr.string_property "value" input_text
-            (* We must update our model with the user's input to keep the virtual dom consistent
+              (* We must update our model with the user's input to keep the virtual dom consistent
                with the actual dom. *)
             ; Attr.on_input (fun _ev text -> inject (Action.Update_input text))
             ]

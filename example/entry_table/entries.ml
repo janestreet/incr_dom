@@ -236,7 +236,7 @@ let update_visibility m ~schedule_action:_ =
         Map.nth_exn filtered_entries n |> fst |> Entry_id.id_string)
       Js_misc.Rows
     |> Option.map ~f:(fun (a, b) ->
-      Map.nth_exn filtered_entries a |> fst, Map.nth_exn filtered_entries b |> fst)
+         Map.nth_exn filtered_entries a |> fst, Map.nth_exn filtered_entries b |> fst)
   in
   { m with visible_range }
 ;;

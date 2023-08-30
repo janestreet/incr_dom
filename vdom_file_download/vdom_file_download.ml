@@ -38,12 +38,12 @@ let trigger { filename; mimetype; contents } =
 
 module Button = struct
   let create
-        ?(enabled = true)
-        ?(on_click = fun _ -> Vdom.Effect.Ignore)
-        ?(extra_attrs = [])
-        ~get_download
-        ~button_text
-        ()
+    ?(enabled = true)
+    ?(on_click = fun _ -> Vdom.Effect.Ignore)
+    ?(extra_attrs = [])
+    ~get_download
+    ~button_text
+    ()
     =
     let open Vdom in
     let trigger_csv_download ev =

@@ -32,13 +32,13 @@ module Todo = struct
   ;;
 
   let view
-        ({ completed; text = todo_text; editing } as t)
-        ~visibility
-        ~change_completion
-        ~destroy
-        ~edit_started
-        ~editing_ended
-        ~set_text
+    ({ completed; text = todo_text; editing } as t)
+    ~visibility
+    ~change_completion
+    ~destroy
+    ~edit_started
+    ~editing_ended
+    ~set_text
     =
     let li_attrs =
       match
@@ -98,7 +98,7 @@ module Model = struct
   type t =
     { todos : Todo.t Id.Map.t
     ; visibility : Visibility.t
-    (* Determines if the main input element should be cleared of its' value *)
+        (* Determines if the main input element should be cleared of its' value *)
     ; clear_input : bool
     }
   [@@deriving fields ~getters ~fields ~iterators:create, sexp, compare]
@@ -167,8 +167,8 @@ let input_section inject clear_input =
       ~attrs:
         [ Attr.many_without_merge
             ([ Attr.on_change (fun _ s ->
-               Vdom.Effect.Many
-                 [ inject (Action.Clear_input true); inject (Action.Add s) ])
+                 Vdom.Effect.Many
+                   [ inject (Action.Clear_input true); inject (Action.Add s) ])
              ; Attr.class_ "new-todo"
              ; Attr.placeholder "What needs to be done?"
              ; Attr.autofocus true

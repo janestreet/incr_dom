@@ -187,11 +187,11 @@ end = struct
 end
 
 let fade_out_color
-      ~start_time
-      ~solid_for
-      ~fade_for
-      ~(fade_from : Rgb.t)
-      ~(fade_to : Rgb.t)
+  ~start_time
+  ~solid_for
+  ~fade_for
+  ~(fade_from : Rgb.t)
+  ~(fade_to : Rgb.t)
   =
   let%bind start_time = start_time in
   match start_time with
@@ -221,13 +221,13 @@ let focused_color = { Rgb.r = 135; g = 206; b = 250 }
 let sort_column_color = { Rgb.r = 250; g = 250; b = 200 }
 
 let view
-      (m : Model.t Incr.t)
-      ~(mode : Mode.t Incr.t)
-      ~sort_columns
-      ~focused_column
-      ~focus_me
-      ~focus_nth_column
-      ~remember_edit
+  (m : Model.t Incr.t)
+  ~(mode : Mode.t Incr.t)
+  ~sort_columns
+  ~focused_column
+  ~focus_me
+  ~focus_nth_column
+  ~remember_edit
   =
   let open Vdom in
   let on_click = Attr.on_click (fun _ -> focus_me) in
