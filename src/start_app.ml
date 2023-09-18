@@ -414,12 +414,12 @@ let start_bonsai
      in
      Incr.set_cutoff model cutoff;
      Incr.set_cutoff model_from_last_display cutoff;
-     let action_queue = Deque.create () in
+     let action_queue = Queue.create () in
      let module Event =
        Vdom.Effect.Define (struct
          module Action = App.Action
 
-         let handle action = Deque.enqueue_back action_queue action
+         let handle action = Queue.enqueue action_queue action
        end)
      in
      let visibility = Visibility.create_as_dirty () in
@@ -445,6 +445,7 @@ let start_bonsai
        , fetch (fun { on_display; _ } -> on_display) )
      in
      Incr.stabilize ();
+     App.on_stabilize ();
      let named_logging_filters =
        ("all", Fn.const true) :: ("none", Fn.const false) :: named_logging_filters
        |> String.Table.of_alist_exn
@@ -535,7 +536,8 @@ let start_bonsai
        Incr.Var.set model_v new_model;
        timer_start "stabilize";
        Incr.stabilize ();
-       timer_stop "stabilize"
+       timer_stop "stabilize";
+       App.on_stabilize ()
      in
      let maybe_log_action =
        let safe_filter ~name filter action =
@@ -571,30 +573,33 @@ let start_bonsai
          if should_log_action
          then Async_js.log_s_as_string [%message "Action" (action : App.Action.t)]
      in
-     let apply_action action =
+     (* It's important that we don't call [Incr.Var.set] within [apply_action] unless
+        we're also going to stabilize. Some code in Bonsai relies on this assumption
+        as part of its [action_requires_stabilization] logic. Breaking this invariant
+        won't break Bonsai code, but it will effectively remove an optimization. *)
+     let apply_action action model =
        maybe_log_action action;
        if App.action_requires_stabilization action
        then (
+         Incr.Var.set model_v model;
          timer_start "stabilize-for-action";
          Incr.stabilize ();
-         timer_stop "stabilize-for-action")
+         timer_stop "stabilize-for-action";
+         App.on_stabilize ())
        else if should_debug ()
        then Firebug.console##debug (Js.string "action applied without stabilizing");
        let new_model =
-         (get_apply_action ())
-           state
-           ~schedule_event:Ui_effect.Expert.handle
-           (Incr.Var.latest_value model_v)
-           action
+         (get_apply_action ()) state ~schedule_event:Ui_effect.Expert.handle model action
        in
-       Incr.Var.set model_v new_model
+       App.on_action_application action;
+       new_model
      in
-     let rec apply_actions () =
-       match Deque.dequeue_front action_queue with
-       | None -> ()
+     let rec apply_actions model =
+       match Queue.dequeue action_queue with
+       | None -> Incr.Var.set model_v model
        | Some action ->
-         apply_action action;
-         apply_actions ()
+         let new_model = apply_action action model in
+         apply_actions new_model
      in
      let perform_update () =
        timer_start "stabilize";
@@ -608,16 +613,18 @@ let start_bonsai
        App.advance_clock_to now;
        Incr.stabilize ();
        timer_stop "stabilize";
+       App.on_stabilize ();
        timer_start "total";
        timer_start "update visibility";
        if Visibility.is_dirty visibility then update_visibility ();
        timer_stop "update visibility";
        timer_start "apply actions";
-       apply_actions ();
+       apply_actions (Incr.Var.value model_v);
        timer_stop "apply actions";
        timer_start "stabilize";
        Incr.stabilize ();
        timer_stop "stabilize";
+       App.on_stabilize ();
        let html = get_view () in
        let html = override_root_element html in
        timer_start "diff";
@@ -687,6 +694,8 @@ let start
       include App
 
       let action_requires_stabilization _ = true
+      let on_action_application _ = ()
+      let on_stabilize () = ()
 
       let advance_clock_to to_ =
         Ui_time_source.advance_clock time_source ~to_;

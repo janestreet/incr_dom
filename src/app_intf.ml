@@ -118,6 +118,8 @@ module Private = struct
     module State : State
 
     val action_requires_stabilization : Action.t -> bool
+    val on_action_application : Action.t -> unit
+    val on_stabilize : unit -> unit
     val on_startup : schedule_action:(Action.t -> unit) -> Model.t -> State.t Deferred.t
     val advance_clock_to : Time_ns.t -> unit
 
