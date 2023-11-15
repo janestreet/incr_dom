@@ -118,7 +118,7 @@ let generate_fake_data () =
     Quickcheck.Generator.generate
       generator
       ~size:1_000
-      ~random:(Splittable_random.State.of_int 1)
+      ~random:(Splittable_random.of_int 1)
   in
   List.map values ~f:(fun tup ->
     let id = Row.Id.create () in
