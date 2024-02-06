@@ -1,3 +1,6 @@
-(executables (names main)
+(executables
+ (modes byte exe)
+ (names main)
  (libraries core incr_dom incr_dom_partial_render jane_web_style)
- (preprocess (pps ppx_jane)))
+ (preprocess
+  (pps ppx_jane)))

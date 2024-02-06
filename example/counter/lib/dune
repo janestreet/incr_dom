@@ -1,2 +1,5 @@
-(library (name incr_dom_counter_example_lib) (libraries core incr_dom)
- (preprocess (pps ppx_jane)))
+(library
+ (name incr_dom_counter_example_lib)
+ (libraries core incr_dom)
+ (preprocess
+  (pps ppx_jane)))

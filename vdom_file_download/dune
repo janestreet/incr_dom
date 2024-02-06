@@ -1,3 +1,6 @@
-(library (name vdom_file_download) (public_name incr_dom.vdom_file_download)
- (preprocess (pps js_of_ocaml-ppx ppx_jane))
+(library
+ (name vdom_file_download)
+ (public_name incr_dom.vdom_file_download)
+ (preprocess
+  (pps js_of_ocaml-ppx ppx_jane))
  (libraries core js_of_ocaml virtual_dom))

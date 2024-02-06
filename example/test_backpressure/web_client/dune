@@ -1,3 +1,6 @@
-(executables (names main)
+(executables
+ (modes byte exe)
+ (names main)
  (libraries async_js_jane core backpressure_test_shared)
- (preprocess (pps ppx_jane)))
+ (preprocess
+  (pps ppx_jane)))

@@ -43,7 +43,10 @@ let create_and_serve
     Single_page_handler.create_handler
       handler
       ~assets:
-        [ Asset.local Asset.Kind.javascript (Asset.What_to_serve.file ~path:js_path) ]
+        [ Asset.local
+            Asset.Kind.javascript
+            (Asset.What_to_serve.file ~path:js_path ~relative_to:`Cwd)
+        ]
       ~on_unknown_url:`Not_found
   in
   let initial_connection_state get_principal identity initiated_from addr conn =

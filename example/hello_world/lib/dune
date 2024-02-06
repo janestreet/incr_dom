@@ -1,2 +1,5 @@
-(library (name hello_world_example_lib) (libraries core incr_dom)
- (preprocess (pps ppx_jane)))
+(library
+ (name hello_world_example_lib)
+ (libraries core incr_dom)
+ (preprocess
+  (pps ppx_jane)))

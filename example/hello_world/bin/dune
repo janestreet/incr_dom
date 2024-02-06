@@ -1,2 +1,6 @@
-(executables (names main) (libraries hello_world_example_lib incr_dom)
- (preprocess (pps js_of_ocaml-ppx ppx_jane)))
+(executables
+ (modes byte exe)
+ (names main)
+ (libraries hello_world_example_lib incr_dom)
+ (preprocess
+  (pps js_of_ocaml-ppx ppx_jane)))
