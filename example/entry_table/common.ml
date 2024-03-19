@@ -1,7 +1,5 @@
 open! Core
 
-(* Things that really we should mostly get from a future Jane_kernel module... *)
-
 module Dir = struct
   type t =
     | Buy

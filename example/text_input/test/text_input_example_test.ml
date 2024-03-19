@@ -24,7 +24,8 @@ let%expect_test "default model" =
       <button id="submit" onclick> Submit </button>
       <button id="reset" onclick> Reset </button>
       <button id="increment" onclick> Increment </button>
-    </body> |}]
+    </body>
+    |}]
 ;;
 
 let%expect_test "submit with default" =
@@ -40,7 +41,8 @@ let%expect_test "submit with default" =
       <button id="submit" onclick> Submit </button>
       <button id="reset" onclick> Reset </button>
       <button id="increment" onclick> Increment </button>
-    </body> |}]
+    </body>
+    |}]
 ;;
 
 let%expect_test "Increment twice and then submit" =
@@ -58,7 +60,8 @@ let%expect_test "Increment twice and then submit" =
       <button id="submit" onclick> Submit </button>
       <button id="reset" onclick> Reset </button>
       <button id="increment" onclick> Increment </button>
-    </body> |}]
+    </body>
+    |}]
 ;;
 
 let%expect_test "Set value and then submit" =
@@ -75,7 +78,8 @@ let%expect_test "Set value and then submit" =
       <button id="submit" onclick> Submit </button>
       <button id="reset" onclick> Reset </button>
       <button id="increment" onclick> Increment </button>
-    </body> |}]
+    </body>
+    |}]
 ;;
 
 let%expect_test "Set value and then increment" =
@@ -93,5 +97,6 @@ let%expect_test "Set value and then increment" =
       <button id="submit" onclick> Submit </button>
       <button id="reset" onclick> Reset </button>
       <button id="increment" onclick> Increment </button>
-    </body> |}]
+    </body>
+    |}]
 ;;

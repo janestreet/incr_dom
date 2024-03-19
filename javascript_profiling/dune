@@ -1,10 +1,6 @@
 (library
- (foreign_stubs
-  (language c)
-  (names c_stubs))
  (name javascript_profiling)
  (public_name incr_dom.javascript_profiling)
- (js_of_ocaml
-  (javascript_files ./runtime.js))
+ (libraries js_of_ocaml)
  (preprocess
-  (pps ppx_jane)))
+  (pps js_of_ocaml-ppx ppx_jane)))

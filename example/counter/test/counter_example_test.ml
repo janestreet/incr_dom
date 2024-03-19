@@ -15,7 +15,8 @@ let%expect_test _ =
   [%expect {|
     <body>
       <div> 0 </div>
-    </body> |}];
+    </body>
+    |}];
   H.do_actions [ App.Action.Increment ];
   H.perform_update ();
   H.show_model ();
@@ -24,5 +25,6 @@ let%expect_test _ =
   [%expect {|
     <body>
       <div> 1 </div>
-    </body> |}]
+    </body>
+    |}]
 ;;

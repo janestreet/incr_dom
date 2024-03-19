@@ -1,6 +1,6 @@
 (executables
  (modes byte exe)
  (names main)
- (libraries incr_dom uri async_js_jane)
+ (libraries incr_dom uri)
  (preprocess
   (pps js_of_ocaml-ppx ppx_jane)))

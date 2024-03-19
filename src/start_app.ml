@@ -394,6 +394,7 @@ let start_bonsai
   ?(debug = false)
   ?(stop = Deferred.never ())
   ?(named_logging_filters = [])
+  ?(simulate_body_focus_on_root_element = true)
   ~bind_to_element_with_id
   ~initial_model
   (module App : App_intf.Private.S_for_bonsai
@@ -501,31 +502,32 @@ let start_bonsai
      let timer_stop s =
        timer_stop s ~debug:(should_debug ()) ~profile:(should_profile ())
      in
-     (*
-        Take action on any blur event, refocusing to the root node if the relatedTarget is
-        null or undefined, signifying that focus was lost and would otherwise be reset to
-        the body node.
+     if simulate_body_focus_on_root_element
+     then
+       (* Take action on any blur event, refocusing to the root node if the relatedTarget is
+          null or undefined, signifying that focus was lost and would otherwise be reset to
+          the body node.
 
-        The Js._true parameter provided to Dom.addEventListener is the useCapture
-        parameter described here:
-        https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
-     *)
-     ignore
-     @@ Dom.addEventListener
-          Dom_html.window
-          Dom_html.Event.blur
-          (Dom_html.handler (fun e ->
-             (* [Js.Unsafe.*] is like [Obj.magic]. We should be explicit about what we
-                expect. *)
-             let e
-               : < relatedTarget : Dom_html.element Js.t Js.opt Js.readonly_prop > Js.t
-               =
-               Js.Unsafe.coerce e
-             in
-             let related_target = e##.relatedTarget in
-             if not (Js.Opt.test related_target) then refocus_root_element ();
-             Js._true))
-          Js._true;
+          The Js._true parameter provided to Dom.addEventListener is the useCapture
+          parameter described here:
+          https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
+       *)
+       ignore
+       @@ Dom.addEventListener
+            Dom_html.window
+            Dom_html.Event.blur
+            (Dom_html.handler (fun e ->
+               (* [Js.Unsafe.*] is like [Obj.magic]. We should be explicit about what we
+                  expect. *)
+               let e
+                 : < relatedTarget : Dom_html.element Js.t Js.opt Js.readonly_prop > Js.t
+                 =
+                 Js.Unsafe.coerce e
+               in
+               let related_target = e##.relatedTarget in
+               if not (Js.Opt.test related_target) then refocus_root_element ();
+               Js._true))
+            Js._true;
      let update_visibility () =
        Visibility.mark_clean visibility;
        let new_model =
@@ -626,7 +628,9 @@ let start_bonsai
        timer_stop "stabilize";
        App.on_stabilize ();
        let html = get_view () in
-       let html = override_root_element html in
+       let html =
+         if simulate_body_focus_on_root_element then override_root_element html else html
+       in
        timer_start "diff";
        let patch = Vdom.Node.Patch.create ~previous:!prev_html ~current:html in
        timer_stop "diff";

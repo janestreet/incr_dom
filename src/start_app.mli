@@ -27,6 +27,7 @@ module Private : sig
     :  ?debug:bool (** print timing info to JS console - default false *)
     -> ?stop:unit Deferred.t
     -> ?named_logging_filters:(string * ('action -> bool)) list
+    -> ?simulate_body_focus_on_root_element:bool
     -> bind_to_element_with_id:string
     -> initial_model:'model
     -> (module App_intf.Private.S_for_bonsai

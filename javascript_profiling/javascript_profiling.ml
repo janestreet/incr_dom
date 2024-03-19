@@ -1,10 +1,21 @@
-external js_prof_mark : string -> unit = "js_prof_mark"
-external js_prof_measure : string -> string -> string -> unit = "js_prof_measure"
-external js_prof_clear_marks : unit -> unit = "js_prof_clear_marks"
-external js_prof_clear_measures : unit -> unit = "js_prof_clear_measures"
+open Js_of_ocaml
 
-let mark name = js_prof_mark name
-let measure ~name ~start ~end_ = js_prof_measure name start end_
+class type performance = object
+  method mark : Js.js_string Js.t -> unit Js.meth
+
+  method measure :
+    Js.js_string Js.t -> Js.js_string Js.t -> Js.js_string Js.t -> unit Js.meth
+
+  method clearMarks : unit Js.meth
+  method clearMeasures : unit Js.meth
+end
+
+let perf () : performance Js.t = Js.Unsafe.global##.performance
+let mark name = (perf ())##mark (Js.string name)
+
+let measure ~name ~start ~end_ =
+  (perf ())##measure (Js.string name) (Js.string start) (Js.string end_)
+;;
 
 let record name ~f =
   let before_name = name ^ "_before" in
@@ -16,8 +27,8 @@ let record name ~f =
   res
 ;;
 
-let clear_marks () = js_prof_clear_marks ()
-let clear_measures () = js_prof_clear_measures ()
+let clear_marks () = (perf ())##clearMarks
+let clear_measures () = (perf ())##clearMeasures
 
 module Manual = struct
   let mark = mark
