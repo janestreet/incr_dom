@@ -4,20 +4,88 @@ open Async_kernel
 open Js_of_ocaml
 module Performance = Javascript_profiling
 
-let timer_start s ~debug ~profile =
-  if profile then Performance.Manual.mark (s ^ "before");
-  if debug then Firebug.console##time (Js.string s)
-;;
+module For_mutating_inertness = struct
+  let app_root_class = "private-app-root-for-inertness"
+end
 
-let timer_stop s ~debug ~profile =
-  if profile
-  then (
-    let before = s ^ "before" in
-    let after = s ^ "after" in
-    Performance.Manual.mark after;
-    Performance.Manual.measure ~name:s ~start:before ~end_:after);
-  if debug then Firebug.console##timeEnd (Js.string s)
-;;
+module Performance_measure = struct
+  type t =
+    | Whole_animation_frame_loop
+    | Stabilize_for_clock
+    | Update_visibility
+    | Stabilize_for_update_visibility
+    | Apply_actions
+    | Stabilize_for_action
+    | Stabilize_after_all_apply_actions
+    | Diff_vdom
+    | Patch_vdom
+    | On_display_handlers
+    | Start_of_frame_to_start_of_next_frame
+    | End_of_frame_to_start_of_next_frame
+    | Unknown of string [@fallback]
+  [@@deriving string ~capitalize:"lower sentence case", variants]
+
+  let before_label t = to_string t ^ "before"
+  let after_label t = to_string t ^ "after"
+  let measure_label t = to_string t
+
+  let all_except_unknown =
+    let add acc var = var.Variantslib.Variant.constructor :: acc in
+    Variants.fold
+      ~init:[]
+      ~whole_animation_frame_loop:add
+      ~stabilize_for_clock:add
+      ~update_visibility:add
+      ~stabilize_for_update_visibility:add
+      ~apply_actions:add
+      ~stabilize_for_action:add
+      ~stabilize_after_all_apply_actions:add
+      ~diff_vdom:add
+      ~patch_vdom:add
+      ~on_display_handlers:add
+      ~start_of_frame_to_start_of_next_frame:add
+      ~end_of_frame_to_start_of_next_frame:add
+      ~unknown:(fun acc _ -> acc)
+  ;;
+
+  let clear_all_incr_dom_marks_and_measures () =
+    List.iter all_except_unknown ~f:(fun t ->
+      Performance.clear_marks ~name:(before_label t) ();
+      Performance.clear_marks ~name:(after_label t) ();
+      Performance.clear_measures ~name:(measure_label t) ())
+  ;;
+
+  let timer_start t ~debug ~profile =
+    if profile
+    then (
+      let before_label = before_label t in
+      Performance.Manual.mark before_label);
+    if debug then Firebug.console##time (Js.string (measure_label t))
+  ;;
+
+  let timer_stop t ~debug ~profile =
+    let before_label = before_label t in
+    let after_label = after_label t in
+    let measure_label = measure_label t in
+    if profile
+    then (
+      Performance.Manual.mark after_label;
+      (* If we decide to always profile, there's a world in which
+         {!clear_all_incr_dom_marks_and_measures} runs between {!timer_start} and
+         {!timer_stop}, so we should try to avoid creating a DOMException.
+
+         This should only happen if the animation frame callback somehow defers to the
+         clear marks callback - which is highly unlikely. *)
+      try
+        Performance.Manual.measure
+          ~name:measure_label
+          ~start:before_label
+          ~end_:after_label
+      with
+      | _ -> ());
+    if debug then Firebug.console##timeEnd (Js.string measure_label)
+  ;;
+end
 
 let print_errorf fmt = ksprintf (fun s -> Firebug.console##error (Js.string s)) fmt
 
@@ -110,7 +178,7 @@ let request_animation_frame callback =
     let timeout_callback = Js.wrap_callback (fun _ -> callback ()) in
     (* 1000 ms = 1s;  Chosen because backgrounded tangle sends requests
        at approximately this rate. *)
-    let timeout = 1000.0 in
+    let timeout = Js.float 1000.0 in
     Dom_html.window##setTimeout timeout_callback timeout
   in
   Request_ids.set_once_exn request_ids ~animation_frame_id ~set_timeout_id
@@ -181,6 +249,8 @@ module Debug_flags : sig
     -> debug:bool
     -> stop:unit Deferred.t
     -> t
+
+  val is_any_app_profiling : unit -> bool
 end = struct
   type t =
     { logging_filter : unit -> Logging_filter.t
@@ -207,11 +277,11 @@ end = struct
 
     method startLogging :
       (Js.js_string Js.t -> Js.js_string Js.t Js.opt -> unit) Js.callback
-      Js.writeonly_prop
+        Js.writeonly_prop
 
     method startLoggingCustom :
       ((Js.js_string Js.t -> bool Js.t) -> Js.js_string Js.t Js.opt -> unit) Js.callback
-      Js.writeonly_prop
+        Js.writeonly_prop
 
     method stopLogging : (Js.js_string Js.t Js.opt -> unit) Js.callback Js.writeonly_prop
 
@@ -242,6 +312,10 @@ end = struct
     strings |> List.map ~f:(fun str -> "  " ^ str) |> String.concat ~sep:"\n"
   ;;
 
+  let is_any_app_profiling () =
+    Hashtbl.exists app_states ~f:(fun app_state -> !(app_state.should_profile))
+  ;;
+
   let init_global ~app_filters () =
     let with_app_id_opt update_state app_id_opt =
       let app_id_opt = Js.Opt.to_option app_id_opt |> Option.map ~f:Js.to_string in
@@ -267,44 +341,44 @@ end = struct
     in
     global##.startLoggingAll := Js.wrap_callback (update_logging_filter All);
     global##.startLogging
-      := Js.wrap_callback (fun blang_str ->
-           let blang_str = Js.to_string blang_str in
-           with_app_id_opt (fun app_state ->
-             let blang = Blang.t_of_sexp String.t_of_sexp (Sexp.of_string blang_str) in
-             let invalid_names =
-               Blang.fold blang ~init:String.Set.empty ~f:(fun invalid_names name ->
-                 if Set.mem app_state.filter_names name
-                 then invalid_names
-                 else Set.add invalid_names name)
-             in
-             if Set.is_empty invalid_names
-             then
-               App_state.set_logging_filter
-                 app_state
-                 ~logging_filter:(Named_filter_blang blang)
-             else
-               print_errorf
-                 "Unable to find named filter(s): %s. Valid names are:\n%s"
-                 (Set.to_list invalid_names |> single_line_string_list)
-                 (Set.to_list app_state.filter_names |> multi_line_string_list)));
-    global##.startLoggingCustom
-      := Js.wrap_callback (fun filter ->
-           let filter action_sexp =
-             action_sexp |> Sexp.to_string |> Js.string |> filter |> Js.to_bool
+    := Js.wrap_callback (fun blang_str ->
+         let blang_str = Js.to_string blang_str in
+         with_app_id_opt (fun app_state ->
+           let blang = Blang.t_of_sexp String.t_of_sexp (Sexp.of_string blang_str) in
+           let invalid_names =
+             Blang.fold blang ~init:String.Set.empty ~f:(fun invalid_names name ->
+               if Set.mem app_state.filter_names name
+               then invalid_names
+               else Set.add invalid_names name)
            in
-           update_logging_filter (Custom_filter filter));
+           if Set.is_empty invalid_names
+           then
+             App_state.set_logging_filter
+               app_state
+               ~logging_filter:(Named_filter_blang blang)
+           else
+             print_errorf
+               "Unable to find named filter(s): %s. Valid names are:\n%s"
+               (Set.to_list invalid_names |> single_line_string_list)
+               (Set.to_list app_state.filter_names |> multi_line_string_list)));
+    global##.startLoggingCustom
+    := Js.wrap_callback (fun filter ->
+         let filter action_sexp =
+           action_sexp |> Sexp.to_string |> Js.string |> filter |> Js.to_bool
+         in
+         update_logging_filter (Custom_filter filter));
     global##.stopLogging := Js.wrap_callback (update_logging_filter None);
     global##.startProfiling := Js.wrap_callback (update_should_profile true);
     global##.stopProfiling := Js.wrap_callback (update_should_profile false);
     global##.startDebugging := Js.wrap_callback (update_should_debug true);
     global##.stopDebugging := Js.wrap_callback (update_should_debug false);
     global##.saveIncrementalGraph
-      := Js.wrap_callback (fun () ->
-           let filename = "current_incr_dom_dot_graph.dot" in
-           Ui_incr.save_dot_to_file filename;
-           let contents = In_channel.read_all filename in
-           Vdom_file_download.create ~filename ~mimetype:"plain/text" ~contents
-           |> Vdom_file_download.trigger);
+    := Js.wrap_callback (fun () ->
+         let filename = "current_incr_dom_dot_graph.dot" in
+         Ui_incr.save_dot_to_file filename;
+         let contents = In_channel.read_all filename in
+         Vdom_file_download.create ~filename ~mimetype:"plain/text" ~contents
+         |> Vdom_file_download.trigger);
     let group s ~f =
       Firebug.console##groupCollapsed (Js.string s);
       f ();
@@ -339,7 +413,7 @@ To stop debugging, type: stopDebugging([app_id])
     let app_init_message =
       sprintf
         {|Available logging filters for "%s":
-%s|}
+        %s|}
         app_id
         (Set.to_list filter_names |> multi_line_string_list)
     in
@@ -363,28 +437,48 @@ To stop debugging, type: stopDebugging([app_id])
   ;;
 end
 
+(* If the [<!DOCTYPE html>] declaration is missing, or not at the beginning of the page,
+   browsers will use "Quirks Mode", which emulates IE5:
+   https://developer.mozilla.org/en-US/docs/Web/API/Document/compatMode
+
+   This can lead to tricky, hard-to-detect bugs. *)
+let warn_if_quirks_mode () =
+  let document : < compatMode : Js.js_string Js.t Js.prop > Js.t =
+    Js_of_ocaml.Js.Unsafe.coerce Dom_html.document
+  in
+  let compat_mode = Js.to_string document##.compatMode in
+  if String.equal compat_mode "BackCompat"
+  then
+    Firebug.console##warn
+      (Js.string
+         "The browser is currently using `Quirks Mode`, which may cause your app to \
+          misbehave. To use `Standards Mode`, make sure your HTML file starts with a \
+          valid `<!DOCTYPE html>` declaration.")
+;;
+
 (* Adds the necessary attribute to the root node so that it can intercept
    keyboard events.
    https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/tabindex *)
-let override_root_element root =
+let override_root_element ~simulate_body_focus_on_root_element root =
   let open Vdom in
-  let should_add_focus_modifiers element =
-    element |> Node.Element.attrs |> Attr.Expert.contains_name "disable_tab_index" |> not
-  in
   match (root : Node.t) with
-  | Element element when should_add_focus_modifiers element ->
+  | Element element ->
+    let focus_attrs =
+      let should_add_focus_modifiers =
+        element
+        |> Node.Element.attrs
+        |> Attr.Expert.contains_name "disable_tab_index"
+        |> not
+      in
+      match should_add_focus_modifiers && simulate_body_focus_on_root_element with
+      | true -> Vdom.Attr.(style (Css_gen.outline ~style:`None ()) @ tabindex 0)
+      | false -> Vdom.Attr.empty
+    in
     let add_new_attrs attrs =
-      Vdom.Attr.(style (Css_gen.outline ~style:`None ()) @ tabindex 0 @ attrs)
+      Vdom.Attr.(focus_attrs @ class_ For_mutating_inertness.app_root_class @ attrs)
     in
     element |> Node.Element.map_attrs ~f:add_new_attrs |> Node.Element
   | _ -> root
-;;
-
-let rec get_tag_name (node : Vdom.Node.t) =
-  match node with
-  | Element e -> Some (Vdom.Node.Element.tag e)
-  | Lazy { t; _ } -> get_tag_name (Lazy.force t)
-  | None | Text _ | Widget _ | Fragment _ -> None
 ;;
 
 let time_source : Ui_time_source.t = Ui_time_source.create ~start:(Time_ns.now ())
@@ -395,16 +489,19 @@ let start_bonsai
   ?(stop = Deferred.never ())
   ?(named_logging_filters = [])
   ?(simulate_body_focus_on_root_element = true)
+  ?(profile = false)
   ~bind_to_element_with_id
   ~initial_model
   (module App : App_intf.Private.S_for_bonsai
     with type Model.t = model
      and type Action.t = action)
   =
-  (* This is idempotent and so fine to do. *)
+  (* [Inline_css] and [Async_js] inits are idempotent and so fine to do. *)
+  Inline_css.Private.update_if_not_already_updated ();
   Async_js.init ();
   don't_wait_for
     (let%bind () = Async_js.document_loaded () in
+     warn_if_quirks_mode ();
      let model_v = Incr.Var.create initial_model in
      let model = Incr.Var.watch model_v in
      let model_from_last_display_v = Incr.Var.create initial_model in
@@ -471,7 +568,7 @@ let start_bonsai
                viewport_changed ();
                Js._true))
             Js._false
-           : Dom.event_listener_id)
+          : Dom.event_listener_id)
      in
      call_viewport_changed_on_event "scroll" (Js_misc.get_scroll_container html_dom);
      call_viewport_changed_on_event "resize" Dom_html.window;
@@ -482,40 +579,116 @@ let start_bonsai
      in
      let prev_html = ref html in
      let prev_elt = ref html_dom in
-     let refocus_root_element () =
-       let element = !prev_elt in
-       (* If the element to focus is an element, cast it into the
-          more permissive "focusable" type defined at the top of
-          this file, and then focus that. *)
-       Dom_html.CoerceTo.element element
-       |> Js.Opt.to_option
-       |> Option.map ~f:as_focusable
-       |> Option.iter ~f:(fun element ->
-            element##focus
-              (object%js
-                 val preventScroll = Js._true
-              end))
+     let potentially_refocus_root_element () =
+       let refocus_root_element () =
+         let element = !prev_elt in
+         (* If the element to focus is an element, cast it into the
+            more permissive "focusable" type defined at the top of
+            this file, and then focus that. *)
+         Dom_html.CoerceTo.element element
+         |> Js.Opt.to_option
+         |> Option.map ~f:as_focusable
+         |> Option.iter ~f:(fun element ->
+           element##focus
+             (object%js
+                val preventScroll = Js._true
+             end))
+       in
+       (* [Js_of_ocaml.Dom_html.document] has the wrong type.
+          It is listed as [Dom_html.element Js.Opt.t Js.t] but should be either
+
+          - [Dom_html.element Js.Optdef.t Js.t] or
+          - [Dom_html.element Js.Opt.t Js.Optdef.t Js.t].
+
+          Fortunately, we can "correct" the type by promoting it
+          into an [Optdef.t] and then immediately casting back down to
+          an option.
+
+          This sequence of calls produces this javascript code:
+          {v
+            var focus_lost;
+            var active;
+
+            var documentActiveElement = Dom_html.document##.activeElement;
+            if (documentActiveElement !== undefined) {
+                active = documentActiveElement;
+            } else {
+                active = null;
+            }
+
+            if (active === null) {
+                focus_lost = true;
+            } else {
+                focus_lost = active.tagName == "body";
+            }
+
+            if (focus_lost && document.hasFocus()) {
+              refocus_root_element()
+            }
+          v} *)
+       let active =
+         Js.Optdef.get
+           (Js.Optdef.return Dom_html.document##.activeElement)
+           (fun () -> Js.Opt.empty)
+       in
+       let focus_lost =
+         Js.Opt.case
+           active
+           (* refocus if there is no active element. This never seems to happen in Chrome
+              as of v124, but might be the case in other browsers. *)
+             (fun () -> true)
+           (* refocus if the active element is <body> *)
+             (fun active_elt -> Js.Opt.test (Dom_html.CoerceTo.body active_elt))
+       in
+       (* If we are in an iframe, we don't want to steal focus unless we have focus. *)
+       let has_focus =
+         let document : < hasFocus : bool Js.t Js.meth > Js.t =
+           Js_of_ocaml.Js.Unsafe.coerce Dom_html.document
+         in
+         Js_of_ocaml.Js.to_bool document##hasFocus
+       in
+       if focus_lost && has_focus then refocus_root_element ()
+     in
+     let potentially_refocus_root_element =
+       if simulate_body_focus_on_root_element
+       then potentially_refocus_root_element
+       else fun () -> ()
      in
      let timer_start s =
-       timer_start s ~debug:(should_debug ()) ~profile:(should_profile ())
+       Performance_measure.timer_start
+         s
+         ~debug:(should_debug ())
+         ~profile:(profile || should_profile ())
      in
      let timer_stop s =
-       timer_stop s ~debug:(should_debug ()) ~profile:(should_profile ())
+       Performance_measure.timer_stop
+         s
+         ~debug:(should_debug ())
+         ~profile:(profile || should_profile ())
      in
      if simulate_body_focus_on_root_element
      then
-       (* Take action on any blur event, refocusing to the root node if the relatedTarget is
-          null or undefined, signifying that focus was lost and would otherwise be reset to
-          the body node.
+       (* If a [blur] event results in focus moving to [<body />], we move it back to the
+          app root.
 
-          The Js._true parameter provided to Dom.addEventListener is the useCapture
-          parameter described here:
-          https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
+          As of Chrome v124, [blur] runs both when the [activeElement] changes,
+          and when focus moves to another tab / window:
+          - In the former case, a [relatedTarget] of [null] means that focus will move to
+            [<body />].
+          - In the latter case, [blur] is dispatched twice; with [relatedTarget] being
+            [null] and [undefined] respectively, but [activeElement] doesn't change.
+
+          That's why it's critical that in [potentially_refocus_root_element], we check
+          that [activeElement] is on the [<body />] or [null],
+          AND that [document.hasFocus()] returns [true].
+
+          We run this on [capture] because [blur] doesn't bubble.
        *)
        ignore
-       @@ Dom.addEventListener
+       @@ Dom.addEventListenerWithOptions
             Dom_html.window
             Dom_html.Event.blur
+            ~capture:Js._true
             (Dom_html.handler (fun e ->
                (* [Js.Unsafe.*] is like [Obj.magic]. We should be explicit about what we
                   expect. *)
@@ -524,10 +697,10 @@ let start_bonsai
                  =
                  Js.Unsafe.coerce e
                in
-               let related_target = e##.relatedTarget in
-               if not (Js.Opt.test related_target) then refocus_root_element ();
-               Js._true))
-            Js._true;
+               let receiving_focus = e##.relatedTarget in
+               if not (Js.Opt.test receiving_focus)
+               then potentially_refocus_root_element ();
+               Js._true));
      let update_visibility () =
        Visibility.mark_clean visibility;
        let new_model =
@@ -536,9 +709,9 @@ let start_bonsai
            (Incr.Var.latest_value model_v)
        in
        Incr.Var.set model_v new_model;
-       timer_start "stabilize";
+       timer_start Stabilize_for_update_visibility;
        Incr.stabilize ();
-       timer_stop "stabilize";
+       timer_stop Stabilize_for_update_visibility;
        App.on_stabilize ()
      in
      let maybe_log_action =
@@ -584,9 +757,9 @@ let start_bonsai
        if App.action_requires_stabilization action
        then (
          Incr.Var.set model_v model;
-         timer_start "stabilize-for-action";
+         timer_start Stabilize_for_action;
          Incr.stabilize ();
-         timer_stop "stabilize-for-action";
+         timer_stop Stabilize_for_action;
          App.on_stabilize ())
        else if should_debug ()
        then Firebug.console##debug (Js.string "action applied without stabilizing");
@@ -604,53 +777,64 @@ let start_bonsai
          apply_actions new_model
      in
      let perform_update () =
-       timer_start "stabilize";
+       timer_stop Start_of_frame_to_start_of_next_frame;
+       timer_start Start_of_frame_to_start_of_next_frame;
+       timer_stop End_of_frame_to_start_of_next_frame;
+       timer_start Whole_animation_frame_loop;
+       timer_start Stabilize_for_clock;
        (* The clock is set only once per call to perform_update, so that all actions that
           occur before each display update occur "at the same time." *)
        let now =
          let date = new%js Js.date_now in
-         Time_ns.Span.of_ms date##getTime |> Time_ns.of_span_since_epoch
+         Time_ns.Span.of_ms (Js.to_float date##getTime) |> Time_ns.of_span_since_epoch
        in
        Incr.Clock.advance_clock Incr.clock ~to_:now;
        App.advance_clock_to now;
        Incr.stabilize ();
-       timer_stop "stabilize";
+       timer_stop Stabilize_for_clock;
        App.on_stabilize ();
-       timer_start "total";
-       timer_start "update visibility";
+       timer_start Update_visibility;
        if Visibility.is_dirty visibility then update_visibility ();
-       timer_stop "update visibility";
-       timer_start "apply actions";
+       timer_stop Update_visibility;
+       timer_start Apply_actions;
        apply_actions (Incr.Var.value model_v);
-       timer_stop "apply actions";
-       timer_start "stabilize";
+       timer_stop Apply_actions;
+       timer_start Stabilize_after_all_apply_actions;
        Incr.stabilize ();
-       timer_stop "stabilize";
+       timer_stop Stabilize_after_all_apply_actions;
        App.on_stabilize ();
-       let html = get_view () in
        let html =
-         if simulate_body_focus_on_root_element then override_root_element html else html
+         get_view () |> override_root_element ~simulate_body_focus_on_root_element
        in
-       timer_start "diff";
+       timer_start Diff_vdom;
        let patch = Vdom.Node.Patch.create ~previous:!prev_html ~current:html in
-       timer_stop "diff";
+       timer_stop Diff_vdom;
        if not (Vdom.Node.Patch.is_empty patch) then Visibility.mark_dirty visibility;
-       timer_start "patch";
+       timer_start Patch_vdom;
        let elt = Vdom.Node.Patch.apply patch !prev_elt in
-       timer_stop "patch";
-       timer_start "on_display";
+       timer_stop Patch_vdom;
+       timer_start On_display_handlers;
        (get_on_display ()) state ~schedule_event:Ui_effect.Expert.handle;
-       timer_stop "on_display";
+       timer_stop On_display_handlers;
        Incr.Var.set model_from_last_display_v (Incr.Var.value model_v);
-       let old_tag_name = get_tag_name !prev_html in
-       let new_tag_name = get_tag_name html in
-       let tags_the_same = Option.equal String.equal old_tag_name new_tag_name in
        prev_html := html;
        prev_elt := elt;
-       timer_stop "total";
        if should_debug () then Firebug.console##debug (Js.string "-------");
-       (* Changing the tag name causes focus to be lost.  Refocus in that case. *)
-       if not tags_the_same then refocus_root_element ()
+       (* Restoring focus from the [<body />] to the app root should mostly be handled by
+          the [blur] listener above, but we additionally run this check every frame because:
+
+          - We want the root element to start out focused, so perform an initial
+            update/render, then immediately focus the root (unless a non-body element
+            already has focus).
+          - [blur] doesn't run if the currently focused element is removed from the DOM,
+            so we might need to possibly focus-steal after every frame.
+
+          We keep the check on [blur], so that we can respond immediately to most blurs
+          without waiting ~16ms for the next frame.
+       *)
+       potentially_refocus_root_element ();
+       timer_stop Whole_animation_frame_loop;
+       timer_start End_of_frame_to_start_of_next_frame
      in
      (* We use [request_animation_frame] so that browser tells us where it's time to
         refresh the UI. All the actions will be processed and the changes propagated
@@ -662,21 +846,33 @@ let start_bonsai
          perform_update ();
          request_animation_frame callback)
      in
-     (* We want the root element to start out focused, so perform an initial
-        update/render, then immediately focus the root (unless a non-body element already
-        has focus).  This focusing can't happen inside of the `callback` because then it
-        would refocus root every frame.  *)
      perform_update ();
-     (match Js.Opt.to_option Dom_html.document##.activeElement with
-      | Some el -> if Js.Opt.test (Dom_html.CoerceTo.body el) then refocus_root_element ()
-      | None -> refocus_root_element ());
      request_animation_frame callback;
-     Deferred.never ())
+     Deferred.never ());
+  (*
+     If the app has enabled profiling, we clear marks / measures occasionally to avoid
+     a memory leak, unless a user has requested profiling. This preserves existing
+     behavior, and allows buffered [PerformanceObserver]s to read old marks / measures on
+     instantiation.
+
+     Note that {!Performance.clear_marks} and {!Performance.clear_measures} will only
+     clear from the performance buffer. This will not affect the Performance
+     Timeline in the DevTools panel (if in use), or apps pulling new data from
+     a [PerformanceObserver]. *)
+  if profile
+  then
+    Clock_ns.every (Time_ns.Span.of_int_sec 2) (fun () ->
+      if not (Debug_flags.is_any_app_profiling ())
+      then Performance_measure.clear_all_incr_dom_marks_and_measures ())
 ;;
 
 module Private = struct
   let start_bonsai = start_bonsai
   let time_source = time_source
+end
+
+module For_profiling = struct
+  module Performance_measure = Performance_measure
 end
 
 let start

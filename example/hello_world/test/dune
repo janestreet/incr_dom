@@ -1,5 +1,6 @@
 (library
  (name hello_world_example_test)
- (libraries async_kernel hello_world_example_lib incr_dom_testing js_of_ocaml)
+ (libraries async_kernel core hello_world_example_lib incr_dom_testing
+   js_of_ocaml)
  (preprocess
   (pps ppx_jane)))

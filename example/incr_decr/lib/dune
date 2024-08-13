@@ -1,5 +1,5 @@
 (library
  (name incr_decr_example_lib)
- (libraries core incr_dom)
+ (libraries async_kernel core incr_dom)
  (preprocess
   (pps ppx_jane)))

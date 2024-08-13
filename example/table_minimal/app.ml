@@ -79,7 +79,7 @@ let row_view (row : Row.t Incr.t) =
 ;;
 
 let row_renderer (_m : Model.t Incr.t) ~inject:_ : Row.t T.row_renderer =
-  fun ~row_id:_ ~row -> row_view row
+  fun ~row_id:_ ~row _ -> row_view row
 ;;
 
 let height_guess = 43.

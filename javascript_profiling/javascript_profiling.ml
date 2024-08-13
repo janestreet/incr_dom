@@ -6,8 +6,8 @@ class type performance = object
   method measure :
     Js.js_string Js.t -> Js.js_string Js.t -> Js.js_string Js.t -> unit Js.meth
 
-  method clearMarks : unit Js.meth
-  method clearMeasures : unit Js.meth
+  method clearMarks : Js.js_string Js.t Js.optdef -> unit Js.meth
+  method clearMeasures : Js.js_string Js.t Js.optdef -> unit Js.meth
 end
 
 let perf () : performance Js.t = Js.Unsafe.global##.performance
@@ -27,8 +27,13 @@ let record name ~f =
   res
 ;;
 
-let clear_marks () = (perf ())##clearMarks
-let clear_measures () = (perf ())##clearMeasures
+let clear_marks ?name () =
+  (perf ())##clearMarks (Js.Optdef.map (Js.Optdef.option name) Js.string)
+;;
+
+let clear_measures ?name () =
+  (perf ())##clearMeasures (Js.Optdef.map (Js.Optdef.option name) Js.string)
+;;
 
 module Manual = struct
   let mark = mark

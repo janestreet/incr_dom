@@ -12,8 +12,8 @@ end
 
 include
   Incr_dom.App_intf.S
-    with type State.t = unit
-     and module Model := Model
-     and module Action := Action
+  with type State.t = unit
+   and module Model := Model
+   and module Action := Action
 
 val initial_model : Model.t

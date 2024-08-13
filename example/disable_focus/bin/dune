@@ -1,6 +1,6 @@
 (executables
  (modes byte exe)
  (names main)
- (libraries disable_focus_example_lib incr_dom)
+ (libraries core disable_focus_example_lib incr_dom js_of_ocaml)
  (preprocess
   (pps js_of_ocaml-ppx ppx_jane)))

@@ -28,6 +28,8 @@ module Private : sig
     -> ?stop:unit Deferred.t
     -> ?named_logging_filters:(string * ('action -> bool)) list
     -> ?simulate_body_focus_on_root_element:bool
+    -> ?profile:bool
+         (** Send timing marks and measures to JS performance buffer - default false*)
     -> bind_to_element_with_id:string
     -> initial_model:'model
     -> (module App_intf.Private.S_for_bonsai
@@ -36,4 +38,28 @@ module Private : sig
     -> unit
 
   val time_source : Ui_time_source.t
+end
+
+module For_profiling : sig
+  module Performance_measure : sig
+    type t =
+      | Whole_animation_frame_loop
+      | Stabilize_for_clock
+      | Update_visibility
+      | Stabilize_for_update_visibility
+      | Apply_actions
+      | Stabilize_for_action
+      | Stabilize_after_all_apply_actions
+      | Diff_vdom
+      | Patch_vdom
+      | On_display_handlers
+      | Start_of_frame_to_start_of_next_frame
+      | End_of_frame_to_start_of_next_frame
+      | Unknown of string
+    [@@deriving string]
+  end
+end
+
+module For_mutating_inertness : sig
+  val app_root_class : string
 end

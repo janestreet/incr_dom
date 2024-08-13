@@ -20,7 +20,7 @@ let%expect_test "empty counters model" =
     {|
     <body>
       <div>
-        <button onclick> add new counter </button>
+        <button @on_click> add new counter </button>
       </div>
       <hr> </hr>
     </body>
@@ -34,13 +34,13 @@ let%expect_test "singleton initial model" =
     {|
     <body>
       <div>
-        <button onclick> add new counter </button>
+        <button @on_click> add new counter </button>
       </div>
       <hr> </hr>
       <div>
-        <button onclick> - </button>
+        <button @on_click> - </button>
         13
-        <button onclick> + </button>
+        <button @on_click> + </button>
       </div>
     </body>
     |}]

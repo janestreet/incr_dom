@@ -1,6 +1,6 @@
 (executables
  (modes byte exe)
  (names main)
- (libraries incr_dom incr_dom_counter_example_lib)
+ (libraries core incr_dom incr_dom_counter_example_lib js_of_ocaml)
  (preprocess
   (pps js_of_ocaml-ppx ppx_jane)))

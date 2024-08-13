@@ -3,4 +3,5 @@
  (public_name incr_dom.testing)
  (preprocess
   (pps js_of_ocaml-ppx ppx_jane))
- (libraries incr_dom virtual_dom virtual_dom.vdom_test_helpers))
+ (libraries async_kernel core incr_dom virtual_dom
+   virtual_dom.vdom_test_helpers))

@@ -12,7 +12,8 @@ let%expect_test _ =
   in
   let module H = (val Helpers.make driver) in
   H.show_view ();
-  [%expect {|
+  [%expect
+    {|
     <body>
       <div> 0 </div>
     </body>
@@ -22,7 +23,8 @@ let%expect_test _ =
   H.show_model ();
   [%expect {| ((counter 1)) |}];
   H.show_view ();
-  [%expect {|
+  [%expect
+    {|
     <body>
       <div> 1 </div>
     </body>

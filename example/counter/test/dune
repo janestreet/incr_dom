@@ -1,6 +1,6 @@
 (library
  (name incr_dom_counter_example_test)
- (libraries async_kernel incr_dom_counter_example_lib incr_dom_testing
+ (libraries async_kernel core incr_dom_counter_example_lib incr_dom_testing
    js_of_ocaml)
  (preprocess
   (pps ppx_jane)))

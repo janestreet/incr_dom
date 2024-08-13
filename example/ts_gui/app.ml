@@ -280,7 +280,7 @@ let row_renderer (m : Model.t Incr.t) ~(inject : Action.t -> unit Vdom.Effect.t)
   let focused_column = table_m >>| Ts_table.Model.focus_col in
   let focused_row = table_m >>| Ts_table.Model.focus_row in
   let edit_state = m >>| Model.edit_state in
-  fun ~row_id ~row ->
+  fun ~row_id ~row _ ->
     let mode =
       let%bind focused_row = focused_row in
       let focused = [%compare.equal: Row_id.t option] (Some row_id) focused_row in
@@ -342,7 +342,7 @@ let view table (m : Model.t Incr.t) ~(inject : Action.t -> unit Vdom.Effect.t) =
   let%map table = table >>| Component.view
   and maybe_help_menu =
     match%map m >>| Model.help_text with
-    | None -> Node.none
+    | None -> Node.none_deprecated [@alert "-deprecated"]
     | Some help_text ->
       Node.div
         ~key:"help"

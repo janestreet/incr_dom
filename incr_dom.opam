@@ -18,6 +18,7 @@ depends: [
   "incr_map"
   "incr_select"
   "incremental"
+  "ppx_css"
   "ppx_jane"
   "virtual_dom"
   "dune"            {>= "3.11.0"}

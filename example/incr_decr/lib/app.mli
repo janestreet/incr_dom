@@ -20,6 +20,6 @@ val initial_model_exn : (int * int) list -> Model.t
 
 include
   Incr_dom.App_intf.S
-    with module Model := Model
-     and module Action := Action
-     and type State.t = unit
+  with module Model := Model
+   and module Action := Action
+   and type State.t = unit

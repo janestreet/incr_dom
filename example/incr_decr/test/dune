@@ -1,5 +1,6 @@
 (library
  (name incr_decr_example_test)
- (libraries async_kernel incr_decr_example_lib incr_dom_testing js_of_ocaml)
+ (libraries async_kernel core incr_decr_example_lib incr_dom_testing
+   js_of_ocaml)
  (preprocess
   (pps ppx_jane)))

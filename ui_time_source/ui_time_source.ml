@@ -5,11 +5,9 @@ module Effect = Ui_effect
 type t =
   { incr : Incr.Clock.t
   ; timing_wheel : (unit, unit) Ui_effect.Private.Callback.t Timing_wheel.t
-  ; mutable
-      add_before_advance :
+  ; mutable add_before_advance :
       (Time_ns.t * (unit, unit) Ui_effect.Private.Callback.t) Reversed_list.t
-  ; mutable
-      wait_after_display_callbacks :
+  ; mutable wait_after_display_callbacks :
       (unit, unit) Ui_effect.Private.Callback.t Reversed_list.t
   ; mutable advance_to : Time_ns.t option
   }
@@ -63,8 +61,15 @@ let watch_now t = Incr.Clock.watch_now t.incr
 let at t at = Incr.Clock.at t.incr at
 
 let advance_clock t ~to_ =
-  assert (Time_ns.( >= ) to_ (now t));
-  t.advance_to <- Some to_
+  if Time_ns.( >= ) to_ (now t)
+  then t.advance_to <- Some to_
+  else
+    eprint_s
+      [%message
+        [%here]
+          "time moving backwards"
+          ~now:(now t : Time_ns.Alternate_sexp.t)
+          (to_ : Time_ns.Alternate_sexp.t)]
 ;;
 
 let advance_clock_by t span = advance_clock t ~to_:(Time_ns.add (now t) span)

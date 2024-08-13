@@ -13,13 +13,14 @@ include Comparable.Make (T)
 
 let now () =
   let date = new%js Js.date_now in
-  Time_ns.Span.of_ms date##getTime |> Time_ns.of_span_since_epoch
+  Time_ns.Span.of_ms (Js.float_of_number date##getTime) |> Time_ns.of_span_since_epoch
 ;;
 
 let to_string t =
   let date =
     new%js Js.date_fromTimeValue
-      (Float.of_int64 (Int63.to_int64 (to_int63_ns_since_epoch t)) /. 1e6)
+      (Js.number_of_float
+         (Float.of_int64 (Int63.to_int64 (to_int63_ns_since_epoch t)) /. 1e6))
   in
   let str = date##toTimeString |> Js.to_string in
   fst (String.lsplit2_exn ~on:' ' str)

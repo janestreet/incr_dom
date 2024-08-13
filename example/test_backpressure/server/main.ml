@@ -35,7 +35,10 @@ let create_and_serve
   =
   let module Connection_index = Unique_id.Int () in
   let implementations =
-    Rpc.Implementations.create_exn ~implementations ~on_unknown_rpc:`Raise
+    Rpc.Implementations.create_exn
+      ~implementations
+      ~on_unknown_rpc:`Raise
+      ~on_exception:Log_on_background_exn
   in
   let http_handler =
     let open Cohttp_static_handler in

@@ -20,7 +20,7 @@ module Rect = struct
   let float_width t = t.right -. t.left
 end
 
-let round_float_rect ?(round = Float.iround_nearest_exn) = Rect.map ~f:round
+let round_float_rect ?(round = (Float.iround_nearest_exn :> _ -> _)) = Rect.map ~f:round
 
 type rows_or_columns =
   | Rows
@@ -32,10 +32,10 @@ let innerWidth () = Dom_html.window##.innerWidth
 
 let element_is_in_viewport (elt : Dom_html.element Js.t) =
   let rect = elt##getBoundingClientRect in
-  Float.( >= ) rect##.top 0.
-  && Float.( >= ) rect##.left 0.
-  && Float.( <= ) rect##.bottom (Float.of_int (innerHeight ()))
-  && Float.( <= ) rect##.right (Float.of_int (innerWidth ()))
+  Float.( >= ) (Js.float_of_number rect##.top) 0.
+  && Float.( >= ) (Js.float_of_number rect##.left) 0.
+  && Float.( <= ) (Js.float_of_number rect##.bottom) (Float.of_int (innerHeight ()))
+  && Float.( <= ) (Js.float_of_number rect##.right) (Float.of_int (innerWidth ()))
 ;;
 
 (** Scrolls to the item marked as "keep-in-view" *)
@@ -58,10 +58,10 @@ let scroll ?(id = "keep-in-view") () =
    relative to the view port *)
 let viewport_rect_of_element (elt : Dom_html.element Js.t) : float Rect.t =
   let rect = elt##getBoundingClientRect in
-  { Rect.top = rect##.top
-  ; left = rect##.left
-  ; bottom = rect##.bottom
-  ; right = rect##.right
+  { Rect.top = Js.float_of_number rect##.top
+  ; left = Js.float_of_number rect##.left
+  ; bottom = Js.float_of_number rect##.bottom
+  ; right = Js.float_of_number rect##.right
   }
 ;;
 
@@ -96,7 +96,8 @@ let binary_search (type elt) ~length ~get ~compare mode x =
       let length () = length
     end)
   in
-  Bs.binary_search () ~compare mode x
+  let r = Bs.binary_search () ~compare mode x in
+  [%globalize: int option] r [@nontail]
 ;;
 
 (** Searches through elements indexed from [0] to [length - 1]. *)

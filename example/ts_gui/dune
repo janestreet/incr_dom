@@ -1,6 +1,7 @@
 (executables
  (modes byte exe)
  (names main)
- (libraries incr_dom_partial_render async_kernel virtual_dom.keyboard)
+ (libraries incr_dom_partial_render async_kernel core virtual_dom.css_gen
+   incr_dom js_of_ocaml splay_tree virtual_dom.keyboard)
  (preprocess
   (pps js_of_ocaml-ppx ppx_jane)))

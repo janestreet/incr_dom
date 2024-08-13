@@ -1,6 +1,7 @@
 (executables
  (modes byte exe)
  (names main)
- (libraries incr_dom incr_dom_partial_render)
+ (libraries async_kernel core virtual_dom.css_gen incr_dom
+   incr_dom_partial_render js_of_ocaml)
  (preprocess
   (pps js_of_ocaml-ppx ppx_jane)))
