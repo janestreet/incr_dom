@@ -21,7 +21,7 @@ let on_startup ~schedule_action:_ _model = Deferred.unit
 
 let create model ~old_model:_ ~inject:_ =
   let open Incr.Let_syntax in
-  let%map model = model
+  let%map model
   and time = Incr.Clock.watch_now Incr.clock in
   let apply_action action _ ~schedule_action:_ = Nothing.unreachable_code action in
   let view = time |> Time_ns.to_string_utc |> Vdom.Node.text in

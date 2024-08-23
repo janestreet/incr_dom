@@ -21,7 +21,7 @@ let on_startup ~schedule_action:_ _model = Deferred.unit
 
 let create model ~old_model:_ ~inject:_ =
   let open Incr.Let_syntax in
-  let%map model = model in
+  let%map model in
   let apply_action action _ ~schedule_action:_ = Nothing.unreachable_code action in
   let view = Vdom.Node.text "hello world" in
   Component.create ~apply_action model view

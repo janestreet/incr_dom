@@ -166,7 +166,7 @@ let view model row_view ~inject =
       let inject act = inject (Action.Change_row (key, act)) in
       Row.view ~inject ~row_id:key data)
   in
-  let%map visible_rows_dom = visible_rows_dom
+  let%map visible_rows_dom
   and filter_string = model >>| Model.filter_string
   and start_height, end_height = Row_view.spacer_heights row_view in
   let start_offset = offset_div "start_offset" start_height in
@@ -229,13 +229,12 @@ let create_row_view (model : Model.t Incr.t) =
 let create model ~old_model:_ ~inject =
   let row_view = create_row_view model in
   let%map apply_action =
-    let%map model = model in
+    let%map model in
     apply_action model
   and update_visibility =
-    let%map model = model
-    and row_view = row_view in
+    let%map model and row_view in
     update_visibility model row_view
   and view = view model row_view ~inject
-  and model = model in
+  and model in
   Component.create ~apply_action ~update_visibility model view
 ;;

@@ -38,7 +38,7 @@ module State = struct
 end
 
 let apply_action table (model : Model.t Incr.t) =
-  let%map model = model
+  let%map model
   and table_apply_action = table >>| Component.apply_action in
   fun (action : Action.t) _state ~schedule_action ->
     let schedule_table_action action = schedule_action (Action.Table_action action) in
@@ -70,7 +70,7 @@ module Rn_spec = Incr_dom_partial_render.Row_node_spec
 
 let row_view (row : Row.t Incr.t) =
   let open Vdom in
-  let%bind row = row in
+  let%bind row in
   let text_cell text = { Rn_spec.Cell.attrs = []; nodes = [ Node.text text ] } in
   let cells =
     List.map columns ~f:(fun (_index, _col, to_string) -> text_cell (to_string row))
@@ -155,8 +155,7 @@ let view table (_m : Model.t Incr.t) ~inject:_ =
 ;;
 
 let update_visibility table (m : Model.t Incr.t) =
-  let%map m = m
-  and table = table in
+  let%map m and table in
   fun ~schedule_action ->
     let table =
       Component.update_visibility table ~schedule_action:(fun a ->
@@ -170,6 +169,6 @@ let create model ~old_model ~inject =
   let%map apply_action = apply_action table model
   and update_visibility = update_visibility table model
   and view = view table model ~inject
-  and model = model in
+  and model in
   Component.create ~apply_action ~update_visibility model view
 ;;

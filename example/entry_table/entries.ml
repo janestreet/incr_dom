@@ -162,7 +162,7 @@ let view (m : Model.t Incr.t) ~inject =
   let set_inner_focus fp = inject (Action.Set_inner_focus fp) in
   let focus = m >>| Model.focus in
   let on_keydown =
-    let%map focus = focus in
+    let%map focus in
     Attr.on_keydown (fun ev ->
       match Dom_html.Keyboard_code.of_event ev with
       | KeyK -> inject (Move_outer_focus Prev)
@@ -205,8 +205,7 @@ let view (m : Model.t Incr.t) ~inject =
         | None -> false
         | Some range -> in_range Entry_id.compare range entry_id
       in
-      let%bind name = name
-      and search_string = search_string in
+      let%bind name and search_string in
       if not (Model.name_found_by_search ~search_string name)
       then Incr.const None
       else (
@@ -223,7 +222,7 @@ let view (m : Model.t Incr.t) ~inject =
           Entry.view entry entry_id ~visible ~focus ~focus_me ~set_inner_focus
         in
         Some view))
-  and on_keydown = on_keydown in
+  and on_keydown in
   Node.body ~attrs:[ on_keydown ] (input :: Map.data entries)
 ;;
 
@@ -264,16 +263,15 @@ let on_display ~(old_model : Model.t) (model : Model.t) _ ~schedule_action:_ =
 let create model ~old_model ~inject =
   let open Incr.Let_syntax in
   let%map apply_action =
-    let%map model = model in
+    let%map model in
     apply_action model
   and update_visibility =
-    let%map model = model in
+    let%map model in
     update_visibility model
   and on_display =
-    let%map old_model = old_model
-    and model = model in
+    let%map old_model and model in
     on_display ~old_model model
   and view = view model ~inject
-  and model = model in
+  and model in
   Component.create ~apply_action ~update_visibility ~on_display model view
 ;;

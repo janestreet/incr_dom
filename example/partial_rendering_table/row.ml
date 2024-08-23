@@ -37,7 +37,7 @@ end
 
 let view (model : Model.t Incr.t) ~row_id ~inject =
   let onclick = Vdom.Attr.on_click (fun _ -> inject Action.Increase_font) in
-  let%map model = model in
+  let%map model in
   Vdom.Node.div
     ~key:(Id.to_string row_id)
     ~attrs:
