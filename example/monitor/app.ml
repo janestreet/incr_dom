@@ -98,7 +98,7 @@ let view (m : Model.t Incr.t) ~(inject : Action.t -> unit Vdom.Effect.t) =
       | Some loc -> inject (Set_exn_location loc)
       | None -> Vdom.Effect.Ignore)
   in
-  let%map m = m in
+  let%map m in
   let attr = [ key_handler m ~inject ] in
   let text =
     match m.mode with
@@ -152,15 +152,15 @@ let init ?init_loc monitor ~stop : Model.t =
 let create model ~old_model:_ ~inject =
   let open Incr.Let_syntax in
   let%map apply_action =
-    let%map model = model in
+    let%map model in
     apply_action model
   and update_visibility =
-    let%map model = model in
+    let%map model in
     update_visibility model
   and on_display =
-    let%map model = model in
+    let%map model in
     on_display model
   and view = view model ~inject
-  and model = model in
+  and model in
   Component.create ~apply_action ~update_visibility ~on_display model view
 ;;

@@ -250,7 +250,7 @@ let live_data visible live =
   Incr.if_
     visible
     ~then_:
-      (let%map live = live in
+      (let%map live in
        [ td [] [ Node.text (Float.to_string_12 live.buy) ]
        ; td [] [ Node.text (Float.to_string_12 live.sell) ]
        ])
@@ -271,9 +271,9 @@ let view
   let live = m >>| Model.live in
   let basic = m >>| Model.basic in
   let live_data = live_data visible live in
-  let%bind focus = focus in
+  let%bind focus in
   let%map basic_data, header = basic >>| basic_data_and_header ~set_inner_focus ~focus
-  and live_data = live_data in
+  and live_data in
   let data = Node.tr (basic_data @ live_data) in
   let table =
     let focused =

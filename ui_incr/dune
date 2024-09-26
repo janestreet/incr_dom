@@ -1,6 +1,0 @@
-(library
- (name ui_incr)
- (public_name incr_dom.ui_incr)
- (libraries core incremental incr_map incr_select)
- (preprocess
-  (pps ppx_jane)))

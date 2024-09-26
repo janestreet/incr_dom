@@ -143,7 +143,7 @@ let view (m : Model.t) ~(inject : Action.t -> unit Vdom.Effect.t) =
 
 let create model ~old_model:_ ~inject =
   let open Incr.Let_syntax in
-  let%map model = model in
+  let%map model in
   let apply_action = apply_action model in
   let view = view model ~inject in
   Component.create ~apply_action model view

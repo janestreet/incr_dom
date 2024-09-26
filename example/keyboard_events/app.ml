@@ -35,13 +35,13 @@ let create
   let open Incr.Let_syntax in
   let open Vdom in
   let%map apply_action =
-    let%map model = model in
+    let%map model in
     fun action _ ~schedule_action:_ ->
       match (action : Action.t) with
       | Set_key_code k -> { model with last_key_code = k }
       | Set_text_content s -> { model with text_box_content = s }
   and view =
-    let%map model = model in
+    let%map model in
     let style =
       let ( @> ) = Css_gen.( @> ) in
       Css_gen.width (`Vw (Percent.of_percentage 50.))
@@ -81,7 +81,7 @@ let create
     if Int.rem model.last_key_code 2 = 0
     then Node.div ~attrs:[ Attr.many_without_merge container_attributes ] contents
     else Node.span ~attrs:[ Attr.many_without_merge container_attributes ] contents
-  and model = model in
+  and model in
   (* Note that we don't include [on_display] or [update_visibility], since
      these are optional arguments *)
   Component.create ~apply_action model view

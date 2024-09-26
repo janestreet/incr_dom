@@ -140,7 +140,7 @@ let big_kick (m : Model.t) ids =
 ;;
 
 let apply_action table (m : Model.t Incr.t) =
-  let%map m = m
+  let%map m
   and table_apply_action = table >>| Component.apply_action in
   fun (action : Action.t) state ~schedule_action ->
     let schedule_table_action action = schedule_action (Action.Table_action action) in
@@ -165,8 +165,7 @@ let apply_action table (m : Model.t Incr.t) =
 let search_input_id = "search-input"
 
 let update_visibility table (m : Model.t Incr.t) =
-  let%map m = m
-  and table = table in
+  let%map m and table in
   fun ~schedule_action ->
     let table =
       Component.update_visibility
@@ -282,7 +281,7 @@ let row_renderer (m : Model.t Incr.t) ~(inject : Action.t -> unit Vdom.Effect.t)
   let edit_state = m >>| Model.edit_state in
   fun ~row_id ~row _ ->
     let mode =
-      let%bind focused_row = focused_row in
+      let%bind focused_row in
       let focused = [%compare.equal: Row_id.t option] (Some row_id) focused_row in
       if not focused
       then Incr.const Row.Mode.Unfocused
@@ -297,7 +296,7 @@ let row_renderer (m : Model.t Incr.t) ~(inject : Action.t -> unit Vdom.Effect.t)
     let focus_nth_column col_num =
       inject (Action.Table_action (Ts_table.Action.set_focus_col (Some col_num)))
     in
-    let%bind sort_columns = sort_columns in
+    let%bind sort_columns in
     Row.view
       row
       ~mode
@@ -398,9 +397,9 @@ let maybe_set_edit_focus ~old_model m =
 
 let on_display table ~old_model (m : Model.t Incr.t) =
   let%map table_on_display = table >>| Component.on_display
-  and old_model = old_model
+  and old_model
   and table_extra = table >>| Component.extra
-  and m = m in
+  and m in
   fun state ~schedule_action ->
     (* If the focus has moved, and is now outside the visible range, scroll until the
        focused point is back in view.  *)
@@ -456,7 +455,7 @@ let create model ~old_model ~inject =
   and apply_action = apply_action table model
   and update_visibility = update_visibility table model
   and view = view table model ~inject
-  and model = model in
+  and model in
   Component.create ~apply_action ~update_visibility ~on_display model view
 ;;
 

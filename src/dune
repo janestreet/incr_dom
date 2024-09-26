@@ -3,7 +3,7 @@
  (public_name incr_dom)
  (preprocess
   (pps js_of_ocaml-ppx ppx_jane))
- (libraries js_of_ocaml virtual_dom core async_js async_kernel incremental
-   incr_map incr_select javascript_profiling vdom_file_download
-   virtual_dom.css_gen virtual_dom.ui_effect ui_incr ui_time_source
-   ppx_css.inline_css))
+ (libraries js_of_ocaml virtual_dom core async_js async_kernel bonsai_metrics
+   incremental incr_map incr_select javascript_profiling vdom_file_download
+   virtual_dom.css_gen virtual_dom.ui_effect bonsai_concrete.ui_incr
+   bonsai_concrete.ui_time_source ppx_css.inline_css))

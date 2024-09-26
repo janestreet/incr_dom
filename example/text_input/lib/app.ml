@@ -89,10 +89,10 @@ let view (m : Model.t Incr.t) ~inject =
 let create model ~old_model:_ ~inject =
   let open Incr.Let_syntax in
   let%map apply_action =
-    let%map model = model in
+    let%map model in
     apply_action model
   and view = view model ~inject
-  and model = model in
+  and model in
   Component.create ~apply_action model view
 ;;
 

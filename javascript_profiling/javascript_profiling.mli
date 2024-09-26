@@ -33,5 +33,10 @@ val clear_measures : ?name:string -> unit -> unit
 
 module Manual : sig
   val mark : string -> unit
-  val measure : name:string -> start:string -> end_:string -> unit
+
+  val measure
+    :  name:string
+    -> start:string
+    -> end_:string
+    -> Js_of_ocaml.PerformanceObserver.performanceEntry Js_of_ocaml.Js.t
 end

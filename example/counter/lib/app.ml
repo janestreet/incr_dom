@@ -34,7 +34,7 @@ let create model ~old_model:_ ~inject:_ =
       Vdom.Node.div [ Vdom.Node.text (Int.to_string counter) ]
     in
     Vdom.Node.body [ counter ]
-  and model = model in
+  and model in
   (* Note that we don't include [on_display] or [update_visibility], since
      these are optional arguments *)
   Component.create ~apply_action model view

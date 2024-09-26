@@ -241,7 +241,7 @@ let view model ~inject : Vdom.Node.t Incr.t =
              ~editing_ended
              ~set_text:(fun _elt str ->
                Vdom.Effect.Many [ inject (Action.Set_text (id, str)); editing_ended ]))
-    and model = model
+    and model
     and clear_input = model >>| Model.clear_input in
     let todos = Model.todos model in
     let node =
@@ -309,12 +309,12 @@ let on_display ~old_model _ ~schedule_action =
 let create model ~old_model ~inject =
   let open Incr.Let_syntax in
   let%map apply_action =
-    let%map model = model in
+    let%map model in
     apply_action model
   and on_display =
-    let%map old_model = old_model in
+    let%map old_model in
     on_display ~old_model
   and view = view model ~inject
-  and model = model in
+  and model in
   Component.create ~apply_action ~on_display model view
 ;;

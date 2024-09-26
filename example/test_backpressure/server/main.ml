@@ -114,8 +114,7 @@ let create_and_serve
       vanilla_rpc_server, web_server
   in
   let open Deferred.Or_error.Let_syntax in
-  let%map vanilla_rpc_server = vanilla_rpc_server
-  and web_server = web_server in
+  let%map vanilla_rpc_server and web_server in
   { vanilla_rpc_server; web_server }
 ;;
 

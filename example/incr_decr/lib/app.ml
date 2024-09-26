@@ -88,7 +88,7 @@ let create model ~old_model:_ ~inject =
   (* Here we use Incremental in a trivial way, just having everything recompute every time
      the model changes.  That approach is actually just fine for most small applications.
      Only use Incremental where you need to! *)
-  let%map model = model in
+  let%map model in
   let apply_action = apply_action model in
   let view = view model ~inject in
   Component.create ~apply_action model view

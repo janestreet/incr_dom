@@ -86,8 +86,8 @@ let view (m : Model.t Incr.t) ~inject =
   in
   let%map clicks = m >>| Model.outer_click_count
   and keydowns = m >>| Model.outer_keydown_count
-  and inner_click = inner_click
-  and inner_keydown = inner_keydown in
+  and inner_click
+  and inner_keydown in
   Node.body
     [ Node.p
         [ Node.text
@@ -129,9 +129,9 @@ let view (m : Model.t Incr.t) ~inject =
 
 let create model ~old_model:_ ~inject =
   let%map apply_action =
-    let%map model = model in
+    let%map model in
     apply_action model
   and view = view model ~inject
-  and model = model in
+  and model in
   Component.create ~apply_action model view
 ;;

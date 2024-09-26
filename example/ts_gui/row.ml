@@ -193,7 +193,7 @@ let fade_out_color
   ~(fade_from : Rgb.t)
   ~(fade_to : Rgb.t)
   =
-  let%bind start_time = start_time in
+  let%bind start_time in
   match start_time with
   | None -> return (Rgb.background_style fade_to)
   | Some start_time ->
@@ -209,7 +209,7 @@ let fade_out_color
      | `Solid -> return (Rgb.background_style fade_from)
      | `Default -> return (Rgb.background_style fade_to)
      | `Fading ->
-       let%map now = now in
+       let%map now in
        let elapsed = Time_ns.diff now end_solid in
        let pct_elapsed = Time_ns.Span.(elapsed // fade_for) in
        Rgb.background_style (Rgb.interpolate fade_from fade_to pct_elapsed))
@@ -237,9 +237,7 @@ let view
     | Unfocused -> if is_sort_column then sort_column_color else normal_color
   in
   let last_fill_time = m >>| Model.last_fill in
-  let%bind m = m
-  and mode = mode
-  and focused_column = focused_column in
+  let%bind m and mode and focused_column in
   let editing =
     match mode with
     | Editing -> true

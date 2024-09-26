@@ -4,7 +4,10 @@ class type performance = object
   method mark : Js.js_string Js.t -> unit Js.meth
 
   method measure :
-    Js.js_string Js.t -> Js.js_string Js.t -> Js.js_string Js.t -> unit Js.meth
+    Js.js_string Js.t
+    -> Js.js_string Js.t
+    -> Js.js_string Js.t
+    -> PerformanceObserver.performanceEntry Js.t Js.meth
 
   method clearMarks : Js.js_string Js.t Js.optdef -> unit Js.meth
   method clearMeasures : Js.js_string Js.t Js.optdef -> unit Js.meth
@@ -23,7 +26,8 @@ let record name ~f =
   let () = mark before_name in
   let res = f () in
   let () = mark after_name in
-  measure ~name ~start:before_name ~end_:after_name;
+  measure ~name ~start:before_name ~end_:after_name
+  |> (ignore : PerformanceObserver.performanceEntry Js.t -> unit);
   res
 ;;
 
