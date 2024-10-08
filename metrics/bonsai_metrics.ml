@@ -10,7 +10,8 @@ module For_debugging = struct
   ;;
 end
 
-let document_is_hidden = ref (fun () -> false)
+let document_is_hidden = ref false
+let num_backgrounding_changes = ref 0
 
 module Over_time = struct
   module Collected_at = struct
@@ -253,7 +254,7 @@ module Timing_histograms = struct
     ;;
 
     let observe t datum =
-      let fg_or_bg = if !document_is_hidden () then t.background else t.foreground in
+      let fg_or_bg = if !document_is_hidden then t.background else t.foreground in
       Tracker.observe fg_or_bg datum
     ;;
 
@@ -362,7 +363,7 @@ module Counters = struct
     ;;
 
     let observe t =
-      if not (!document_is_hidden ()) then Tracker.incr t.foreground;
+      if not !document_is_hidden then Tracker.incr t.foreground;
       Tracker.incr t.all
     ;;
 
@@ -427,7 +428,7 @@ module One_off_timings = struct
   let the_one_and_only = Hashtbl.create (module Kind)
 
   let observe kind value =
-    let was_backgrounded = !document_is_hidden () in
+    let was_backgrounded = !document_is_hidden in
     Hashtbl.set
       the_one_and_only
       ~key:kind
@@ -590,10 +591,23 @@ module For_debugging_histograms = struct
   ;;
 end
 
+module Private = struct
+  let set_document_is_hidden is_hidden =
+    if not (Bool.equal is_hidden !document_is_hidden)
+    then (
+      document_is_hidden := is_hidden;
+      incr num_backgrounding_changes)
+  ;;
+
+  let num_backgrounding_changes () = !num_backgrounding_changes
+end
+
 module For_testing = struct
   let clear () =
     Hashtbl.clear Timing_histograms.the_one_and_only;
     Hashtbl.clear Counters.the_one_and_only;
     Hashtbl.clear One_off_timings.the_one_and_only
   ;;
+
+  let set_document_is_hidden = Private.set_document_is_hidden
 end

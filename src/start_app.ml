@@ -9,99 +9,106 @@ module For_mutating_inertness = struct
 end
 
 module Performance_measure = struct
-  type t =
-    (* Startup*)
-    | Bonsai_graph_application
-    | Bonsai_preprocess
-    | Bonsai_gather
-    | Incr_app_creation
-    | First_stabilization
-    | Mount_initial_dom
-    (* Per-frame*)
-    | Whole_animation_frame_loop
-    | Stabilize_for_clock
-    | Update_visibility
-    | Stabilize_for_update_visibility
-    | Apply_actions
-    | Stabilize_for_action
-    | Stabilize_after_all_apply_actions
-    | Diff_vdom
-    | Patch_vdom
-    | On_display_handlers
-    | Start_of_frame_to_start_of_next_frame
-    | End_of_frame_to_start_of_next_frame
-  [@@deriving to_string ~capitalize:"lower sentence case", enumerate]
+  module T = struct
+    type t =
+      (* Startup*)
+      | Bonsai_graph_application
+      | Bonsai_preprocess
+      | Bonsai_gather
+      | Incr_app_creation
+      | First_stabilization
+      | Mount_initial_dom
+      (* Per-frame*)
+      | Whole_animation_frame_loop
+      | Stabilize_for_clock
+      | Update_visibility
+      | Stabilize_for_update_visibility
+      | Apply_actions
+      | Stabilize_for_action
+      | Stabilize_after_all_apply_actions
+      | Diff_vdom
+      | Patch_vdom
+      | On_display_handlers
+      | Start_of_frame_to_start_of_next_frame
+      | End_of_frame_to_start_of_next_frame
+    [@@deriving
+      to_string ~capitalize:"lower sentence case", enumerate, hash, compare, sexp_of]
+  end
 
-  let before_label t = to_string t ^ "before"
-  let after_label t = to_string t ^ "after"
-  let measure_label t = to_string t
+  include T
+
+  let started_timers = Hashtbl.create (module T)
 
   let clear_associated_marks_and_measures () =
-    List.iter all ~f:(fun t ->
-      Performance.clear_marks ~name:(before_label t) ();
-      Performance.clear_marks ~name:(after_label t) ();
-      Performance.clear_measures ~name:(measure_label t) ())
+    List.iter all ~f:(fun t -> Performance.clear_measures ~name:(to_string t) ())
   ;;
 
   let timer_start t ~debug ~profile =
-    if profile
-    then (
-      let before_label = before_label t in
-      Performance.Manual.mark before_label);
-    if debug then Firebug.console##time (Js.string (measure_label t))
+    if profile then Hashtbl.set started_timers ~key:t ~data:(Performance.Timer.start ());
+    if debug then Firebug.console##time (Js.string (to_string t))
   ;;
 
   let timer_stop t ~debug ~profile =
-    let measure_label = lazy (measure_label t) in
-    if profile
-    then (
-      let before_label = before_label t in
-      let after_label = after_label t in
-      Performance.Manual.mark after_label;
-      (* If we decide to always profile, there's a world in which
-         {!clear_associated_marks_and_measures} runs between {!timer_start} and
-         {!timer_stop}, so we should try to avoid creating a DOMException.
-
-         This should only happen if the animation frame callback somehow defers to the
-         clear marks callback - which is highly unlikely. *)
-      try
-        let entry =
-          Performance.Manual.measure
-            ~name:(force measure_label)
-            ~start:before_label
-            ~end_:after_label
-        in
-        let duration =
-          Js.Unsafe.get entry "duration" |> Js.float_of_number |> Time_ns.Span.of_ms
-        in
-        let histogram x = Bonsai_metrics.Timing_histograms.observe x duration in
-        let one_off x = Bonsai_metrics.One_off_timings.observe x duration in
-        match t with
-        | Bonsai_graph_application -> one_off Bonsai_graph_application
-        | Bonsai_preprocess -> one_off Bonsai_preprocess
-        | Bonsai_gather -> one_off Bonsai_gather
-        | Incr_app_creation -> one_off Incr_app_creation
-        | First_stabilization -> one_off First_stabilization
-        | Mount_initial_dom -> one_off Mount_initial_dom
-        | Whole_animation_frame_loop -> histogram Bonsai_whole_frame_loop
-        | Stabilize_for_clock -> histogram Bonsai_stabilization_clock
-        | Update_visibility -> histogram Bonsai_update_visibility
-        | Stabilize_for_update_visibility ->
-          histogram Bonsai_stabilization_update_visibility
-        | Apply_actions -> histogram Bonsai_apply_action
-        | Stabilize_for_action -> histogram Bonsai_stabilization_action
-        | Stabilize_after_all_apply_actions ->
-          histogram Bonsai_stabilization_after_apply_actions
-        | Diff_vdom -> histogram Bonsai_diff_vdom
-        | Patch_vdom -> histogram Bonsai_patch_vdom
-        | On_display_handlers -> histogram Bonsai_display_handlers
-        | Start_of_frame_to_start_of_next_frame ->
-          histogram Bonsai_start_of_frame_to_start_of_next_frame
-        | End_of_frame_to_start_of_next_frame ->
-          histogram Bonsai_end_of_frame_to_start_of_next_frame
-      with
-      | _ -> ());
-    if debug then Firebug.console##timeEnd (Js.string (force measure_label))
+    (match profile, Hashtbl.find started_timers t with
+     | true, Some timer ->
+       let measurement = Performance.Timer.stop timer in
+       (match Performance.Timer.duration measurement with
+        | Backgrounding_changed_unreliable _ -> ()
+        | Ok duration ->
+          let observe_hist x = Bonsai_metrics.Timing_histograms.observe x duration in
+          let observe_one_off x = Bonsai_metrics.One_off_timings.observe x duration in
+          let observe_hist_and_annotate ?color x =
+            observe_hist x;
+            Performance.measure ?color (to_string t) measurement
+          in
+          let observe_one_off_and_annotate ?color x =
+            observe_one_off x;
+            Performance.measure ?color (to_string t) measurement
+          in
+          (* The color mapping is arbitrary, but roughly:
+          - Bonsai is secondary, vdom is tertiary
+          - Light should draw less attention, dark should draw more. *)
+          (match t with
+           | Bonsai_graph_application ->
+             observe_one_off_and_annotate ~color:Secondary Bonsai_graph_application
+           | Bonsai_preprocess ->
+             observe_one_off_and_annotate ~color:Secondary_light Bonsai_preprocess
+           | Bonsai_gather ->
+             observe_one_off_and_annotate ~color:Secondary_dark Bonsai_gather
+           | Incr_app_creation ->
+             observe_one_off_and_annotate ~color:Secondary_light Incr_app_creation
+           | First_stabilization ->
+             observe_one_off_and_annotate ~color:Secondary_dark First_stabilization
+           | Mount_initial_dom ->
+             observe_one_off_and_annotate ~color:Tertiary Mount_initial_dom
+           | Whole_animation_frame_loop -> observe_hist Bonsai_whole_frame_loop
+           | Stabilize_for_clock ->
+             observe_hist_and_annotate ~color:Secondary_light Bonsai_stabilization_clock
+           | Update_visibility ->
+             observe_hist_and_annotate ~color:Secondary_light Bonsai_update_visibility
+           | Stabilize_for_update_visibility ->
+             observe_hist_and_annotate
+               ~color:Secondary_light
+               Bonsai_stabilization_update_visibility
+           | Apply_actions ->
+             observe_hist_and_annotate ~color:Secondary Bonsai_apply_action
+           | Stabilize_for_action ->
+             observe_hist_and_annotate ~color:Secondary_dark Bonsai_stabilization_action
+           | Stabilize_after_all_apply_actions ->
+             observe_hist_and_annotate
+               ~color:Secondary_dark
+               Bonsai_stabilization_after_apply_actions
+           | Diff_vdom -> observe_hist_and_annotate ~color:Tertiary Bonsai_diff_vdom
+           | Patch_vdom ->
+             observe_hist_and_annotate ~color:Tertiary_dark Bonsai_patch_vdom
+           | On_display_handlers ->
+             observe_hist_and_annotate ~color:Secondary Bonsai_display_handlers
+           | Start_of_frame_to_start_of_next_frame ->
+             observe_hist Bonsai_start_of_frame_to_start_of_next_frame
+           | End_of_frame_to_start_of_next_frame ->
+             observe_hist Bonsai_end_of_frame_to_start_of_next_frame))
+     | false, _ | true, None -> ());
+    if debug then Firebug.console##timeEnd (Js.string (to_string t))
   ;;
 
   module For_bonsai_web_start_only = struct
@@ -516,6 +523,9 @@ let start_bonsai
   (* [Inline_css] and [Async_js] inits are idempotent and so fine to do. *)
   Inline_css.Private.update_if_not_already_updated ();
   Async_js.init ();
+  (* This is only really needed for tests, because the store of timings is global, so we
+     could have old "start" timings around. *)
+  Hashtbl.clear Performance_measure.started_timers;
   don't_wait_for
     (let%bind () = Async_js.document_loaded () in
      warn_if_quirks_mode ();

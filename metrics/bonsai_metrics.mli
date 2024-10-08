@@ -10,9 +10,6 @@ module Histogram = Histogram
     As a side effect, this module listens to the number of incremental nodes
     annotated by Bonsai. *)
 
-(** [document_is_hidden] should be overriden by the "start" call. *)
-val document_is_hidden : (unit -> bool) ref
-
 module Over_time : sig
   module Collected_at : sig
     module Why : sig
@@ -188,4 +185,10 @@ end
 
 module For_testing : sig
   val clear : unit -> unit
+  val set_document_is_hidden : bool -> unit
+end
+
+module Private : sig
+  val set_document_is_hidden : bool -> unit
+  val num_backgrounding_changes : unit -> int
 end

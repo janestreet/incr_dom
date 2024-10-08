@@ -1,6 +1,6 @@
 (library
  (name javascript_profiling)
  (public_name incr_dom.javascript_profiling)
- (libraries js_of_ocaml)
+ (libraries bonsai_metrics core js_of_ocaml)
  (preprocess
   (pps js_of_ocaml-ppx ppx_jane)))
