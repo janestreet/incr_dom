@@ -1,37 +1,76 @@
-(** [record name ~f] will call the function [f] and display
-    the span for its execution in the chrome profiler. *)
-val record : string -> f:(unit -> 'a) -> 'a
+open! Core
 
-(** If [name] is specified, only marks with name [name] will be cleared. Otherwise, all
-    marks in the performance buffer will be cleared.
+(** The browser's `Performance` API provides us with a performant way to measure and record
+    timespans and events of interest. These will be broadcast to `PerformanceObserver`s,
+    and will appear on the "timing" track of any Chrome performance traces.
 
-    Chrome writes marks / measures into 3 places:
-
-    1. The Chrome DevTools Performance panel
-    2. Any [PerformanceObserver]s listening to marks / measures
-    3. An internal, unbounded buffer used to pair marks / measures, and for retrieval
-    via [getEntriesByType].
-
-    [clear_marks] only clears (3).
-
-    If using [PerformanceObserver.observe] and not polling [getEntriesByType], potential
-    issues caused by clearing include:
-
-    - Clearing in between a "start" and "end" mark. This will throw an exception when
-      calling "measure"
-    - Not being able to pull existing marks / measures when using [observe] with the
-      [buffered] option.
+    The `javascript_profiling` library provides bindings to this API.
 *)
-val clear_marks : ?name:string -> unit -> unit
+module Timer : sig
+  type t
+  type measurement
 
-(** If [name] is specified, only measures with name [name] will be cleared. Otherwise, all
+  val start : unit -> t
+  val stop : t -> measurement
+  val record : (unit -> 'a) -> 'a * measurement
+
+  module Duration : sig
+    (** If the tab was backgrounded or unbackgrounded between the start and stop
+        timestamp, the measured duration will be very unreliable.
+
+        Background status is determined by referencing [Bonsai_metrics.Private.num_backgrounding_changes]. *)
+    type t =
+      | Ok of Time_ns.Span.t
+      | Backgrounding_changed_unreliable of Time_ns.Span.t
+    [@@deriving sexp_of]
+  end
+
+  val duration : measurement -> Duration.t
+end
+
+module Dev_tools_color : sig
+  type t =
+    | Primary
+    | Primary_light
+    | Primary_dark
+    | Secondary
+    | Secondary_light
+    | Secondary_dark
+    | Tertiary
+    | Tertiary_light
+    | Tertiary_dark
+    | Error
+  [@@deriving sexp_of, string]
+end
+
+(** [mark] will create a mark on the performance timeline.
+
+    If [prominent] (default false), the mark will be prominently displayed in the DevTools
+    performance trace. *)
+val mark : ?prominent:bool -> ?color:Dev_tools_color.t -> string -> unit
+
+(** [measure name measurement] will create a measure on the Chrome performance timeline.
+
+    If [Measure.duration measurement] is [None], this is a no-op. *)
+val measure
+  :  ?color:Dev_tools_color.t
+  -> ?track:string
+  -> string
+  -> Timer.measurement
+  -> unit
+
+(** [clear_marks] will clear all marks from the buffer that
+    powers Chrome's [getEntriesByType] API.
+
+    If [name] is specified, only marks with name [name] will be cleared. Otherwise, all
     measures in the performance buffer will be cleared.
 
-    See [clear_marks] for more information on when you need to do this and what buffers
-    this operation will affect. *)
+    If using [PerformanceObserver.observe] instead of [getEntriesByType], this should
+    only cause issues if you've created your performance observer with the [buffered]
+    option, and expect to observe entries prior to creation. *)
+val clear_marks : ?name:string -> unit -> unit
+
+(** [clear_all_measures] is like [clear_marks], but for measures. *)
 val clear_measures : ?name:string -> unit -> unit
 
-module Manual : sig
-  val mark : string -> unit
-  val measure : name:string -> start:string -> end_:string -> unit
-end
+val time_since_navigation_start : unit -> Time_ns.Span.t

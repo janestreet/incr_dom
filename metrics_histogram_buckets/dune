@@ -1,0 +1,6 @@
+(library
+ (name prometheus_instrumentation_collector_histogram_buckets)
+ (public_name incr_dom.metrics_histogram_buckets)
+ (libraries core core_kernel.nonempty_list)
+ (preprocess
+  (pps ppx_jane)))

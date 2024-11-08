@@ -43,6 +43,14 @@ end
 module For_profiling : sig
   module Performance_measure : sig
     type t =
+      (* Startup*)
+      | Bonsai_graph_application
+      | Bonsai_preprocess
+      | Bonsai_gather
+      | Incr_app_creation
+      | First_stabilization
+      | Mount_initial_dom
+      (* Per-frame*)
       | Whole_animation_frame_loop
       | Stabilize_for_clock
       | Update_visibility
@@ -55,8 +63,12 @@ module For_profiling : sig
       | On_display_handlers
       | Start_of_frame_to_start_of_next_frame
       | End_of_frame_to_start_of_next_frame
-      | Unknown of string
-    [@@deriving string]
+    [@@deriving to_string]
+
+    module For_bonsai_web_start_only : sig
+      val timer_start : t -> profile:bool -> unit
+      val timer_stop : t -> profile:bool -> unit
+    end
   end
 end
 

@@ -9,82 +9,112 @@ module For_mutating_inertness = struct
 end
 
 module Performance_measure = struct
-  type t =
-    | Whole_animation_frame_loop
-    | Stabilize_for_clock
-    | Update_visibility
-    | Stabilize_for_update_visibility
-    | Apply_actions
-    | Stabilize_for_action
-    | Stabilize_after_all_apply_actions
-    | Diff_vdom
-    | Patch_vdom
-    | On_display_handlers
-    | Start_of_frame_to_start_of_next_frame
-    | End_of_frame_to_start_of_next_frame
-    | Unknown of string [@fallback]
-  [@@deriving string ~capitalize:"lower sentence case", variants]
+  module T = struct
+    type t =
+      (* Startup*)
+      | Bonsai_graph_application
+      | Bonsai_preprocess
+      | Bonsai_gather
+      | Incr_app_creation
+      | First_stabilization
+      | Mount_initial_dom
+      (* Per-frame*)
+      | Whole_animation_frame_loop
+      | Stabilize_for_clock
+      | Update_visibility
+      | Stabilize_for_update_visibility
+      | Apply_actions
+      | Stabilize_for_action
+      | Stabilize_after_all_apply_actions
+      | Diff_vdom
+      | Patch_vdom
+      | On_display_handlers
+      | Start_of_frame_to_start_of_next_frame
+      | End_of_frame_to_start_of_next_frame
+    [@@deriving
+      to_string ~capitalize:"lower sentence case", enumerate, hash, compare, sexp_of]
+  end
 
-  let before_label t = to_string t ^ "before"
-  let after_label t = to_string t ^ "after"
-  let measure_label t = to_string t
+  include T
 
-  let all_except_unknown =
-    let add acc var = var.Variantslib.Variant.constructor :: acc in
-    Variants.fold
-      ~init:[]
-      ~whole_animation_frame_loop:add
-      ~stabilize_for_clock:add
-      ~update_visibility:add
-      ~stabilize_for_update_visibility:add
-      ~apply_actions:add
-      ~stabilize_for_action:add
-      ~stabilize_after_all_apply_actions:add
-      ~diff_vdom:add
-      ~patch_vdom:add
-      ~on_display_handlers:add
-      ~start_of_frame_to_start_of_next_frame:add
-      ~end_of_frame_to_start_of_next_frame:add
-      ~unknown:(fun acc _ -> acc)
-  ;;
+  let started_timers = Hashtbl.create (module T)
 
-  let clear_all_incr_dom_marks_and_measures () =
-    List.iter all_except_unknown ~f:(fun t ->
-      Performance.clear_marks ~name:(before_label t) ();
-      Performance.clear_marks ~name:(after_label t) ();
-      Performance.clear_measures ~name:(measure_label t) ())
+  let clear_associated_marks_and_measures () =
+    List.iter all ~f:(fun t -> Performance.clear_measures ~name:(to_string t) ())
   ;;
 
   let timer_start t ~debug ~profile =
-    if profile
-    then (
-      let before_label = before_label t in
-      Performance.Manual.mark before_label);
-    if debug then Firebug.console##time (Js.string (measure_label t))
+    if profile then Hashtbl.set started_timers ~key:t ~data:(Performance.Timer.start ());
+    if debug then Firebug.console##time (Js.string (to_string t))
   ;;
 
   let timer_stop t ~debug ~profile =
-    let before_label = before_label t in
-    let after_label = after_label t in
-    let measure_label = measure_label t in
-    if profile
-    then (
-      Performance.Manual.mark after_label;
-      (* If we decide to always profile, there's a world in which
-         {!clear_all_incr_dom_marks_and_measures} runs between {!timer_start} and
-         {!timer_stop}, so we should try to avoid creating a DOMException.
-
-         This should only happen if the animation frame callback somehow defers to the
-         clear marks callback - which is highly unlikely. *)
-      try
-        Performance.Manual.measure
-          ~name:measure_label
-          ~start:before_label
-          ~end_:after_label
-      with
-      | _ -> ());
-    if debug then Firebug.console##timeEnd (Js.string measure_label)
+    (match profile, Hashtbl.find started_timers t with
+     | true, Some timer ->
+       let measurement = Performance.Timer.stop timer in
+       (match Performance.Timer.duration measurement with
+        | Backgrounding_changed_unreliable _ -> ()
+        | Ok duration ->
+          let observe_hist x = Bonsai_metrics.Timing_histograms.observe x duration in
+          let observe_one_off x = Bonsai_metrics.One_off_timings.observe x duration in
+          let observe_hist_and_annotate ?color x =
+            observe_hist x;
+            Performance.measure ?color (to_string t) measurement
+          in
+          let observe_one_off_and_annotate ?color x =
+            observe_one_off x;
+            Performance.measure ?color (to_string t) measurement
+          in
+          (* The color mapping is arbitrary, but roughly:
+          - Bonsai is secondary, vdom is tertiary
+          - Light should draw less attention, dark should draw more. *)
+          (match t with
+           | Bonsai_graph_application ->
+             observe_one_off_and_annotate ~color:Secondary Bonsai_graph_application
+           | Bonsai_preprocess ->
+             observe_one_off_and_annotate ~color:Secondary_light Bonsai_preprocess
+           | Bonsai_gather ->
+             observe_one_off_and_annotate ~color:Secondary_dark Bonsai_gather
+           | Incr_app_creation ->
+             observe_one_off_and_annotate ~color:Secondary_light Incr_app_creation
+           | First_stabilization ->
+             observe_one_off_and_annotate ~color:Secondary_dark First_stabilization
+           | Mount_initial_dom ->
+             observe_one_off_and_annotate ~color:Tertiary Mount_initial_dom
+           | Whole_animation_frame_loop -> observe_hist Bonsai_whole_frame_loop
+           | Stabilize_for_clock ->
+             observe_hist_and_annotate ~color:Secondary_light Bonsai_stabilization_clock
+           | Update_visibility ->
+             observe_hist_and_annotate ~color:Secondary_light Bonsai_update_visibility
+           | Stabilize_for_update_visibility ->
+             observe_hist_and_annotate
+               ~color:Secondary_light
+               Bonsai_stabilization_update_visibility
+           | Apply_actions ->
+             observe_hist_and_annotate ~color:Secondary Bonsai_apply_action
+           | Stabilize_for_action ->
+             observe_hist_and_annotate ~color:Secondary_dark Bonsai_stabilization_action
+           | Stabilize_after_all_apply_actions ->
+             observe_hist_and_annotate
+               ~color:Secondary_dark
+               Bonsai_stabilization_after_apply_actions
+           | Diff_vdom -> observe_hist_and_annotate ~color:Tertiary Bonsai_diff_vdom
+           | Patch_vdom ->
+             observe_hist_and_annotate ~color:Tertiary_dark Bonsai_patch_vdom
+           | On_display_handlers ->
+             observe_hist_and_annotate ~color:Secondary Bonsai_display_handlers
+           | Start_of_frame_to_start_of_next_frame ->
+             observe_hist Bonsai_start_of_frame_to_start_of_next_frame
+           | End_of_frame_to_start_of_next_frame ->
+             observe_hist Bonsai_end_of_frame_to_start_of_next_frame))
+     | false, _ | true, None -> ());
+    if debug then Firebug.console##timeEnd (Js.string (to_string t))
   ;;
+
+  module For_bonsai_web_start_only = struct
+    let timer_start = timer_start ~debug:false
+    let timer_stop = timer_stop ~debug:false
+  end
 end
 
 let print_errorf fmt = ksprintf (fun s -> Firebug.console##error (Js.string s)) fmt
@@ -249,8 +279,6 @@ module Debug_flags : sig
     -> debug:bool
     -> stop:unit Deferred.t
     -> t
-
-  val is_any_app_profiling : unit -> bool
 end = struct
   type t =
     { logging_filter : unit -> Logging_filter.t
@@ -310,10 +338,6 @@ end = struct
 
   let multi_line_string_list strings =
     strings |> List.map ~f:(fun str -> "  " ^ str) |> String.concat ~sep:"\n"
-  ;;
-
-  let is_any_app_profiling () =
-    Hashtbl.exists app_states ~f:(fun app_state -> !(app_state.should_profile))
   ;;
 
   let init_global ~app_filters () =
@@ -496,9 +520,11 @@ let start_bonsai
     with type Model.t = model
      and type Action.t = action)
   =
-  (* [Inline_css] and [Async_js] inits are idempotent and so fine to do. *)
-  Inline_css.Private.update_if_not_already_updated ();
+  (* [Async_js] init is idempotent and so fine to do. *)
   Async_js.init ();
+  (* This is only really needed for tests, because the store of timings is global, so we
+     could have old "start" timings around. *)
+  Hashtbl.clear Performance_measure.started_timers;
   don't_wait_for
     (let%bind () = Async_js.document_loaded () in
      warn_if_quirks_mode ();
@@ -530,10 +556,12 @@ let start_bonsai
        end)
      in
      let get_view, get_apply_action, get_update_visibility, get_on_display =
+       Performance_measure.timer_start ~profile ~debug:false Incr_app_creation;
        let obs =
          Incr.observe
            (App.create model ~old_model:model_from_last_display ~inject:Event.inject)
        in
+       Performance_measure.timer_stop ~profile ~debug:false Incr_app_creation;
        let fetch (f : _ App_intf.Private.snapshot -> _) () =
          f (Incr.Observer.value_exn obs)
        in
@@ -542,7 +570,9 @@ let start_bonsai
        , fetch (fun { update_visibility; _ } -> update_visibility)
        , fetch (fun { on_display; _ } -> on_display) )
      in
+     Performance_measure.timer_start ~profile ~debug:false First_stabilization;
      Incr.stabilize ();
+     Performance_measure.timer_stop ~profile ~debug:false First_stabilization;
      App.on_stabilize ();
      let named_logging_filters =
        ("all", Fn.const true) :: ("none", Fn.const false) :: named_logging_filters
@@ -552,11 +582,25 @@ let start_bonsai
        let filter_names = Hashtbl.keys named_logging_filters |> String.Set.of_list in
        Debug_flags.init_app ~app_id:bind_to_element_with_id ~filter_names ~debug ~stop
      in
+     let timer_start s =
+       Performance_measure.timer_start
+         s
+         ~debug:(should_debug ())
+         ~profile:(profile || should_profile ())
+     in
+     let timer_stop s =
+       Performance_measure.timer_stop
+         s
+         ~debug:(should_debug ())
+         ~profile:(profile || should_profile ())
+     in
+     timer_start Mount_initial_dom;
      let html = get_view () in
      let html_dom = Vdom.Node.to_dom html in
      let elem = Dom_html.getElementById_exn bind_to_element_with_id in
      let parent = Option.value_exn ~here:[%here] (Js.Opt.to_option elem##.parentNode) in
      Dom.replaceChild parent html_dom elem;
+     timer_stop Mount_initial_dom;
      (* we make sure to call [viewport_changed] whenever the window resizes or the scroll
         container in which our HTML is located is scrolled. *)
      let call_viewport_changed_on_event event_name where =
@@ -654,18 +698,6 @@ let start_bonsai
        then potentially_refocus_root_element
        else fun () -> ()
      in
-     let timer_start s =
-       Performance_measure.timer_start
-         s
-         ~debug:(should_debug ())
-         ~profile:(profile || should_profile ())
-     in
-     let timer_stop s =
-       Performance_measure.timer_stop
-         s
-         ~debug:(should_debug ())
-         ~profile:(profile || should_profile ())
-     in
      if simulate_body_focus_on_root_element
      then
        (* If a [blur] event results in focus moving to [<body />], we move it back to the
@@ -761,8 +793,10 @@ let start_bonsai
          Incr.stabilize ();
          timer_stop Stabilize_for_action;
          App.on_stabilize ())
-       else if should_debug ()
-       then Firebug.console##debug (Js.string "action applied without stabilizing");
+       else (
+         Bonsai_metrics.Counters.observe Incr_skipped_stabilizations;
+         if should_debug ()
+         then Firebug.console##debug (Js.string "action applied without stabilizing"));
        let new_model =
          (get_apply_action ()) state ~schedule_event:Ui_effect.Expert.handle model action
        in
@@ -851,9 +885,7 @@ let start_bonsai
      Deferred.never ());
   (*
      If the app has enabled profiling, we clear marks / measures occasionally to avoid
-     a memory leak, unless a user has requested profiling. This preserves existing
-     behavior, and allows buffered [PerformanceObserver]s to read old marks / measures on
-     instantiation.
+     a memory leak.
 
      Note that {!Performance.clear_marks} and {!Performance.clear_measures} will only
      clear from the performance buffer. This will not affect the Performance
@@ -862,8 +894,7 @@ let start_bonsai
   if profile
   then
     Clock_ns.every (Time_ns.Span.of_int_sec 2) (fun () ->
-      if not (Debug_flags.is_any_app_profiling ())
-      then Performance_measure.clear_all_incr_dom_marks_and_measures ())
+      Performance_measure.clear_associated_marks_and_measures ())
 ;;
 
 module Private = struct
