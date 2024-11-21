@@ -5,4 +5,4 @@
    core_kernel.nonempty_list
    prometheus_instrumentation_collector_histogram_buckets time_now)
  (preprocess
-  (pps ppx_jane ppx_quick_test)))
+  (pps ppx_jane)))

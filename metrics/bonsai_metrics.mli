@@ -189,6 +189,7 @@ module For_testing : sig
 end
 
 module Private : sig
+  val set_get_time_since_navigation_start : (unit -> Time_ns.Span.t) -> unit
   val set_document_is_hidden : bool -> unit
   val num_backgrounding_changes : unit -> int
 end

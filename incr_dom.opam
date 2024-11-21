@@ -20,14 +20,14 @@ depends: [
   "incr_map"
   "incr_select"
   "incremental"
+  "js_of_ocaml_patches"
   "ppx_css"
   "ppx_jane"
-  "ppx_quick_test"
   "time_now"
   "virtual_dom"
-  "dune"            {>= "3.11.0"}
-  "js_of_ocaml"     {>= "5.1.1" & < "5.7.0"}
-  "js_of_ocaml-ppx" {>= "5.1.1" & < "5.7.0"}
+  "dune"                {>= "3.11.0"}
+  "js_of_ocaml"         {>= "5.1.1" & < "5.7.0"}
+  "js_of_ocaml-ppx"     {>= "5.1.1" & < "5.7.0"}
 ]
 available: arch != "arm32" & arch != "x86_32"
 synopsis: "A library for building dynamic webapps, using Js_of_ocaml"

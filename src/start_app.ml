@@ -520,8 +520,7 @@ let start_bonsai
     with type Model.t = model
      and type Action.t = action)
   =
-  (* [Inline_css] and [Async_js] inits are idempotent and so fine to do. *)
-  Inline_css.Private.update_if_not_already_updated ();
+  (* [Async_js] init is idempotent and so fine to do. *)
   Async_js.init ();
   (* This is only really needed for tests, because the store of timings is global, so we
      could have old "start" timings around. *)

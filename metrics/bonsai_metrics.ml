@@ -13,6 +13,12 @@ end
 let document_is_hidden = ref false
 let num_backgrounding_changes = ref 0
 
+(* In wasm, `Time_now.nanosecond_counter_for_timing` is implemented in terms of the unix
+   epoch. We should be explicit about getting time since navigation start. *)
+let time_since_navigation_start =
+  ref (fun () -> Time_ns.Span.of_int63_ns (Time_now.nanosecond_counter_for_timing ()))
+;;
+
 module Over_time = struct
   module Collected_at = struct
     module Why = struct
@@ -36,9 +42,7 @@ module Over_time = struct
       let timestamp, time_since_navigation_start =
         if am_running_test
         then Time_ns.epoch, Time_ns.Span.zero
-        else
-          ( Time_ns.now ()
-          , Time_ns.Span.of_int63_ns (Time_now.nanosecond_counter_for_timing ()) )
+        else Time_ns.now (), !time_since_navigation_start ()
       in
       { why; timestamp; time_since_navigation_start }
     ;;
@@ -79,9 +83,7 @@ module One_off = struct
       let timestamp, time_since_navigation_start =
         if am_running_test
         then Time_ns.epoch, Time_ns.Span.zero
-        else
-          ( Time_ns.now ()
-          , Time_ns.Span.of_int63_ns (Time_now.nanosecond_counter_for_timing ()) )
+        else Time_ns.now (), !time_since_navigation_start ()
       in
       { was_backgrounded; timestamp; time_since_navigation_start }
     ;;
@@ -456,7 +458,7 @@ module One_off_timings = struct
 end
 
 let () =
-  Bonsai.Private.Annotate_incr.on_incr_annotation (fun kind _ ->
+  Bonsai.Private.Annotate_incr.on_incr_annotation (fun ~here:_ kind _ ->
     let our_kind =
       match kind with
       | Bonsai.Private.Annotate_incr.Kind.Input -> Counters.Kind.Incr_node_input
@@ -600,6 +602,7 @@ module Private = struct
   ;;
 
   let num_backgrounding_changes () = !num_backgrounding_changes
+  let set_get_time_since_navigation_start f = time_since_navigation_start := f
 end
 
 module For_testing = struct

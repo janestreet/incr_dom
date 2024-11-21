@@ -145,9 +145,7 @@ let prominent_data_type = Js.Optdef.return (Js.string "marker")
    This code is a bit fragile, because if we add a field, we might forget to set it.
    However, because we're setting every field every time, there's no risk of stale field
    values sticking around. *)
-let mark ?(prominent = false) ?color ?track name =
-  Mark_options.the_one_and_only##.detail##.devtools##.track
-  := Js.Optdef.option (Option.map track ~f:Js.string);
+let mark ?(prominent = false) ?color name =
   Mark_options.the_one_and_only##.detail##.devtools##.color
   := Js.Optdef.option
        (Option.map color ~f:(fun x -> Js.string (Dev_tools_color.to_string x)));
@@ -176,4 +174,8 @@ let clear_marks ?name () =
 
 let clear_measures ?name () =
   (perf ())##clearMeasures (Js.Optdef.map (Js.Optdef.option name) Js.string)
+;;
+
+let time_since_navigation_start () =
+  Time_ns.Span.of_ms (Js.float_of_number (perf ())##now)
 ;;

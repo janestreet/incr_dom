@@ -25,9 +25,6 @@ module Timer : sig
     [@@deriving sexp_of]
   end
 
-  (** Returns [None] if the tab was backgrounded or unbackgrounded between
-      the start and stop timestamp, which makes the result very unreliable.
-  *)
   val duration : measurement -> Duration.t
 end
 
@@ -50,7 +47,7 @@ end
 
     If [prominent] (default false), the mark will be prominently displayed in the DevTools
     performance trace. *)
-val mark : ?prominent:bool -> ?color:Dev_tools_color.t -> ?track:string -> string -> unit
+val mark : ?prominent:bool -> ?color:Dev_tools_color.t -> string -> unit
 
 (** [measure name measurement] will create a measure on the Chrome performance timeline.
 
@@ -75,3 +72,5 @@ val clear_marks : ?name:string -> unit -> unit
 
 (** [clear_all_measures] is like [clear_marks], but for measures. *)
 val clear_measures : ?name:string -> unit -> unit
+
+val time_since_navigation_start : unit -> Time_ns.Span.t

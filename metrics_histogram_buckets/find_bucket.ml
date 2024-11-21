@@ -8,7 +8,7 @@ open Core
   let func name modname =
     printf
       {|
-        let[@inline never] %s arr value =
+        let %s arr value =
           let rec loop arr i last_index value =
             if %s.(<=) value arr.(i)
             then i
@@ -29,7 +29,7 @@ open Core
     [ "float", "Float"; "int", "Int"; "span", "Time_ns.Span" ]
     ~f:(fun (fname, mname) -> func fname mname)
 *)
-let[@inline never] float arr value =
+let float arr value =
   let rec loop arr i last_index value =
     if Float.( <= ) value arr.(i)
     then i
@@ -42,7 +42,7 @@ let[@inline never] float arr value =
   loop arr 0 (Array.length arr - 1) value
 ;;
 
-let[@inline never] int arr value =
+let int arr value =
   let rec loop arr i last_index value =
     if Int.( <= ) value arr.(i)
     then i
@@ -55,7 +55,7 @@ let[@inline never] int arr value =
   loop arr 0 (Array.length arr - 1) value
 ;;
 
-let[@inline never] span arr value =
+let span arr value =
   let rec loop arr i last_index value =
     if Time_ns.Span.( <= ) value arr.(i)
     then i
