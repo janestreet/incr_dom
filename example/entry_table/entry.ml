@@ -26,7 +26,7 @@ module Model = struct
     ;;
   end
 
-  (** The part of the model that changes rarely.  We've segmented this into a separate
+  (** The part of the model that changes rarely. We've segmented this into a separate
       record to make it more efficient to recognize that nothing here has changed. *)
   module Basic = struct
     type t =
@@ -208,8 +208,8 @@ let header ~collapsed ~set_inner_focus focus =
      @ live_header)
 ;;
 
-(** Computes the header and the data corresponding to the slow changing part of the
-    view.  Note that the code here doesn't depend on the live part of the model, which is
+(** Computes the header and the data corresponding to the slow changing part of the view.
+    Note that the code here doesn't depend on the live part of the model, which is
     important for performance reasons. *)
 let basic_data_and_header ~set_inner_focus ~focus (basic : Model.Basic.t) =
   (* Note that the returned incremental only fully fires when the field in question

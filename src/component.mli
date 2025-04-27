@@ -1,9 +1,9 @@
 (** A [Component] captures the basic operations that need to be provided in order to build
-    an Incr_dom app.  The same type can be used both at the top-level of an app,
-    as well as for defining individual components within a larger app.
+    an Incr_dom app. The same type can be used both at the top-level of an app, as well as
+    for defining individual components within a larger app.
 
     The {!Component.t} is often constructed incrementally, and is always created
-    incrementally at the top-level, as is required by {!App_intf.S}.  *)
+    incrementally at the top-level, as is required by {!App_intf.S}. *)
 
 open Virtual_dom
 
@@ -38,7 +38,7 @@ val apply_action
 
     Note that changes in visibility could trigger changes to the DOM that in turn cause
     the page to reflow. This can cause more changes in visibility, which can lead to an
-    infinite loop.  Such behavior is a bug in the component, but the framework doesn't
+    infinite loop. Such behavior is a bug in the component, but the framework doesn't
     attempt to stop cascading sequences of [update_visibility], so that these bugs are not
     hidden. *)
 val update_visibility
@@ -50,7 +50,7 @@ val update_visibility
 val view : _ with_extra -> Vdom.Node.t
 
 (** [extra] allows you to expose extra information that was derived from the model. Note
-    that for most components, [extra] has type [unit].  *)
+    that for most components, [extra] has type [unit]. *)
 val extra : (_, _, _, 'extra) with_extra -> 'extra
 
 (** [on_display] is called every time the DOM is updated, with the model just before the
@@ -62,14 +62,13 @@ val on_display
   -> unit
 
 (** Though this create function is not incremental, it is usually called in the context of
-    an incremental computation function, like the one in {!App_intf.S}. If some
-    arguments are not supplied, defaults (which either return the model supplied or unit)
-    are included in the component.
+    an incremental computation function, like the one in {!App_intf.S}. If some arguments
+    are not supplied, defaults (which either return the model supplied or unit) are
+    included in the component.
 
     Note that the functions [apply_action], [update_visibility] and [on_display] are
     allowed to perform effects, but the incremental computation that produces [create]
-    should itself be functional.
-*)
+    should itself be functional. *)
 val create
   :  ?apply_action:('action -> 'state -> schedule_action:('action -> unit) -> 'model)
   -> ?update_visibility:(schedule_action:('action -> unit) -> 'model)

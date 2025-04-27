@@ -85,7 +85,7 @@ let client_rect () =
   }
 ;;
 
-(** Simple wrapper for the binary-search functor   *)
+(** Simple wrapper for the binary-search functor *)
 let binary_search (type elt) ~length ~get ~compare mode x =
   let module Bs =
     Binary_searchable.Make (struct

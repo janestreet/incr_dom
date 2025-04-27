@@ -42,18 +42,8 @@ let view_resize_observer =
             Js_of_ocaml.Js.to_array entries
             |> Array.to_list
             |> List.iter ~f:(fun entry ->
-              let width =
-                entry##.contentRect##.width
-                |> Js.Optdef.to_option
-                |> Option.value_exn
-                |> Js.float_of_number
-              in
-              let height =
-                entry##.contentRect##.height
-                |> Js.Optdef.to_option
-                |> Option.value_exn
-                |> Js.float_of_number
-              in
+              let width = entry##.contentRect##.width |> Js.float_of_number in
+              let height = entry##.contentRect##.height |> Js.float_of_number in
               div##.textContent
               := Js.Opt.return (Js.string (sprintf "%f x %f" width height))))
           ()

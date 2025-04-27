@@ -101,7 +101,7 @@ module Action = struct
 end
 
 (** Make sure that the number in question has at most two digits after the decimal point,
-    so they render more cleanly.  *)
+    so they render more cleanly. *)
 let fix_digits x = Float.round (x *. 100.) /. 100.
 
 let kick_price (m : Model.t) =

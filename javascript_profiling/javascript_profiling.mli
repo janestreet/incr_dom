@@ -1,11 +1,11 @@
 open! Core
 
-(** The browser's `Performance` API provides us with a performant way to measure and record
-    timespans and events of interest. These will be broadcast to `PerformanceObserver`s,
-    and will appear on the "timing" track of any Chrome performance traces.
+(** The browser's `Performance` API provides us with a performant way to measure and
+    record timespans and events of interest. These will be broadcast to
+    `PerformanceObserver`s, and will appear on the "timing" track of any Chrome
+    performance traces.
 
-    The `javascript_profiling` library provides bindings to this API.
-*)
+    The `javascript_profiling` library provides bindings to this API. *)
 module Timer : sig
   type t
   type measurement
@@ -18,7 +18,8 @@ module Timer : sig
     (** If the tab was backgrounded or unbackgrounded between the start and stop
         timestamp, the measured duration will be very unreliable.
 
-        Background status is determined by referencing [Bonsai_metrics.Private.num_backgrounding_changes]. *)
+        Background status is determined by referencing
+        [Bonsai_metrics.Private.num_backgrounding_changes]. *)
     type t =
       | Ok of Time_ns.Span.t
       | Backgrounding_changed_unreliable of Time_ns.Span.t
@@ -59,15 +60,15 @@ val measure
   -> Timer.measurement
   -> unit
 
-(** [clear_marks] will clear all marks from the buffer that
-    powers Chrome's [getEntriesByType] API.
+(** [clear_marks] will clear all marks from the buffer that powers Chrome's
+    [getEntriesByType] API.
 
     If [name] is specified, only marks with name [name] will be cleared. Otherwise, all
     measures in the performance buffer will be cleared.
 
-    If using [PerformanceObserver.observe] instead of [getEntriesByType], this should
-    only cause issues if you've created your performance observer with the [buffered]
-    option, and expect to observe entries prior to creation. *)
+    If using [PerformanceObserver.observe] instead of [getEntriesByType], this should only
+    cause issues if you've created your performance observer with the [buffered] option,
+    and expect to observe entries prior to creation. *)
 val clear_marks : ?name:string -> unit -> unit
 
 (** [clear_all_measures] is like [clear_marks], but for measures. *)
