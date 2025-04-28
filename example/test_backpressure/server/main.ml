@@ -20,7 +20,11 @@ let subscribe () () =
 ;;
 
 let implementations =
-  [ Rpc.Pipe_rpc.implement Backpressure_test_shared.Protocol.Fibonacci.t subscribe ]
+  [ Rpc.Pipe_rpc.implement
+      Backpressure_test_shared.Protocol.Fibonacci.t
+      subscribe
+      ~leave_open_on_exception:true
+  ]
 ;;
 
 module Mode = struct

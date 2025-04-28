@@ -1,9 +1,9 @@
 open! Core
 open Incr_dom
 
-(** The [Model] represents the full state of the application.  The module has methods for
+(** The [Model] represents the full state of the application. The module has methods for
     updating the model as well, which will be used when applying actions, in the
-    [apply_action] function below.  *)
+    [apply_action] function below. *)
 module Model = struct
   type t = { counters : int Int.Map.t } [@@deriving sexp, equal]
 
@@ -21,25 +21,24 @@ module Model = struct
   ;;
 
   (** It's important to specify a cutoff function that returns false if the models differ
-      in any way.  Otherwise, you can get weird behavior where the application doesn't
-      update in the expected way when the model changes.  Basing this on a derived
-      equality or comparison function is a good way to do this.
+      in any way. Otherwise, you can get weird behavior where the application doesn't
+      update in the expected way when the model changes. Basing this on a derived equality
+      or comparison function is a good way to do this.
 
       Note that the need for a cutoff function means that you need to avoid models that
-      can't be checked for equality.  So, for example, including functions in your model
-      is problematic. *)
+      can't be checked for equality. So, for example, including functions in your model is
+      problematic. *)
   let cutoff t1 t2 = equal t1 t2
 end
 
 (** The [Action] type represents transactions whose purpose is to update the model, and
     maybe kick off other imperative actions.
 
-    Note that the design of the action type is important!  In particular, you could
-    imagine having [update] set an absolute value for the counter, rather than a diff.
-    This, however, would work quite differently if you quickly clicked the button a few
-    times in a row, before a refresh could occur.  Always be aware when designing the
-    action type that actions will be interpreted at some unpredictable time after they're
-    initiated. *)
+    Note that the design of the action type is important! In particular, you could imagine
+    having [update] set an absolute value for the counter, rather than a diff. This,
+    however, would work quite differently if you quickly clicked the button a few times in
+    a row, before a refresh could occur. Always be aware when designing the action type
+    that actions will be interpreted at some unpredictable time after they're initiated. *)
 module Action = struct
   type t =
     | New_counter
@@ -50,8 +49,8 @@ module Action = struct
   [@@deriving sexp]
 end
 
-(** The state is for holding real imperative state, like RPC connections.  We have none of
-    those here, so we make it trivial.  *)
+(** The state is for holding real imperative state, like RPC connections. We have none of
+    those here, so we make it trivial. *)
 module State = struct
   type t = unit
 end

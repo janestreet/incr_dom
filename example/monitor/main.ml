@@ -17,7 +17,7 @@ let () =
   let monitor = Monitor.create ~name:"My monitor" () in
   let stop = Ivar.create () in
   upon (Ivar.read stop) (fun () ->
-    Firebug.console##log (Js.string "Stopped incr_dom app"));
+    Console.console##log (Js.string "Stopped incr_dom app"));
   let all_messages = ref [] in
   Monitor.detach_and_iter_errors monitor ~f:(fun exn ->
     let exn = Monitor.extract_exn exn in
