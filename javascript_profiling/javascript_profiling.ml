@@ -97,7 +97,7 @@ module Timer = struct
 
   let start () =
     { start_ms = (perf ())##now
-    ; num_backgrounding_changes = Bonsai_metrics.Private.num_backgrounding_changes ()
+    ; num_backgrounding_changes = Ui_metrics.Private.num_backgrounding_changes ()
     }
   ;;
 
@@ -108,7 +108,7 @@ module Timer = struct
         not
           (Int.equal
              num_backgrounding_changes
-             (Bonsai_metrics.Private.num_backgrounding_changes ()))
+             (Ui_metrics.Private.num_backgrounding_changes ()))
     }
   ;;
 

@@ -19,7 +19,7 @@ module Timer : sig
         timestamp, the measured duration will be very unreliable.
 
         Background status is determined by referencing
-        [Bonsai_metrics.Private.num_backgrounding_changes]. *)
+        [Ui_metrics.Private.num_backgrounding_changes]. *)
     type t =
       | Ok of Time_ns.Span.t
       | Backgrounding_changed_unreliable of Time_ns.Span.t

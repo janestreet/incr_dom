@@ -49,8 +49,8 @@ let timer_stop { timer; event; profile; debug } =
     match Performance.Timer.duration measurement with
     | Backgrounding_changed_unreliable _ -> ()
     | Ok duration ->
-      let observe_hist x = Bonsai_metrics.Timing_histograms.observe x duration in
-      let observe_one_off x = Bonsai_metrics.One_off_timings.observe x duration in
+      let observe_hist x = Ui_metrics.Timing_histograms.observe x duration in
+      let observe_one_off x = Ui_metrics.One_off_timings.observe x duration in
       let observe_hist_and_annotate ?color x =
         observe_hist x;
         Performance.measure ?color (to_string event) measurement
