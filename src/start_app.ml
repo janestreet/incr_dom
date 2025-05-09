@@ -207,7 +207,7 @@ let start_bonsai
          time Stabilize_for_action ~f:(fun () -> Incr.stabilize ());
          App.on_stabilize ())
        else (
-         Bonsai_metrics.Counters.observe Incr_skipped_stabilizations;
+         Ui_metrics.Counters.observe Incr_skipped_stabilizations;
          if should_debug ()
          then Console.console##debug (Js.string "action applied without stabilizing"));
        let new_model =

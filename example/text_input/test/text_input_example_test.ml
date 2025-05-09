@@ -20,7 +20,7 @@ let%expect_test "default model" =
     {|
     <body>
       <div> No submissions yet </div>
-      <input id="input" type="text" #value="Default #0" @on_input> </input>
+      <input id="input" type="text" #value="Default #0" @on_input/>
       <button id="submit" @on_click> Submit </button>
       <button id="reset" @on_click> Reset </button>
       <button id="increment" @on_click> Increment </button>
@@ -37,7 +37,7 @@ let%expect_test "submit with default" =
     {|
     <body>
       <div> Your latest submission was: Default #0 </div>
-      <input id="input" type="text" #value="Default #0" @on_input> </input>
+      <input id="input" type="text" #value="Default #0" @on_input/>
       <button id="submit" @on_click> Submit </button>
       <button id="reset" @on_click> Reset </button>
       <button id="increment" @on_click> Increment </button>
@@ -56,7 +56,7 @@ let%expect_test "Increment twice and then submit" =
     {|
     <body>
       <div> Your latest submission was: Default #2 </div>
-      <input id="input" type="text" #value="Default #2" @on_input> </input>
+      <input id="input" type="text" #value="Default #2" @on_input/>
       <button id="submit" @on_click> Submit </button>
       <button id="reset" @on_click> Reset </button>
       <button id="increment" @on_click> Increment </button>
@@ -74,7 +74,7 @@ let%expect_test "Set value and then submit" =
     {|
     <body>
       <div> Your latest submission was: hello world </div>
-      <input id="input" type="text" #value="hello world" @on_input> </input>
+      <input id="input" type="text" #value="hello world" @on_input/>
       <button id="submit" @on_click> Submit </button>
       <button id="reset" @on_click> Reset </button>
       <button id="increment" @on_click> Increment </button>
@@ -93,7 +93,7 @@ let%expect_test "Set value and then increment" =
     {|
     <body>
       <div> Your latest submission was: Default #1 </div>
-      <input id="input" type="text" #value="Default #1" @on_input> </input>
+      <input id="input" type="text" #value="Default #1" @on_input/>
       <button id="submit" @on_click> Submit </button>
       <button id="reset" @on_click> Reset </button>
       <button id="increment" @on_click> Increment </button>

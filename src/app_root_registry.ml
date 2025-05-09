@@ -23,18 +23,20 @@ let unregister_app_root handle = Hashtbl.remove global_app_roots handle
 let connected_app_roots () =
   Hashtbl.data global_app_roots
   |> List.filter_map ~f:(fun (handle, element_ref) ->
-    let element = !element_ref in
-    let element' : < isConnected : bool Js.t Js.readonly_prop > Js.t =
-      Js.Unsafe.coerce element
-    in
-    if Js.to_bool element'##.isConnected
-    then Some element
-    else (
-      print_s
-        [%message
-          "BUG! There should never be a disconnected app root. Perhaps you forgot to \
-           call [Handle.stop] on your Bonsai app handle?"];
-      Console.console##error_2 (Js.string "Disconnected app root: ") element;
-      unregister_app_root handle;
-      None))
+    match Js.Opt.to_option (Dom_html.CoerceTo.element !element_ref) with
+    | None -> None
+    | Some element ->
+      let element' : < isConnected : bool Js.t Js.readonly_prop > Js.t =
+        Js.Unsafe.coerce element
+      in
+      if Js.to_bool element'##.isConnected
+      then Some element
+      else (
+        print_s
+          [%message
+            "BUG! There should never be a disconnected app root. Perhaps you forgot to \
+             call [Handle.stop] on your Bonsai app handle?"];
+        Console.console##error_2 (Js.string "Disconnected app root: ") element;
+        unregister_app_root handle;
+        None))
 ;;
