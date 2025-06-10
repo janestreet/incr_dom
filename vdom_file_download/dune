@@ -3,5 +3,5 @@
  (public_name incr_dom.vdom_file_download)
  (preprocess
   (pps js_of_ocaml-ppx ppx_jane))
- (libraries core virtual_dom.css_gen js_of_ocaml js_of_ocaml_patches
-   virtual_dom.ui_effect virtual_dom))
+ (libraries core virtual_dom.css_gen js_of_ocaml virtual_dom.ui_effect
+   virtual_dom))
