@@ -8,17 +8,17 @@ used in the websocket RPC implementation.  The easiest symptom of the bug to
 observe is that `Pipe.write` returns a `Deferred` that completes immediately
 rather than completing when the data is actually written.
 
-## Building 
+## Building
 
 Use this in your jbuild start file to build all the correct targets.
 ```
-(alias %{root}/lib/incr_dom/DEFAULT)
-(alias %{root}/lib/incr_dom/javascript-DEFAULT)
+(alias %{root}/lib/incr_dom/default)
+(alias %{root}/lib/incr_dom/javascript-default)
 ```
 
 ## Running
 
-Start the server with this command: 
+Start the server with this command:
 
 ```bash
 ./server/main.exe server ./web_client/main.bc.js
@@ -34,7 +34,7 @@ and pointing your browser to the url that the server is hosting.
 
 ## The repro
 
-When running the native client, eventually, the server will encounter pushback 
-and will stop sending messages.  However, when using the web client, the server 
-will keep publishing until a queue somewhere explodes.  This issue is still 
+When running the native client, eventually, the server will encounter pushback
+and will stop sending messages.  However, when using the web client, the server
+will keep publishing until a queue somewhere explodes.  This issue is still
 under investigation.

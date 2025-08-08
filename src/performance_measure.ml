@@ -64,10 +64,10 @@ let timer_stop { timer; event; profile; debug } =
           - Light should draw less attention, dark should draw more. *)
       (match event with
        | Bonsai_graph_application ->
-         observe_one_off_and_annotate ~color:Secondary Bonsai_graph_application
+         observe_hist_and_annotate ~color:Secondary Bonsai_graph_application
        | Bonsai_preprocess ->
-         observe_one_off_and_annotate ~color:Secondary_light Bonsai_preprocess
-       | Bonsai_gather -> observe_one_off_and_annotate ~color:Secondary_dark Bonsai_gather
+         observe_hist_and_annotate ~color:Secondary_light Bonsai_preprocess
+       | Bonsai_gather -> observe_hist_and_annotate ~color:Secondary_dark Bonsai_gather
        | Incr_app_creation ->
          observe_one_off_and_annotate ~color:Secondary_light Incr_app_creation
        | First_stabilization ->

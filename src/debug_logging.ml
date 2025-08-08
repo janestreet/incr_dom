@@ -222,15 +222,13 @@ let maybe_log_action { Action_logging.filter; named_logging_filters } ~sexp_of_a
       false
   in
   let named_filter_blang_cache =
-    Core.Memo.of_comparable
-      (module Filter.String_blang)
-      (fun blang ->
-        let filter = Hashtbl.find_exn named_logging_filters in
-        safe_filter
-          ~name:(sprintf !"named filter blang \"%{sexp:string Blang.t}\"" blang)
-          (match blang with
-           | Base name -> filter name
-           | _ -> fun action -> Blang.eval blang (fun name -> filter name action)))
+    Core.Memo.of_comparator (module Filter.String_blang) (fun blang ->
+      let filter = Hashtbl.find_exn named_logging_filters in
+      safe_filter
+        ~name:(sprintf !"named filter blang \"%{sexp:string Blang.t}\"" blang)
+        (match blang with
+         | Base name -> filter name
+         | _ -> fun action -> Blang.eval blang (fun name -> filter name action)))
   in
   fun action ->
     let should_log_action =
