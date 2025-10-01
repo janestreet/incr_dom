@@ -109,6 +109,7 @@ let create_and_serve
       in
       let web_server =
         Simple_web_server.create
+          ~gzip_behavior:`On_every_request
           ~authorize:Krb_http.Authorize.accept_all
           ~rpc_config:(rpc_config Fn.id)
           ~on_handler_error:(`Call on_handler_error)
