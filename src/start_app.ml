@@ -94,7 +94,7 @@ let start_bonsai
        Vdom.Effect.Define (struct
          module Action = App.Action
 
-         let handle action = Queue.enqueue action_queue action
+         let handle action ~on_exn:_ = Queue.enqueue action_queue action
        end)
      in
      let visibility = Visibility.create_as_dirty () in
@@ -173,7 +173,9 @@ let start_bonsai
      call_viewport_changed_on_event "resize" Dom_html.window;
      let%bind state =
        App.on_startup
-         ~schedule_action:(fun a -> Ui_effect.Expert.handle (Event.inject a))
+         ~schedule_action:(fun a ->
+           Ui_effect.Expert.handle (Event.inject a) ~on_exn:(fun exn ->
+             Exn.reraise exn "Unhandled exception raised in effect"))
          (Incr.Var.value model_v)
      in
      let prev_html = ref html in
@@ -185,7 +187,9 @@ let start_bonsai
        Visibility.mark_clean visibility;
        let new_model =
          (get_update_visibility ())
-           ~schedule_event:Ui_effect.Expert.handle
+           ~schedule_event:
+             (Ui_effect.Expert.handle ~on_exn:(fun exn ->
+                Exn.reraise exn "Unhandled exception raised in effect"))
            (Incr.Var.latest_value model_v)
        in
        Incr.Var.set model_v new_model;
@@ -211,7 +215,13 @@ let start_bonsai
          if should_debug ()
          then Console.console##debug (Js.string "action applied without stabilizing"));
        let new_model =
-         (get_apply_action ()) state ~schedule_event:Ui_effect.Expert.handle model action
+         (get_apply_action ())
+           state
+           ~schedule_event:
+             (Ui_effect.Expert.handle ~on_exn:(fun exn ->
+                Exn.reraise exn "Unhandled exception raised in effect"))
+           model
+           action
        in
        App.on_action_application action;
        new_model
@@ -276,7 +286,11 @@ let start_bonsai
            prev_html := html;
            prev_elt := elt));
        time On_display_handlers ~f:(fun () ->
-         (get_on_display ()) state ~schedule_event:Ui_effect.Expert.handle);
+         (get_on_display ())
+           state
+           ~schedule_event:
+             (Ui_effect.Expert.handle ~on_exn:(fun exn ->
+                Exn.reraise exn "Unhandled exception raised in effect")));
        Incr.Var.set model_from_last_display_v (Incr.Var.value model_v);
        if should_debug () then Console.console##debug (Js.string "-------");
        (* Restoring focus from the [<body />] to the app root should mostly be handled by

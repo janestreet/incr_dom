@@ -222,7 +222,7 @@ let maybe_log_action { Action_logging.filter; named_logging_filters } ~sexp_of_a
       false
   in
   let named_filter_blang_cache =
-    Core.Memo.of_comparable (module Filter.String_blang) (fun blang ->
+    Core.Memo.of_comparator (module Filter.String_blang) (fun blang ->
       let filter = Hashtbl.find_exn named_logging_filters in
       safe_filter
         ~name:(sprintf !"named filter blang \"%{sexp:string Blang.t}\"" blang)

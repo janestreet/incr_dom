@@ -29,7 +29,7 @@ let create
     Vdom.Effect.Define (struct
       module Action = App.Action
 
-      let handle = Queue.enqueue action_queue
+      let handle value ~on_exn:_ = Queue.enqueue action_queue value
     end)
   in
   let inject = Event.inject in
