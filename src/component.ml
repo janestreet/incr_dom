@@ -6,13 +6,26 @@ type ('action, 'model, 'state, 'extra) with_extra =
   ; update_visibility : schedule_action:('action -> unit) -> 'model
   ; view : Vdom.Node.t
   ; on_display : 'state -> schedule_action:('action -> unit) -> unit
+  ; before_display :
+      'state
+      -> schedule_action:('action -> unit)
+      -> apply_actions_recursor:(unit -> unit)
+      -> unit
   ; extra : 'extra
   }
 [@@deriving fields ~getters]
 
 type ('action, 'state, 'model) t = ('action, 'state, 'model, unit) with_extra
 
-let create_with_extra ?apply_action ?update_visibility ?on_display ~extra model view =
+let create_with_extra
+  ?apply_action
+  ?update_visibility
+  ?before_display
+  ?on_display
+  ~extra
+  model
+  view
+  =
   let apply_action =
     Option.value apply_action ~default:(fun _ _ ~schedule_action:_ -> model)
   in
@@ -20,7 +33,12 @@ let create_with_extra ?apply_action ?update_visibility ?on_display ~extra model 
     Option.value update_visibility ~default:(fun ~schedule_action:_ -> model)
   in
   let on_display = Option.value on_display ~default:(fun _ ~schedule_action:_ -> ()) in
-  { apply_action; update_visibility; on_display; extra; view }
+  let before_display =
+    Option.value
+      before_display
+      ~default:(fun _ ~schedule_action:_ ~apply_actions_recursor:_ -> ())
+  in
+  { apply_action; update_visibility; on_display; before_display; extra; view }
 ;;
 
 let create = create_with_extra ~extra:()

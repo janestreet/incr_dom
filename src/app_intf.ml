@@ -108,6 +108,11 @@ module Private = struct
     ; apply_action :
         'state -> schedule_event:(unit Ui_effect.t -> unit) -> 'model -> 'action -> 'model
     ; update_visibility : 'model -> schedule_event:(unit Ui_effect.t -> unit) -> 'model
+    ; before_display :
+        'state
+        -> schedule_event:(unit Ui_effect.t -> unit)
+        -> apply_actions_recursor:(unit -> unit)
+        -> unit
     ; on_display : 'state -> schedule_event:(unit Ui_effect.t -> unit) -> unit
     }
 
