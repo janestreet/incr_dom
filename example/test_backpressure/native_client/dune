@@ -1,6 +1,6 @@
 (executables
  (modes byte exe)
  (names main)
- (libraries async krb core backpressure_test_shared core_unix.command_unix)
+ (libraries async backpressure_test_shared core_unix.command_unix core krb)
  (preprocess
   (pps ppx_jane)))

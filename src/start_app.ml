@@ -106,7 +106,12 @@ let start_bonsai
          let handle = viewport_changed
        end)
      in
-     let get_view, get_apply_action, get_update_visibility, get_on_display =
+     let ( get_view
+         , get_apply_action
+         , get_update_visibility
+         , get_before_display
+         , get_on_display )
+       =
        let obs =
          Performance_measure.time Incr_app_creation ~profile ~debug:false ~f:(fun () ->
            Incr.observe
@@ -118,6 +123,7 @@ let start_bonsai
        ( fetch (fun { view; _ } -> view)
        , fetch (fun { apply_action; _ } -> apply_action)
        , fetch (fun { update_visibility; _ } -> update_visibility)
+       , fetch (fun { before_display; _ } -> before_display)
        , fetch (fun { on_display; _ } -> on_display) )
      in
      Performance_measure.time First_stabilization ~profile ~debug:false ~f:(fun () ->
@@ -264,9 +270,23 @@ let start_bonsai
        App.on_stabilize ();
        time Update_visibility ~f:(fun () ->
          if Visibility.is_dirty visibility then update_visibility ());
-       time Apply_actions ~f:(fun () -> apply_actions (Incr.Var.value model_v));
-       time Stabilize_after_all_apply_actions ~f:(fun () -> Incr.stabilize ());
-       App.on_stabilize ();
+       let apply_actions () =
+         time Apply_actions ~f:(fun () -> apply_actions (Incr.Var.value model_v));
+         time Stabilize_after_all_apply_actions ~f:(fun () -> Incr.stabilize ());
+         App.on_stabilize ()
+       in
+       apply_actions ();
+       let rec before_display_loop () =
+         (get_before_display ())
+           state
+           ~schedule_event:
+             (Ui_effect.Expert.handle ~on_exn:(fun exn ->
+                Exn.reraise exn "Unhandled exception raised in effect"))
+           ~apply_actions_recursor:(fun () ->
+             apply_actions ();
+             before_display_loop ())
+       in
+       before_display_loop ();
        let html = get_view () |> Focus_stealer.maybe_wrap_root_element focus_stealer in
        let patch =
          time Diff_vdom ~f:(fun () ->
@@ -372,11 +392,24 @@ let start
           let schedule_action a = schedule_event (inject a) in
           Component.update_visibility component ~schedule_action
         in
+        let before_display state ~schedule_event ~apply_actions_recursor =
+          let schedule_action a = schedule_event (inject a) in
+          Component.before_display
+            component
+            state
+            ~schedule_action
+            ~apply_actions_recursor
+        in
         let on_display state ~schedule_event =
           let schedule_action a = schedule_event (inject a) in
           Component.on_display component state ~schedule_action
         in
-        { App_intf.Private.view; apply_action; update_visibility; on_display }
+        { App_intf.Private.view
+        ; apply_action
+        ; update_visibility
+        ; on_display
+        ; before_display
+        }
       ;;
     end)
 ;;

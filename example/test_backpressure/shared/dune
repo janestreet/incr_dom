@@ -1,5 +1,5 @@
 (library
  (name backpressure_test_shared)
- (libraries core async_kernel async_rpc_kernel)
+ (libraries async_kernel async_rpc_kernel core)
  (preprocess
   (pps ppx_jane)))

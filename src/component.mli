@@ -61,6 +61,14 @@ val on_display
   -> schedule_action:('action -> unit)
   -> unit
 
+(** [before_display] is called right before the stabilization that produces the DOM. *)
+val before_display
+  :  ('action, _, 'state, _) with_extra
+  -> 'state
+  -> schedule_action:('action -> unit)
+  -> apply_actions_recursor:(unit -> unit)
+  -> unit
+
 (** Though this create function is not incremental, it is usually called in the context of
     an incremental computation function, like the one in {!App_intf.S}. If some arguments
     are not supplied, defaults (which either return the model supplied or unit) are
@@ -72,6 +80,11 @@ val on_display
 val create
   :  ?apply_action:('action -> 'state -> schedule_action:('action -> unit) -> 'model)
   -> ?update_visibility:(schedule_action:('action -> unit) -> 'model)
+  -> ?before_display:
+       ('state
+        -> schedule_action:('action -> unit)
+        -> apply_actions_recursor:(unit -> unit)
+        -> unit)
   -> ?on_display:('state -> schedule_action:('action -> unit) -> unit)
   -> 'model
   -> Vdom.Node.t
@@ -82,6 +95,11 @@ val create
 val create_with_extra
   :  ?apply_action:('action -> 'state -> schedule_action:('action -> unit) -> 'model)
   -> ?update_visibility:(schedule_action:('action -> unit) -> 'model)
+  -> ?before_display:
+       ('state
+        -> schedule_action:('action -> unit)
+        -> apply_actions_recursor:(unit -> unit)
+        -> unit)
   -> ?on_display:('state -> schedule_action:('action -> unit) -> unit)
   -> extra:'extra
   -> 'model
