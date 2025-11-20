@@ -181,7 +181,7 @@ let view (m : Model.t Incr.t) ~inject =
       | Minus -> inject (Entry (focus, Bump Decr))
       | _ -> Vdom.Effect.Ignore)
   in
-  (* Right now, the incrementality of this is terrible.  Waiting on better support from
+  (* Right now, the incrementality of this is terrible. Waiting on better support from
      Incremental. *)
   let input =
     Node.input

@@ -141,7 +141,8 @@ let init_global ~app_filters () =
        let contents = In_channel.read_all filename in
        Vdom_file_download.create ~filename ~mimetype:"plain/text" ~contents
        |> Vdom_file_download.trigger);
-  (* If we are running in jsdom, we don't want to log this starting message to the console. *)
+  (* If we are running in jsdom, we don't want to log this starting message to the
+     console. *)
   let group s ~f =
     if not am_running_test
     then (

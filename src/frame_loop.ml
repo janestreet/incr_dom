@@ -89,8 +89,8 @@ let request_animation_frame callback =
   in
   let set_timeout_id =
     let timeout_callback = Js.wrap_callback (fun _ -> callback ()) in
-    (* 1000 ms = 1s;  Chosen because backgrounded tangle sends requests
-       at approximately this rate. *)
+    (* 1000 ms = 1s; Chosen because backgrounded tangle sends requests at approximately
+       this rate. *)
     let timeout = Js.float 1000.0 in
     Dom_html.window##setTimeout timeout_callback timeout
   in
@@ -98,9 +98,9 @@ let request_animation_frame callback =
 ;;
 
 let start_looping ~is_stopped ~perform_update =
-  (* We use [request_animation_frame] so that browser tells us where it's time to
-     refresh the UI. All the actions will be processed and the changes propagated
-     to the DOM in one frame. *)
+  (* We use [request_animation_frame] so that browser tells us where it's time to refresh
+     the UI. All the actions will be processed and the changes propagated to the DOM in
+     one frame. *)
   let rec callback () =
     if is_stopped ()
     then ()

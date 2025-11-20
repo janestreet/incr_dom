@@ -25,8 +25,8 @@ let trigger { filename; mimetype; contents } =
     in
     let blob =
       (* Don't use [blob_from_string]. That has an attractive type but works by first
-         converting our OCaml string to a Javascript string, which converts to
-         UTF-16. If the string contains random binary data that will distort it. *)
+         converting our OCaml string to a Javascript string, which converts to UTF-16. If
+         the string contains random binary data that will distort it. *)
       File.blob_from_any [ `arrayBuffer contents_bigstr ] ~contentType:mimetype
     in
     let url = Dom_html.window##._URL##createObjectURL blob in
