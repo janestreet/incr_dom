@@ -299,8 +299,8 @@ let view model ~inject : Vdom.Node.t Incr.t =
 let on_startup ~schedule_action:_ _ = Async_kernel.Deferred.unit
 
 let on_display ~old_model _ ~schedule_action =
-  (* If we are displaying when [clear_input] is [true], we can safely
-     set it back to false, since the text entry will now be empty.
+  (* If we are displaying when [clear_input] is [true], we can safely set it back to
+     false, since the text entry will now be empty.
   *)
   if old_model.Model.clear_input then schedule_action (Action.Clear_input false);
   ()

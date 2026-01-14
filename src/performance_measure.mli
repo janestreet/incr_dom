@@ -4,14 +4,14 @@ open! Core
     Bonsai / Incr_dom main loop. *)
 
 type t =
-  (* Startup*)
+  (* Startup *)
   | Bonsai_graph_application
   | Bonsai_preprocess
   | Bonsai_gather
   | Incr_app_creation
   | First_stabilization
   | Mount_initial_dom
-  (* Per-frame*)
+  (* Per-frame *)
   | Whole_animation_frame_loop
   | Stabilize_for_clock
   | Update_visibility

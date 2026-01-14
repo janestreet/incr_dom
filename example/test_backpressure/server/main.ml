@@ -67,7 +67,7 @@ let create_and_serve
           (addr : Socket.Address.Inet.t)
           (i : Connection_index.t)]
     in
-    [%log.global.debug_sexp message];
+    [%log.debug_sexp message];
     don't_wait_for
       (let%map reason = Rpc.Connection.close_reason ~on_close:`started conn in
        let message =
@@ -78,11 +78,11 @@ let create_and_serve
              (addr : Socket.Address.Inet.t)
              (i : Connection_index.t)]
        in
-       [%log.global.debug_sexp message]);
+       [%log.debug_sexp message]);
     ()
   in
   let on_handler_error inet err =
-    [%log.global.error "Error encountered" (inet : Socket.Address.Inet.t) (err : exn)]
+    [%log.error "Error encountered" (inet : Socket.Address.Inet.t) (err : exn)]
   in
   let rpc_config get_principal =
     Simple_web_server.Rpc_config.create

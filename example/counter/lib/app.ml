@@ -35,7 +35,7 @@ let create model ~old_model:_ ~inject:_ =
     in
     Vdom.Node.body [ counter ]
   and model in
-  (* Note that we don't include [on_display] or [update_visibility], since
-     these are optional arguments *)
+  (* Note that we don't include [on_display] or [update_visibility], since these are
+     optional arguments *)
   Component.create ~apply_action model view
 ;;

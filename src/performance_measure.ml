@@ -3,14 +3,14 @@ open Js_of_ocaml
 module Performance = Javascript_profiling
 
 type t =
-  (* Startup*)
+  (* Startup *)
   | Bonsai_graph_application
   | Bonsai_preprocess
   | Bonsai_gather
   | Incr_app_creation
   | First_stabilization
   | Mount_initial_dom
-  (* Per-frame*)
+  (* Per-frame *)
   | Whole_animation_frame_loop
   | Stabilize_for_clock
   | Update_visibility
@@ -60,8 +60,8 @@ let timer_stop { timer; event; profile; debug } =
         Performance.measure ?color (to_string event) measurement
       in
       (* The color mapping is arbitrary, but roughly:
-          - Bonsai is secondary, vdom is tertiary
-          - Light should draw less attention, dark should draw more. *)
+         - Bonsai is secondary, vdom is tertiary
+         - Light should draw less attention, dark should draw more. *)
       (match event with
        | Bonsai_graph_application ->
          observe_hist_and_annotate ~color:Secondary Bonsai_graph_application

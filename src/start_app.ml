@@ -203,9 +203,9 @@ let start_bonsai
        App.on_stabilize ()
      in
      (* It's important that we don't call [Incr.Var.set] within [apply_action] unless
-        we're also going to stabilize. Some code in Bonsai relies on this assumption
-        as part of its [action_requires_stabilization] logic. Breaking this invariant
-        won't break Bonsai code, but it will effectively remove an optimization. *)
+        we're also going to stabilize. Some code in Bonsai relies on this assumption as
+        part of its [action_requires_stabilization] logic. Breaking this invariant won't
+        break Bonsai code, but it will effectively remove an optimization. *)
      let apply_action action model =
        Debug_logging.maybe_log_action
          action_logging
@@ -254,8 +254,8 @@ let start_bonsai
        time Stabilize_for_clock ~f:(fun () ->
          (match am_running_test with
           | false ->
-            (* The clock is set only once per call to perform_update, so that all actions that
-               occur before each display update occur "at the same time." *)
+            (* The clock is set only once per call to perform_update, so that all actions
+               that occur before each display update occur "at the same time." *)
             let now =
               let date = new%js Js.date_now in
               Time_ns.Span.of_ms (Js.to_float date##getTime)
@@ -314,16 +314,17 @@ let start_bonsai
        Incr.Var.set model_from_last_display_v (Incr.Var.value model_v);
        if should_debug () then Console.console##debug (Js.string "-------");
        (* Restoring focus from the [<body />] to the app root should mostly be handled by
-          the [blur] listener above, but we additionally run this check every frame because:
+          the [blur] listener above, but we additionally run this check every frame
+          because:
 
           - We want the root element to start out focused, so perform an initial
-          update/render, then immediately focus the root (unless a non-body element
-          already has focus).
+            update/render, then immediately focus the root (unless a non-body element
+            already has focus).
           - [blur] doesn't run if the currently focused element is removed from the DOM,
-          so we might need to possibly focus-steal after every frame.
+            so we might need to possibly focus-steal after every frame.
 
-          We still want [refocus_on_blur], so that we can respond immediately to most blurs
-          without waiting ~16ms for the next frame.
+          We still want [refocus_on_blur], so that we can respond immediately to most
+          blurs without waiting ~16ms for the next frame.
        *)
        Focus_stealer.maybe_refocus_root_element focus_stealer !prev_elt;
        Performance_measure.timer_stop animation_frame_loop_timer;

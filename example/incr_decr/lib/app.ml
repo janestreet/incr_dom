@@ -85,7 +85,7 @@ let view (m : Model.t) ~(inject : Action.t -> unit Vdom.Effect.t) =
 let create model ~old_model:_ ~inject =
   let open Incr.Let_syntax in
   (* Here we use Incremental in a trivial way, just having everything recompute every time
-     the model changes.  That approach is actually just fine for most small applications.
+     the model changes. That approach is actually just fine for most small applications.
      Only use Incremental where you need to! *)
   let%map model in
   let apply_action = apply_action model in

@@ -54,9 +54,9 @@ let view_resize_observer =
 ;;
 
 let view_colorize_button =
-  (* Each widget gets it's own Type_equal.Id.  You must re-use the same id whenever you
-     want a widget from the previous render to be reused by a new render.  That's why we
-     create the id just once, when [view] is called.  Be careful not to create type ids in
+  (* Each widget gets it's own Type_equal.Id. You must re-use the same id whenever you
+     want a widget from the previous render to be reused by a new render. That's why we
+     create the id just once, when [view] is called. Be careful not to create type ids in
      the body of an incremental computation. *)
   let widget_id =
     Type_equal.Id.create ~name:"my widget type" (fun _ -> Sexp.Atom "<my widget type>")

@@ -402,7 +402,7 @@ let on_display table ~old_model (m : Model.t Incr.t) =
   and m in
   fun state ~schedule_action ->
     (* If the focus has moved, and is now outside the visible range, scroll until the
-       focused point is back in view.  *)
+       focused point is back in view. *)
     maybe_set_edit_focus ~old_model m;
     let editing (model : Model.t) =
       match model.edit_state with

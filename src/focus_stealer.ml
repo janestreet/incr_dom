@@ -10,9 +10,8 @@ let as_focusable : Dom_html.element Js.t -> focusable Js.t = Js.Unsafe.coerce
 
 let potentially_refocus_root_element element =
   let refocus_root_element () =
-    (* If the element to focus is an element, cast it into the
-         more permissive "focusable" type defined at the top of
-         this file, and then focus that. *)
+    (* If the element to focus is an element, cast it into the more permissive "focusable"
+       type defined at the top of this file, and then focus that. *)
     Dom_html.CoerceTo.element element
     |> Js.Opt.to_option
     |> Option.map ~f:as_focusable
@@ -22,18 +21,17 @@ let potentially_refocus_root_element element =
            val preventScroll = Js._true
         end))
   in
-  (* [Js_of_ocaml.Dom_html.document] has the wrong type.
-       It is listed as [Dom_html.element Js.Opt.t Js.t] but should be either
+  (* [Js_of_ocaml.Dom_html.document] has the wrong type. It is listed as
+     [Dom_html.element Js.Opt.t Js.t] but should be either
 
-       - [Dom_html.element Js.Optdef.t Js.t] or
-       - [Dom_html.element Js.Opt.t Js.Optdef.t Js.t].
+     - [Dom_html.element Js.Optdef.t Js.t] or
+     - [Dom_html.element Js.Opt.t Js.Optdef.t Js.t].
 
-       Fortunately, we can "correct" the type by promoting it
-       into an [Optdef.t] and then immediately casting back down to
-       an option.
+     Fortunately, we can "correct" the type by promoting it into an [Optdef.t] and then
+     immediately casting back down to an option.
 
-       This sequence of calls produces this javascript code:
-       {v
+     This sequence of calls produces this javascript code:
+     {v
          var focus_lost;
          var active;
 
@@ -53,7 +51,7 @@ let potentially_refocus_root_element element =
          if (focus_lost && document.hasFocus()) {
            refocus_root_element()
          }
-       v} *)
+     v} *)
   let active =
     Js.Optdef.get
       (Js.Optdef.return Dom_html.document##.activeElement)
@@ -62,8 +60,8 @@ let potentially_refocus_root_element element =
   let focus_lost =
     Js.Opt.case
       active
-      (* refocus if there is no active element. This never seems to happen in Chrome
-           as of v124, but might be the case in other browsers. *)
+      (* refocus if there is no active element. This never seems to happen in Chrome as of
+         v124, but might be the case in other browsers. *)
         (fun () -> true)
       (* refocus if the active element is <body> *)
         (fun active_elt -> Js.Opt.test (Dom_html.CoerceTo.body active_elt))
@@ -78,16 +76,16 @@ let potentially_refocus_root_element element =
   if focus_lost && has_focus then refocus_root_element ()
 ;;
 
-(* As of Chrome v124, [blur] runs both when the [activeElement] changes,
-   and when focus moves to another tab / window:
+(* As of Chrome v124, [blur] runs both when the [activeElement] changes, and when focus
+   moves to another tab / window:
    - In the former case, a [relatedTarget] of [null] means that focus will move to
-   [<body />].
-   - In the latter case, [blur] is dispatched twice; with [relatedTarget] being
-   [null] and [undefined] respectively, but [activeElement] doesn't change.
+     [<body />].
+   - In the latter case, [blur] is dispatched twice; with [relatedTarget] being [null] and
+     [undefined] respectively, but [activeElement] doesn't change.
 
-   That's why it's critical that in [potentially_refocus_root_element], we check
-   that [activeElement] is on the [<body />] or [null],
-   AND that [document.hasFocus()] returns [true].
+   That's why it's critical that in [potentially_refocus_root_element], we check that
+   [activeElement] is on the [<body />] or [null], AND that [document.hasFocus()] returns
+   [true].
 
    We run this on [capture] because [blur] doesn't bubble.
 *)

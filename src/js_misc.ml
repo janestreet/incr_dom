@@ -45,13 +45,15 @@ let scroll ?(id = "keep-in-view") () =
   | Some elt -> if not (element_is_in_viewport elt) then elt##scrollIntoView Js._true
 ;;
 
-(* Not yet supported on Chrome.  Maybe we should use jQuery?
+(* Not yet supported on Chrome. Maybe we should use jQuery?
    {[
      let scroll_into_view (elt : Dom_html.element Js.t) : unit =
-       elt##scrollIntoView (object%js
-         val block = Js.string "start"
-         val behavior = Js.string "smooth"
-       end)
+       elt##scrollIntoView
+         (object%js
+            val block = Js.string "start"
+            val behavior = Js.string "smooth"
+         end)
+     ;;
    ]}
 *)
 (* [viewport_rect_of_element el] gets bounding rect of [elt]. The bounding rect is
