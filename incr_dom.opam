@@ -6,6 +6,7 @@ bug-reports: "https://github.com/janestreet/incr_dom/issues"
 dev-repo: "git+https://github.com/janestreet/incr_dom.git"
 doc: "https://ocaml.janestreet.com/ocaml-core/latest/doc/incr_dom/index.html"
 license: "MIT"
+x-maintenance-intent: ["(latest)"]
 build: [
   ["dune" "build" "-p" name "-j" jobs]
 ]
