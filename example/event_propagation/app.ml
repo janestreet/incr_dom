@@ -62,7 +62,7 @@ let view (m : Model.t Incr.t) ~inject =
     and propagation_stopped = m >>| Model.propagation_stopped in
     let events =
       List.filter_opt
-        [ Option.some_if default_prevented Effect.Prevent_default
+        [ Option.some_if default_prevented (Effect.Prevent_default [@alert "-deprecated"])
         ; Option.some_if propagation_stopped Effect.Stop_propagation
         ]
     in
