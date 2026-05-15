@@ -1,8 +1,0 @@
-(executables
- (modes byte exe)
- (names main)
- (libraries async backpressure_test_shared cohttp_static_handler
-   core_unix.command_unix core http_settings krb krb_http rpc_websocket_jane
-   simple_web_server)
- (preprocess
-  (pps ppx_jane)))
