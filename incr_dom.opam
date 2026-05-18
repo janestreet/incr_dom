@@ -16,6 +16,7 @@ depends: [
   "async_kernel"
   "bonsai_concrete"
   "core"
+  "fastdom"
   "incr_map"
   "incr_select"
   "incremental"
@@ -25,7 +26,7 @@ depends: [
   "js_of_ocaml"     {= "6.0.1+ox"}
   "js_of_ocaml-ppx" {= "6.0.1+ox"}
 ]
-available: arch != "arm32" & arch != "x86_32"
+available: arch != "x86_32"
 synopsis: "A library for building dynamic webapps, using Js_of_ocaml"
 description: "
 The library is designed roughly on a model/view/controller model.
