@@ -1,5 +1,5 @@
 (executables
- (modes byte exe)
+ (modes js byte exe)
  (names main)
  (libraries async_js async_kernel core incr_dom js_of_ocaml)
  (preprocess
