@@ -181,15 +181,17 @@ let view model row_view ~inject =
                 ~attrs:
                   [ Attr.many_without_merge
                       [ Attr.type_ "text"
-                      ; Attr.value filter_string
+                      ; Attr.value_attr filter_string
                       ; filter_string_change
                       ]
                   ]
                 ()
             ; Node.select
                 ~attrs:[ sort_change ]
-                [ Node.option ~attrs:[ Attr.value "Num" ] [ Node.text "Numeric" ]
-                ; Node.option ~attrs:[ Attr.value "Native" ] [ Node.text "Lexicographic" ]
+                [ Node.option ~attrs:[ Attr.value_attr "Num" ] [ Node.text "Numeric" ]
+                ; Node.option
+                    ~attrs:[ Attr.value_attr "Native" ]
+                    [ Node.text "Lexicographic" ]
                 ]
             ; Node.div [ Node.text "Add ?number to the URL to change the number of rows" ]
             ]

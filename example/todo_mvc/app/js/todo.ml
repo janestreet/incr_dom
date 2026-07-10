@@ -83,7 +83,7 @@ module Todo = struct
                   ~attrs:
                     [ Attr.many_without_merge
                         [ Attr.class_ "edit"
-                        ; Attr.value todo_text
+                        ; Attr.value_attr todo_text
                         ; Attr.on_blur (fun _ -> editing_ended)
                         ; Vdom.Attr.on_change set_text
                         ]
