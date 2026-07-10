@@ -1,6 +1,5 @@
 (library
  (name incr_dom_text_input_example_test)
- (libraries async_kernel core incr_dom_testing
-   incr_dom_text_input_example_lib js_of_ocaml)
+ (libraries core incr_dom_testing incr_dom_text_input_example_lib)
  (preprocess
   (pps ppx_jane)))

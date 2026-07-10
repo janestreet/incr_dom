@@ -122,7 +122,7 @@ let view (m : Model.t Incr.t) ~(inject : Action.t -> unit Vdom.Effect.t) =
              else []
            in
            Node.option
-             ~attrs:[ Attr.many_without_merge (selected @ [ Attr.value s ]) ]
+             ~attrs:[ Attr.many_without_merge (selected @ [ Attr.value_attr s ]) ]
              [ Node.text s ]))
     ]
 ;;

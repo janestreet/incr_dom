@@ -136,7 +136,7 @@ let editable_cell m col ~remember_edit =
   let attrs =
     [ Attr.style Css_gen.(width Length.percent100)
     ; Attr.create "size" "1"
-    ; Attr.value (Column.get col m)
+    ; Attr.value_attr (Column.get col m)
     ; Attr.on_input (fun _ value -> remember_edit ~column:(Column.name col) value)
     ]
     @ if Column.focus_on_edit col then [ Attr.id "focus-on-edit" ] else []
