@@ -1,5 +1,5 @@
 (executables
- (modes byte exe)
+ (modes js byte exe)
  (names main)
  (libraries core disable_focus_example_lib incr_dom js_of_ocaml)
  (preprocess
