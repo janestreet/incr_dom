@@ -1,6 +1,6 @@
 (executables
- (modes js byte exe)
  (names main)
  (libraries core hello_world_example_lib incr_dom js_of_ocaml)
  (preprocess
-  (pps js_of_ocaml-ppx ppx_jane)))
+  (pps js_of_ocaml-ppx ppx_jane))
+ (modes js wasm byte exe))

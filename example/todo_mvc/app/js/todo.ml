@@ -52,7 +52,10 @@ module Todo = struct
       | classes -> [ Attr.classes classes ]
     in
     let input_attrs =
-      [ Attr.class_ "toggle"; Attr.type_ "checkbox"; Attr.on_click change_completion ]
+      [ Attr.class_ "toggle"
+      ; Attr.type_ "checkbox"
+      ; Attr.on_click_js_of_ocaml change_completion
+      ]
       @ if completed then [ Attr.checked ] else []
     in
     Node.li
@@ -65,12 +68,12 @@ module Todo = struct
                      then [ Node.input ~attrs:[ Attr.many_without_merge input_attrs ] () ]
                      else [])
                   ; [ Node.label
-                        ~attrs:[ Attr.on_double_click edit_started ]
+                        ~attrs:[ Attr.on_double_click_js_of_ocaml edit_started ]
                         [ Node.text todo_text ]
                     ; Node.button
                         ~attrs:
                           [ Attr.many_without_merge
-                              [ Attr.class_ "destroy"; Attr.on_click destroy ]
+                              [ Attr.class_ "destroy"; Attr.on_click_js_of_ocaml destroy ]
                           ]
                         []
                     ]
@@ -84,8 +87,8 @@ module Todo = struct
                     [ Attr.many_without_merge
                         [ Attr.class_ "edit"
                         ; Attr.value_attr todo_text
-                        ; Attr.on_blur (fun _ -> editing_ended)
-                        ; Vdom.Attr.on_change set_text
+                        ; Attr.on_blur_js_of_ocaml (fun _ -> editing_ended)
+                        ; Vdom.Attr.on_change_js_of_ocaml set_text
                         ]
                     ]
                   ()
@@ -166,7 +169,7 @@ let input_section inject clear_input =
     Node.input
       ~attrs:
         [ Attr.many_without_merge
-            ([ Attr.on_change (fun _ s ->
+            ([ Attr.on_change_js_of_ocaml (fun _ s ->
                  Vdom.Effect.Many
                    [ inject (Action.Clear_input true); inject (Action.Add s) ])
              ; Attr.class_ "new-todo"
@@ -204,7 +207,8 @@ let filters inject visibility =
         Attr.href "#" :: selected
       in
       Node.li
-        ~attrs:[ Attr.on_click (fun _ -> inject (Action.Change_visibility vis)) ]
+        ~attrs:
+          [ Attr.on_click_js_of_ocaml (fun _ -> inject (Action.Change_visibility vis)) ]
         [ Node.a ~attrs:[ Attr.many_without_merge attrs ] [ Node.text name ] ])
   in
   Node.ul ~attrs:[ Attr.class_ "filters" ] buttons
@@ -256,7 +260,7 @@ let view model ~inject : Vdom.Node.t Incr.t =
                    ~attrs:
                      [ Attr.many_without_merge
                          [ Attr.class_ "clear-completed"
-                         ; Attr.on_click (fun _ -> inject Clear_completed)
+                         ; Attr.on_click_js_of_ocaml (fun _ -> inject Clear_completed)
                          ]
                      ]
                    [ Node.text "Clear completed" ]
@@ -279,7 +283,7 @@ let view model ~inject : Vdom.Node.t Incr.t =
             [ Attr.many_without_merge
                 [ Attr.class_ "toggle-all"
                 ; Attr.type_ "checkbox"
-                ; Attr.on_click (fun _ -> inject Action.Toggle_all)
+                ; Attr.on_click_js_of_ocaml (fun _ -> inject Action.Toggle_all)
                 ]
             ]
           ()

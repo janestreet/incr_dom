@@ -42,7 +42,7 @@ let () =
         [ Node.h2 [ Node.text "Error!" ]
         ; Node.ul (List.rev_map !all_messages ~f:(fun text -> Node.li [ Node.text text ]))
         ]
-      |> Node.to_dom
+      |> Node.to_dom_js_of_ocaml
     in
     Dom_html.document##.body := dom);
   Async_kernel_scheduler.within ~monitor (fun () ->

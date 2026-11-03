@@ -163,7 +163,7 @@ let view (m : Model.t Incr.t) ~inject =
   let focus = m >>| Model.focus in
   let on_keydown =
     let%map focus in
-    Attr.on_keydown (fun ev ->
+    Attr.on_keydown_js_of_ocaml (fun ev ->
       match Dom_html.Keyboard_code.of_event ev with
       | KeyK -> inject (Move_outer_focus Prev)
       | KeyJ -> inject (Move_outer_focus Next)
@@ -188,7 +188,7 @@ let view (m : Model.t Incr.t) ~inject =
       ~attrs:
         [ Attr.many_without_merge
             [ Attr.create "type" "text"
-            ; Attr.on_input (fun _ev text -> inject (Set_search_string text))
+            ; Attr.on_input_js_of_ocaml (fun _ev text -> inject (Set_search_string text))
             ]
         ]
       ()

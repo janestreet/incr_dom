@@ -1,6 +1,6 @@
 (executables
- (modes js byte exe)
  (names main)
- (libraries async_kernel core incr_dom js_of_ocaml)
+ (libraries async_kernel browser.types core incr_dom js_of_ocaml)
  (preprocess
-  (pps js_of_ocaml-ppx ppx_jane)))
+  (pps js_of_ocaml-ppx ppx_jane))
+ (modes js wasm byte exe))

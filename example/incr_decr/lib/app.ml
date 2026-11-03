@@ -65,13 +65,13 @@ let on_startup ~schedule_action:_ _ = Async_kernel.return ()
 
 let view (m : Model.t) ~(inject : Action.t -> unit Vdom.Effect.t) =
   let open Vdom in
-  let on_add_new_click = Attr.on_click (fun _ev -> inject New_counter) in
+  let on_add_new_click = Attr.on_click_js_of_ocaml (fun _ev -> inject New_counter) in
   let add_new_counter_button =
     Node.div [ Node.button ~attrs:[ on_add_new_click ] [ Node.text "add new counter" ] ]
   in
   let button txt ~pos ~diff =
     let on_click _ev = inject (Update { pos; diff }) in
-    Node.button ~attrs:[ Attr.on_click on_click ] [ Node.text txt ]
+    Node.button ~attrs:[ Attr.on_click_js_of_ocaml on_click ] [ Node.text txt ]
   in
   let elements =
     Map.mapi m.counters ~f:(fun ~key:pos ~data:value ->

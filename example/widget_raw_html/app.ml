@@ -26,10 +26,14 @@ let view_resize_observer =
   let widget_id =
     Type_equal.Id.create
       ~name:"my widget type"
-      (fun (_ : ResizeObserver.resizeObserver Js.t * Dom_html.element Js.t) ->
-         Sexp.Atom "<resize-observer-widget>")
+      (fun
+          (_ :
+            ResizeObserver.resizeObserver Js.t
+            * Dom_html.element Js.t
+            * Browser_types.html_element Js.t)
+        -> Sexp.Atom "<resize-observer-widget>")
   in
-  Vdom.Node.widget
+  Vdom.Node.widget_js_of_ocaml
     ~id:widget_id
     ~init:(fun () ->
       let div = Dom_html.document##createElement (Js.string "div") in
@@ -64,7 +68,7 @@ let view_colorize_button =
   (* Note that this is something of anti-pattern. We typically would only use widgets to
      include third-party JavaScript libraries. What we're doing here would be better done
      using [Incr_dom] in the ordinary way, but demonstrates the basic structure. *)
-  Vdom.Node.widget
+  Vdom.Node.widget_js_of_ocaml
     ~id:widget_id
     ~init:(fun () ->
       (* in here we can do raw javascript operations! *)

@@ -265,7 +265,8 @@ let key_handler ~inject =
   in
   let handler = Keyboard_event_handler.add_command_exn handler help_menu_command in
   let keydown_handler =
-    Attr.on_keydown (fun ev -> Keyboard_event_handler.handle_or_ignore_event handler ev)
+    Attr.on_keydown_js_of_ocaml (fun ev ->
+      Keyboard_event_handler.handle_or_ignore_event handler ev)
   in
   keydown_handler, help_menu_command
 ;;
@@ -309,7 +310,9 @@ let row_renderer (m : Model.t Incr.t) ~(inject : Action.t -> unit Vdom.Effect.t)
 
 let view table (m : Model.t Incr.t) ~(inject : Action.t -> unit Vdom.Effect.t) =
   let open Vdom in
-  let scroll_attr = Vdom.Attr.on_scroll (fun _ -> Vdom.Effect.Viewport_changed) in
+  let scroll_attr =
+    Vdom.Attr.on_scroll_js_of_ocaml (fun _ -> Vdom.Effect.Viewport_changed)
+  in
   let key_handler, help_menu_command = key_handler ~inject in
   let help_text_view_spec =
     Help_text.View_spec.with_classes
@@ -332,7 +335,7 @@ let view table (m : Model.t Incr.t) ~(inject : Action.t -> unit Vdom.Effect.t) =
                 [ Attr.id search_input_id
                 ; Attr.create "placeholder" "Search"
                 ; Attr.create "type" "text"
-                ; Attr.on_input (fun _ev text -> inject (Set_pattern text))
+                ; Attr.on_input_js_of_ocaml (fun _ev text -> inject (Set_pattern text))
                 ]
             ]
           ()
@@ -348,7 +351,7 @@ let view table (m : Model.t Incr.t) ~(inject : Action.t -> unit Vdom.Effect.t) =
         ~attrs:
           [ Attr.many_without_merge
               [ Attr.id "overlay"
-              ; Attr.on_double_click (fun _ev -> inject Action.Escape)
+              ; Attr.on_double_click_js_of_ocaml (fun _ev -> inject Action.Escape)
               ]
           ]
         [ Node.div

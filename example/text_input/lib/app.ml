@@ -51,7 +51,9 @@ let view (m : Model.t Incr.t) ~inject =
     Node.button
       ~attrs:
         [ Attr.many_without_merge
-            [ Attr.id (String.lowercase label); Attr.on_click (fun _ev -> inject action) ]
+            [ Attr.id (String.lowercase label)
+            ; Attr.on_click_js_of_ocaml (fun _ev -> inject action)
+            ]
         ]
       [ Node.text label ]
   in
@@ -70,7 +72,8 @@ let view (m : Model.t Incr.t) ~inject =
             ; Attr.string_property "value" input_text
               (* We must update our model with the user's input to keep the virtual dom
                  consistent with the actual dom. *)
-            ; Attr.on_input (fun _ev text -> inject (Action.Update_input text))
+            ; Attr.on_input_js_of_ocaml (fun _ev text ->
+                inject (Action.Update_input text))
             ]
         ]
       ()
