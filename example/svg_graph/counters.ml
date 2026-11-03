@@ -57,12 +57,12 @@ let on_startup ~schedule_action:_ _ = Async_kernel.return ()
 
 let view (m : Model.t) ~(inject : Action.t -> unit Vdom.Effect.t) =
   let open Vdom in
-  let on_add_new_click = Attr.on_click (fun _ev -> inject New_counter) in
+  let on_add_new_click = Attr.on_click_js_of_ocaml (fun _ev -> inject New_counter) in
   let add_new_counter_button =
     Node.div [ Node.button ~attrs:[ on_add_new_click ] [ Node.text "add new counter" ] ]
   in
   let button txt ~pos ~diff =
-    let on_click = Attr.on_click (fun _ -> inject (Update { pos; diff })) in
+    let on_click = Attr.on_click_js_of_ocaml (fun _ -> inject (Update { pos; diff })) in
     let open Css_gen in
     let button_style = min_width (`Px 0) @> margin_top (`Px 3) in
     Node.button

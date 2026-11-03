@@ -52,7 +52,9 @@ let create
       @> Css_gen.background_color (`Name "red")
     in
     let container_attributes =
-      [ Attr.style style; Attr.on_keypress (fun e -> inject (Set_key_code e##.keyCode)) ]
+      [ Attr.style style
+      ; Attr.on_keypress_js_of_ocaml (fun e -> inject (Set_key_code e##.keyCode))
+      ]
     in
     let contents =
       [ Node.text (model.last_key_code |> Int.to_string)
@@ -60,8 +62,8 @@ let create
           ~attrs:
             [ Attr.many_without_merge
                 [ Attr.string_property "value" model.text_box_content
-                ; Attr.on_keypress (fun _ -> Effect.Stop_propagation)
-                ; Attr.on_keyup (fun e ->
+                ; Attr.on_keypress_js_of_ocaml (fun _ -> Effect.Stop_propagation)
+                ; Attr.on_keyup_js_of_ocaml (fun e ->
                     match
                       let open Option.Let_syntax in
                       let%map target =

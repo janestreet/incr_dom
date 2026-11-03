@@ -79,7 +79,7 @@ let update_visibility m ~schedule_action:_ =
 ;;
 
 let key_handler (m : Model.t) ~(inject : Action.t -> unit Vdom.Effect.t) =
-  Attr.on_keydown (fun ev ->
+  Attr.on_keydown_js_of_ocaml (fun ev ->
     Async_kernel_scheduler.within_v ~monitor:m.monitor (fun () ->
       maybe_fail m On_keydown;
       match Dom_html.Keyboard_code.of_event ev with
@@ -93,7 +93,7 @@ let view (m : Model.t Incr.t) ~(inject : Action.t -> unit Vdom.Effect.t) =
   let open Incr.Let_syntax in
   let set_location =
     let open Js_of_ocaml in
-    Vdom.Attr.on_change (fun (_ : Dom_html.event Js.t) value ->
+    Vdom.Attr.on_change_js_of_ocaml (fun (_ : Dom_html.event Js.t) value ->
       match Exn_location.of_string value with
       | Some loc -> inject (Set_exn_location loc)
       | None -> Vdom.Effect.Ignore)
@@ -111,7 +111,7 @@ let view (m : Model.t Incr.t) ~(inject : Action.t -> unit Vdom.Effect.t) =
   in
   Node.body
     ~attrs:[ Attr.many_without_merge attr ]
-    [ Node.div ~attrs:[ Attr.on_click (fun _ -> inject Switch) ] [ text ]
+    [ Node.div ~attrs:[ Attr.on_click_js_of_ocaml (fun _ -> inject Switch) ] [ text ]
     ; Node.select
         ~attrs:[ set_location ]
         (List.map Exn_location.all ~f:(fun loc ->

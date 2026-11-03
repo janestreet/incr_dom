@@ -54,7 +54,10 @@ module Button = struct
       if enabled then [] else [ Attr.disabled; Attr.style (Css_gen.color (`Name "grey")) ]
     in
     let attrs =
-      [ extra_attrs; enabled_disabled; [ Attr.on_click trigger_csv_download ] ]
+      [ extra_attrs
+      ; enabled_disabled
+      ; [ Attr.on_click_js_of_ocaml trigger_csv_download ]
+      ]
       |> List.concat
     in
     Node.button ~attrs:[ Attr.many_without_merge attrs ] [ Node.text button_text ]

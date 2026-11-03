@@ -1,6 +1,6 @@
 (executables
- (modes byte exe)
  (names main)
  (libraries core incr_dom incr_dom_text_input_example_lib js_of_ocaml)
  (preprocess
-  (pps js_of_ocaml-ppx ppx_jane)))
+  (pps js_of_ocaml-ppx ppx_jane))
+ (modes js wasm byte exe))

@@ -137,7 +137,8 @@ let editable_cell m col ~remember_edit =
     [ Attr.style Css_gen.(width Length.percent100)
     ; Attr.create "size" "1"
     ; Attr.value_attr (Column.get col m)
-    ; Attr.on_input (fun _ value -> remember_edit ~column:(Column.name col) value)
+    ; Attr.on_input_js_of_ocaml (fun _ value ->
+        remember_edit ~column:(Column.name col) value)
     ]
     @ if Column.focus_on_edit col then [ Attr.id "focus-on-edit" ] else []
   in
@@ -230,7 +231,7 @@ let view
   ~remember_edit
   =
   let open Vdom in
-  let on_click = Attr.on_click (fun _ -> focus_me) in
+  let on_click = Attr.on_click_js_of_ocaml (fun _ -> focus_me) in
   let row_background_color (mode : Mode.t) ~is_sort_column =
     match mode with
     | Focused | Editing -> focused_color
@@ -270,7 +271,7 @@ let view
             else []
           | Unfocused | Editing -> []
         in
-        let on_click = Attr.on_click (fun _ -> focus_nth_column i) in
+        let on_click = Attr.on_click_js_of_ocaml (fun _ -> focus_nth_column i) in
         [ on_click; Attr.classes focus_classes ]
       in
       let style =

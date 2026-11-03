@@ -2,6 +2,6 @@
  (name vdom_file_download)
  (public_name incr_dom.vdom_file_download)
  (preprocess
-  (pps js_of_ocaml-ppx ppx_jane))
+  (pps js_of_ocaml-ppx ppx_jane -compare-require-explicit-locality))
  (libraries core virtual_dom.css_gen js_of_ocaml virtual_dom.ui_effect
    virtual_dom))

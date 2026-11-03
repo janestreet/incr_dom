@@ -52,11 +52,13 @@ let view (m : Model.t Incr.t) ~inject =
   let open Vdom in
   let inner_click =
     match%map m >>| Model.propagation_stopped with
-    | true -> Attr.on_click (fun _ -> Effect.Stop_propagation)
-    | false -> Attr.on_click (fun _ -> Effect.Ignore)
+    | true -> Attr.on_click_js_of_ocaml (fun _ -> Effect.Stop_propagation)
+    | false -> Attr.on_click_js_of_ocaml (fun _ -> Effect.Ignore)
   in
-  let outer_click = Attr.on_click (fun _ -> inject Action.Outer_click) in
-  let outer_keydown = Attr.on_keydown (fun _ -> inject Action.Outer_keydown) in
+  let outer_click = Attr.on_click_js_of_ocaml (fun _ -> inject Action.Outer_click) in
+  let outer_keydown =
+    Attr.on_keydown_js_of_ocaml (fun _ -> inject Action.Outer_keydown)
+  in
   let inner_keydown =
     let%map default_prevented = m >>| Model.default_prevented
     and propagation_stopped = m >>| Model.propagation_stopped in
@@ -66,10 +68,10 @@ let view (m : Model.t Incr.t) ~inject =
         ; Option.some_if propagation_stopped Effect.Stop_propagation
         ]
     in
-    Attr.on_keydown (fun _ -> Effect.Many events)
+    Attr.on_keydown_js_of_ocaml (fun _ -> Effect.Many events)
   in
   let pd_click =
-    Attr.on_click (fun evt ->
+    Attr.on_click_js_of_ocaml (fun evt ->
       (let open Option.Let_syntax in
        let%bind target = Js.Opt.to_option evt##.target in
        let%map inp = Js.Opt.to_option (Dom_html.CoerceTo.input target) in
@@ -77,7 +79,7 @@ let view (m : Model.t Incr.t) ~inject =
       |> Option.value ~default:Effect.Ignore)
   in
   let sp_click =
-    Attr.on_click (fun evt ->
+    Attr.on_click_js_of_ocaml (fun evt ->
       (let open Option.Let_syntax in
        let%bind target = Js.Opt.to_option evt##.target in
        let%map inp = Js.Opt.to_option (Dom_html.CoerceTo.input target) in

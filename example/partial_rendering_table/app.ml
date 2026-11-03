@@ -141,13 +141,15 @@ let update_visibility (model : Model.t) row_view ~schedule_action:_ =
 ;;
 
 let view model row_view ~inject =
-  let scroll_attr = Vdom.Attr.on_scroll (fun _ -> Vdom.Effect.Viewport_changed) in
+  let scroll_attr =
+    Vdom.Attr.on_scroll_js_of_ocaml (fun _ -> Vdom.Effect.Viewport_changed)
+  in
   let filter_string_change =
-    Vdom.Attr.on_input (fun (_ : Dom_html.event Js.t) value ->
+    Vdom.Attr.on_input_js_of_ocaml (fun (_ : Dom_html.event Js.t) value ->
       inject (Action.Update_filter value))
   in
   let sort_change =
-    Vdom.Attr.on_change (fun (_ : Dom_html.event Js.t) value ->
+    Vdom.Attr.on_change_js_of_ocaml (fun (_ : Dom_html.event Js.t) value ->
       match value with
       | "Num" -> inject (Action.Update_sort Key.Num)
       | "Native" -> inject (Action.Update_sort Key.Native)

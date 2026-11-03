@@ -3,4 +3,4 @@
  (public_name incr_dom.javascript_profiling)
  (libraries core js_of_ocaml bonsai_concrete.metrics)
  (preprocess
-  (pps js_of_ocaml-ppx ppx_jane)))
+  (pps js_of_ocaml-ppx ppx_jane -compare-require-explicit-locality)))

@@ -194,7 +194,8 @@ let header ~collapsed ~set_inner_focus focus =
   let bd ff dir =
     th
       [ Attr.class_ (if field_is_focused (ff, dir) then "focused" else "unfocused")
-      ; Attr.on_click (fun _ -> set_inner_focus (Model.get_focus_point (ff, dir)))
+      ; Attr.on_click_js_of_ocaml (fun _ ->
+          set_inner_focus (Model.get_focus_point (ff, dir)))
       ]
       [ Node.text (Model.Focusable_field.to_string ff ^ dstring dir) ]
   in
@@ -223,7 +224,8 @@ let basic_data_and_header ~set_inner_focus ~focus (basic : Model.Basic.t) =
       ff
       (let attrs dir =
          [ Attr.class_ (if field_is_focused (ff, dir) then "focused" else "unfocused")
-         ; Attr.on_click (fun _ -> set_inner_focus (Model.get_focus_point (ff, dir)))
+         ; Attr.on_click_js_of_ocaml (fun _ ->
+             set_inner_focus (Model.get_focus_point (ff, dir)))
          ]
        in
        [ td (attrs Buy) [ Node.text (Float.to_string_12 (num Buy)) ]
@@ -286,7 +288,7 @@ let view
         [ Attr.many_without_merge
             ((if focused then [ Attr.id "keep-in-view" ] else [])
              @ [ Attr.class_ (if focused then "focused" else "unfocused")
-               ; Attr.on_click (fun _ -> focus_me)
+               ; Attr.on_click_js_of_ocaml (fun _ -> focus_me)
                ])
         ]
       [ header; data ]

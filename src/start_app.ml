@@ -166,7 +166,7 @@ let start_bonsai
                =
                run_writes ()
              in
-             let html_dom = Vdom.Node.to_dom html in
+             let html_dom = Vdom.Node.to_dom_js_of_ocaml html in
              let elem = Dom_html.getElementById_exn bind_to_element_with_id in
              let parent = Option.value_exn (Js.Opt.to_option elem##.parentNode) in
              Dom.replaceChild parent html_dom elem;
@@ -322,7 +322,7 @@ let start_bonsai
              =
              run_writes ()
            in
-           let elt = Vdom.Node.Patch.apply patch !prev_elt in
+           let elt = Vdom.Node.Patch.apply_js_of_ocaml patch !prev_elt in
            (* [!prev_elt] should almost always refer to the current app root element, and
               be connected. The exceptions are if something external has mutated DOM,
               which we can't control, and if a patch changes the tag of the root element,
